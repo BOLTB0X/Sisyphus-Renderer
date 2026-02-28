@@ -31,9 +31,9 @@ bool Triangle::Init(ID3D11Device* device, HWND hwnd) {
 
 bool Triangle::InitBuffers(ID3D11Device* device) {
     Vertex::VertexColor vertices[] = {
-        { {  -1.0f,  -1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-        { {  0.5f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { 1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
+        { {  0.0f,   0.433f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }, // 위
+        { {  0.5f,  -0.433f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } }, // 우하
+        { { -0.5f,  -0.433f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }  // 좌하
     };
     m_vertexCount = sizeof(vertices) / sizeof(vertices[0]);
 
@@ -68,16 +68,13 @@ bool Triangle::InitBuffers(ID3D11Device* device) {
 
 
 void Triangle::Render(ID3D11DeviceContext* context) {
-    static float rotation = 0.0f;
-    rotation += 0.015f;
-    if (rotation > XM_2PI) rotation -= XM_2PI;
-
-    XMMATRIX rotationX = XMMatrixRotationX(rotation);
-    XMMATRIX rotationZ = XMMatrixRotationZ(rotation);
-    XMMATRIX world = rotationX * rotationZ;
+    // 행렬 생성
+    XMMATRIX world = XMMatrixIdentity();
     XMMATRIX view = XMMatrixIdentity();
     XMMATRIX projection = XMMatrixIdentity();
+
     RenderBuffers(context);
+
     if (m_colorShader) {
         m_colorShader->Render(context, m_indexCount, world, view, projection);
     }
