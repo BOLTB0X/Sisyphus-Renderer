@@ -426,3 +426,6 @@ FodyWeavers.xsd
 build/
 [Bb]uild/
 build/**
+
+.vscode/
+.vscode/**
