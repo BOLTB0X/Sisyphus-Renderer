@@ -24,6 +24,7 @@ add_executable(${PROJECT_NAME} WIN32 ${SOURCES})
 # vcpkg 패키지 불러오기
 find_package(imgui CONFIG REQUIRED)
 find_package(directxtk CONFIG REQUIRED)
+find_package(directxtex CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
@@ -48,6 +49,7 @@ target_link_libraries(${PROJECT_NAME}
     # vcpkg로 설치한 라이브러리 타겟
     imgui::imgui
     Microsoft::DirectXTK
+    Microsoft::DirectXTex
     spdlog::spdlog
     assimp::assimp
 )
@@ -71,7 +73,7 @@ foreach(FILE ${SOURCES})
 endforeach()
 
 set(HLSL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/HLSL")
-set(HLSL_OUTPUT_DIR "${CMAKE_BINARY_DIR}/src/Graphics/HLSL")
+set(HLSL_OUTPUT_DIR "${CMAKE_BINARY_DIR}/HLSL")
 set(ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
 set(ASSETS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/assets")
 
