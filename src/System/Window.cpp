@@ -3,7 +3,7 @@
 // System
 #include "Window.h"
 // Utils
-#include "SharedConstants.h"
+#include "SharedConstants/ScreenConstants.h"
 // Core
 #include "RendererState.h"
 
@@ -47,10 +47,10 @@ bool Window::Init(WNDPROC wndProc, LPCWSTR appName) {
 
     int posX, posY;
 
-    if (DefaultScreen::FULL_SCREEN) {
+    if (ScreenConstants::FULL_SCREEN) {
         posX = posY = 0;
     } else {
-        RECT windowRect = { 0, 0, (LONG)DefaultScreen::WIDTH, (LONG)DefaultScreen::HEIGHT };
+        RECT windowRect = { 0, 0, (LONG)ScreenConstants::WIDTH, (LONG)ScreenConstants::HEIGHT };
         AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
         int actualWidth = windowRect.right - windowRect.left;
         int actualHeight = windowRect.bottom - windowRect.top;
@@ -60,7 +60,7 @@ bool Window::Init(WNDPROC wndProc, LPCWSTR appName) {
     }
 
     m_hwnd = CreateWindowExW(WS_EX_APPWINDOW, m_engineName, m_engineName,
-        WS_OVERLAPPEDWINDOW, posX, posY, DefaultScreen::WIDTH, DefaultScreen::HEIGHT,
+        WS_OVERLAPPEDWINDOW, posX, posY, ScreenConstants::WIDTH, ScreenConstants::HEIGHT,
         NULL, NULL, m_hinstance, NULL);
 
     if (!m_hwnd)
@@ -85,7 +85,7 @@ bool Window::Init(WNDPROC wndProc, LPCWSTR appName) {
 void Window::Shutdown() {
     ShowCursor(true);
 
-    if (DefaultScreen::FULL_SCREEN) {
+    if (ScreenConstants::FULL_SCREEN) {
         ChangeDisplaySettings(NULL, 0);
     }
 

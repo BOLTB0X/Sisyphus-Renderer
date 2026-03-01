@@ -1,10 +1,18 @@
 #pragma once
 #include <directxmath.h>
 
-namespace Vertex {
-    struct VertexColor
+namespace VertexTypes {
+    struct ColorVertex
     {
         DirectX::XMFLOAT3 position;
         DirectX::XMFLOAT4 color;
-    }; // VertexColor
-}
+    }; // ColorVertex
+
+    struct FBRVertex {
+        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT2 texture;
+        DirectX::XMFLOAT3 normal;
+        DirectX::XMFLOAT3 tangent;
+        DirectX::XMFLOAT3 binormal;
+    }; // FBRVertex
+} // VertexTypes

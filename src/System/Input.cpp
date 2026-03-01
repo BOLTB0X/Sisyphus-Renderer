@@ -12,9 +12,7 @@ Input::Input()
 	m_mouseState = {};
 } // Input
 
-
 Input::~Input() {} // ~Input
-
 
 bool Input::Init(HINSTANCE hinstance, HWND hwnd) {
 	HRESULT result;

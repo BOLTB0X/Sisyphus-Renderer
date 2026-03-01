@@ -16,13 +16,11 @@ ImGuiManager::ImGuiManager()
 ImGuiManager::~ImGuiManager()  {
 } // ~ImGuiManager
 
-bool ImGuiManager::Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
-{
+bool ImGuiManager::Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext) {
     return m_ImGuiState->Init(hwnd, device, deviceContext);
 } // Init
 
-void ImGuiManager::Shutdown()
-{
+void ImGuiManager::Shutdown() {
     m_widgets.clear();
 
     if (m_ImGuiState) {
@@ -33,8 +31,7 @@ void ImGuiManager::Shutdown()
 void ImGuiManager::Frame() {
     m_ImGuiState->Begin();
 
-    for (auto& widget : m_widgets)
-    {
+    for (auto& widget : m_widgets) {
         if (widget->IsVisible())
         {
             widget->Frame();
@@ -45,8 +42,7 @@ void ImGuiManager::Frame() {
     return;
 } // Render
 
-void ImGuiManager::Begin()
-{
+void ImGuiManager::Begin() {
     if (m_ImGuiState)
     {
         m_ImGuiState->Begin();

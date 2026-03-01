@@ -2,7 +2,7 @@
 #include "Camera.h"
 #include "Frustum.h"
 // Utils
-#include "SharedConstants.h"
+#include "SharedConstants/CameraConstants.h"
 #include "Helpers/MathHelper.h"
 
 using namespace DirectX;
@@ -13,13 +13,16 @@ Camera::Camera()
       m_rotation(0.0f, 0.0f, 0.0f), m_up(0.0f, 1.0f, 0.0f),
       m_fov(0.0f), m_near(0.0f), m_far(0.0f), m_aspect(0.0f) {
     m_frustum = std::make_unique<Frustum>();
-    m_maxPitch = CameraSettings::MAX_PITCH;
-    m_minPitch = CameraSettings::MIN_PITCH;
-    m_maxFov = CameraSettings::MAX_FOV;
-    m_minFov = CameraSettings::MIN_FOV;
+    m_maxPitch = CameraConstants::MAX_PITCH;
+    m_minPitch = CameraConstants::MIN_PITCH;
+    m_maxFov = CameraConstants::MAX_FOV;
+    m_minFov = CameraConstants::MIN_FOV;
+    m_viewMatrix = XMMatrixIdentity();
+    m_projectionMatrix = XMMatrixIdentity();
 } //Camera
 
-Camera::~Camera() {}
+Camera::~Camera() {
+} // ~Camera
 
 bool Camera::Init(float fov, float aspect, float screenNear, float screenFar) {
     m_fov = fov;

@@ -5,7 +5,7 @@
 #include <vector>
 
 enum class ShaderType {
-    None
+    None, Color, Stone
 };
 
 class Shader {
@@ -16,7 +16,6 @@ public:
 
     virtual bool Init(ID3D11Device*, HWND, const std::wstring&, const std::wstring&) = 0;
 
-    
     protected:
     bool Compile(ID3D11Device*, HWND, const std::wstring&, LPCSTR, LPCSTR, ID3DBlob**);
     void OutputError(ID3DBlob*, HWND, const std::wstring&);

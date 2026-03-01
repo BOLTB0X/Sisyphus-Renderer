@@ -1,11 +1,12 @@
 #include "Pch.h"
 #include "ColorShader.h"
 #include "Resources/ConstantBufferType.h"
-// Utils
-#include "Utils/SharedConstants.h"
 
-using namespace SharedConstants;
 using namespace DirectX;
+
+ColorShader::ColorShader() : Shader() {
+    m_type = ShaderType::Color;
+} // ColorShader
 
 bool ColorShader::Init(ID3D11Device* device, HWND hwnd, 
                        const std::wstring& vsPath, const std::wstring& psPath) {

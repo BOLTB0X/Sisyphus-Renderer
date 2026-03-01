@@ -1,13 +1,11 @@
 #include "Pch.h"
 #include "PerformanceWidget.h"
 #include "ImGuiDrawer.h"
-#include "SharedConstants.h"
-
-using namespace SharedConstants;
+#define NAME "Performance"
 
 PerformanceWidget::PerformanceWidget(
     const int& fps, const long& cpu, const float& frameTime)
-: ImGuiWidget(WidgetName::PERFORMANCE),
+: ImGuiWidget(NAME),
   m_fps(fps), m_cpu(cpu), m_frameTime(frameTime) {
 } //PerformanceWidget
 

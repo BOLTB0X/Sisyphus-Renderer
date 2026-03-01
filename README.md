@@ -20,6 +20,7 @@
 # 터미널/파워쉘에서 다음 라이브러리들을 설치
 vcpkg install imgui[directx11-binding,win32-binding]
 vcpkg install directxtk
+vcpkg install directxtex
 vcpkg install spdlog
 vcpkg install assimp
 ```

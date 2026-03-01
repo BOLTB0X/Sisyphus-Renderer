@@ -3,9 +3,10 @@
 #include "Resources/VertexTypes.h"
 #include "Resources/ConstantBufferType.h"
 #include "Shaders/ColorShader.h"
-#include "Utils/SharedConstants.h"
+// Utils
+#include "SharedConstants/PathConstants.h"
 
-using namespace SharedConstants::HLSL;
+using namespace SharedConstants::PathConstants;
 using namespace DirectX;
 
 Triangle::Triangle()
@@ -30,7 +31,7 @@ bool Triangle::Init(ID3D11Device* device, HWND hwnd) {
 } // Init
 
 bool Triangle::InitBuffers(ID3D11Device* device) {
-    Vertex::VertexColor vertices[] = {
+    VertexTypes::ColorVertex vertices[] = {
         { {  0.0f,   0.433f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }, // 위
         { {  0.5f,  -0.433f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } }, // 우하
         { { -0.5f,  -0.433f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }  // 좌하
@@ -43,7 +44,7 @@ bool Triangle::InitBuffers(ID3D11Device* device) {
     // Vertex Buffer 생성
     D3D11_BUFFER_DESC vbd = {};
     vbd.Usage = D3D11_USAGE_DEFAULT;
-    vbd.ByteWidth = sizeof(Vertex::VertexColor) * m_vertexCount;
+    vbd.ByteWidth = sizeof(VertexTypes::ColorVertex) * m_vertexCount;
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA vsd = {};
@@ -81,7 +82,7 @@ void Triangle::Render(ID3D11DeviceContext* context) {
 } // Render
 
 void Triangle::RenderBuffers(ID3D11DeviceContext* context) {
-    UINT stride = sizeof(Vertex::VertexColor);
+    UINT stride = sizeof(VertexTypes::ColorVertex);
     UINT offset = 0;
 
     context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);

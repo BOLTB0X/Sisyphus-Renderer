@@ -4,7 +4,7 @@
 
 class ColorShader : public Shader {
 public:
-    ColorShader() = default;
+    ColorShader();
     ColorShader(const ColorShader& other) = delete;
     virtual ~ColorShader() = default;
     virtual bool Init(ID3D11Device*, HWND, const std::wstring&, const std::wstring&) override;
