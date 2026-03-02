@@ -26,6 +26,8 @@ public:
 
 private:
     void InitWidgets();
+    void FramePerformance();
+    bool FrameInteraction();
 
 private:
     std::unique_ptr<Window>       m_Window;
@@ -33,8 +35,8 @@ private:
     std::unique_ptr<Cpu>          m_Cpu;
     std::unique_ptr<Timer>        m_Timer;
     std::unique_ptr<Renderer>     m_Renderer;
-    
-    std::shared_ptr<Input>        m_Input;
+    std::unique_ptr<Input>        m_Input;
+
     std::shared_ptr<ImGuiManager> m_ImGuiManager;
 }; // System
 

@@ -7,7 +7,12 @@
 Input::Input()
 	: m_directInput(nullptr), m_keyboard(nullptr), m_mouse(nullptr),
 	m_mouseX(0), m_mouseY(0),
-	m_F1_released(0), m_prevMouseL(false) {
+	m_windowCenterX(0), m_windowCenterY(0),
+	m_F1_released(false),
+	m_prevMouseL(true),
+	m_sensitivity(0.05f),
+	m_adjMouseX(0.0f), m_adjMouseY(0.0f),
+	m_cursorHidden(false) {
 	memset(m_keyboardState, 0, sizeof(m_keyboardState));
 	m_mouseState = {};
 } // Input
@@ -43,11 +48,24 @@ bool Input::Init(HINSTANCE hinstance, HWND hwnd) {
 	result = m_mouse->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 	// 마우스 권한 획득
 	result = m_mouse->Acquire();
+
+	RECT rect;
+    GetClientRect(hwnd, &rect);
+    POINT pt = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
+    
+    ClientToScreen(hwnd, &pt);
+    
+    m_windowCenterX = pt.x;
+    m_windowCenterY = pt.y;
+
+	ShowCursor(FALSE);
 	return true;
 } // Init
 
 
 void Input::Shutdown() {
+	ShowCursor(TRUE);
+
 	if (m_mouse) {
 		m_mouse->Unacquire();
 		m_mouse->Release();
@@ -70,26 +88,51 @@ void Input::Shutdown() {
 
 
 bool Input::Frame() {
-	if (ReadKeyboard() == false)
+	if (!ReadKeyboard()) {
         return false;
+	}
 
-	if (ReadMouse() == false)
+	if (!ReadMouse()) {
         return false;
+	}
 
 	ProcessInput();
 
 	m_prevMouseL = IsMouseLPressed() != 0;
+
+	if (IsEscapePressed()) {
+		return false;
+	}
+	
 	return true;
 } // Frame
 
-
 // 마우스 상태
-void Input::GetMouseLocation(int& mouseX, int& mouseY) { mouseX = m_mouseX; mouseY = m_mouseY; }
-void Input::GetMouseDelta(int& x, int& y) { x = m_mouseState.lX; y = m_mouseState.lY; }
-int Input::GetMouseWheelDelta() { return m_mouseState.lZ; }
-bool Input::IsMouseLPressed() { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
-bool Input::IsLeftMouseDown()  { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
-bool Input::IsRightMouseDown() { return (m_mouseState.rgbButtons[1] & 0x80) != 0; }
+void  Input::GetMouseLocation(int& mouseX, int& mouseY) { mouseX = m_mouseX; mouseY = m_mouseY; }
+void  Input::GetMouseDelta(int& x, int& y) { x = m_mouseState.lX; y = m_mouseState.lY; }
+int   Input::GetMouseWheelDelta() { return m_mouseState.lZ; }
+bool  Input::IsMouseLPressed() { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
+bool  Input::IsLeftMouseDown()  { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
+bool  Input::IsRightMouseDown() { return (m_mouseState.rgbButtons[1] & 0x80) != 0; }
+void  Input::SetSensitivity(float sensitivity) { m_sensitivity = sensitivity; }
+float Input::GetSensitivity() const { return m_sensitivity; }
+bool  Input::IsCursorHidden() const { return m_cursorHidden; }
+
+void  Input::SetCursorHidden(bool hidden) {
+    m_cursorHidden = hidden;
+
+    CURSORINFO ci = { sizeof(CURSORINFO) };
+    if (GetCursorInfo(&ci)) {
+        bool isCurrentlyVisible = (ci.flags & CURSOR_SHOWING);
+        
+        if (hidden && isCurrentlyVisible) {
+            while (ShowCursor(FALSE) >= 0); // 숨겨질 때까지
+        }
+        else if (!hidden && !isCurrentlyVisible) {
+            while (ShowCursor(TRUE) < 0);  // 보일 때까지
+        }
+    }
+} // SetCursorHidden
 
 
 // 키보드 상태
@@ -143,13 +186,20 @@ bool Input::ReadMouse() {
 		else return false;
 	}
 
+	if (m_cursorHidden) {
+        SetCursorPos(m_windowCenterX, m_windowCenterY);
+    }
+
 	return true;
 } // ReadMouse
 
 
 void Input::ProcessInput() {
-	m_mouseX += m_mouseState.lX;
-	m_mouseY += m_mouseState.lY;
+    m_adjMouseX = static_cast<float>(m_mouseState.lX) * m_sensitivity;
+    m_adjMouseY = static_cast<float>(m_mouseState.lY) * m_sensitivity;
+
+    m_mouseX += m_mouseState.lX;
+    m_mouseY += m_mouseState.lY;
 
 	if (m_mouseX < 0) { m_mouseX = 0; }
 	if (m_mouseY < 0) { m_mouseY = 0; }

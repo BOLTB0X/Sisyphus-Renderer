@@ -13,6 +13,7 @@
 // Utils
 #include "ImGui/ImGuiManager.h"
 #include "SharedConstants/PathConstants.h"
+#include "SharedConstants/CameraConstants.h"
 
 using namespace SharedConstants;
 
@@ -39,17 +40,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     auto device = m_D3D11Manager->GetDevice();
     auto context = m_D3D11Manager->GetDeviceContext();
 
-    float aspect = (float)RendererState::ScreenWidth / (float)RendererState::ScreenHeight;
-    if (!m_Camera->Init(60.0f, aspect, RendererState::ScreenNear, RendererState::ScreenDepth)) {
+    if (!m_Camera->Init(CameraConstants::DEFAULT_FOV, RendererState::aspectRatio, RendererState::ScreenNear, RendererState::ScreenDepth)) {
         return false;
     }
-    m_Camera->SetPosition(0.0f, 0.0f, -5.0f);
 
     // Stone 초기화 
     if (!m_Stone->Init(device, context, hwnd, PathConstants::STONE)) {
         return false;
     }
-    m_Stone->SetPosition(0.0f, 0.0f, 0.0f);
 
     // ImGui 초기화
     m_ImGuiManager = std::move(imgui);
@@ -72,6 +70,19 @@ bool Renderer::Frame() {
     return Render();
 } // Frame
 
+Camera* Renderer::GetCamera() const {
+    return m_Camera.get();
+} // GetCamera
+
+void Renderer::UpdateCameraRotation(float dx, float dy) {
+    m_Camera->AddYaw(dx);
+    m_Camera->AddPitch(dy);
+} // UpdateCameraRotation
+
+void Renderer::UpdateCameraZoom(float delta) {
+    float fovDelta = -delta * 0.05f; 
+    m_Camera->AddFOV(fovDelta);
+} // UpdateCameraZoom
 
 bool Renderer::Render() {
     m_D3D11Manager->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);

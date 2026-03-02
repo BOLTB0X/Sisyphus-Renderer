@@ -9,7 +9,8 @@
 #include "imgui_impl_dx11.h"
 
 ImGuiManager::ImGuiManager()
-    : m_isCameraLocked(false) {
+    : m_isCameraLocked(false),
+      m_showUI(true) {
     m_ImGuiState = std::make_unique<ImGuiState>();
 } // ImGuiManager
 
@@ -69,10 +70,15 @@ void ImGuiManager::AddWidget(std::unique_ptr<ImGuiWidget> widget) {
 } // AddWidget
 
 void ImGuiManager::ToggleWidget() {
+    m_showUI = !m_showUI;
     for (auto& widget : m_widgets) {
         widget->SetVisible(!widget->IsVisible());
     }
 } // ToggleWidget
+
+bool ImGuiManager::IsVisible() const {
+    return m_showUI;
+} // IsVisible
 
 bool ImGuiManager::GetCameraLocked() const { return m_isCameraLocked;}
 // GetCameraLocked

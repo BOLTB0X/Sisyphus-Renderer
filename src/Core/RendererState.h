@@ -8,4 +8,5 @@ public:
     static int   ScreenHeight;
     static float ScreenDepth;
     static float ScreenNear;
+	static float aspectRatio;
 }; // RendererState

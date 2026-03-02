@@ -27,6 +27,7 @@ public:
     bool CanControlWorld() const;
     void AddWidget(std::unique_ptr<ImGuiWidget>);
     void ToggleWidget();
+    bool IsVisible() const;
 
     bool GetCameraLocked() const;
     void SetCameraLocked(bool);
@@ -47,4 +48,5 @@ private:
     std::unique_ptr<ImGuiState>               m_ImGuiState;
     std::vector<std::unique_ptr<ImGuiWidget>> m_widgets;
     bool                                      m_isCameraLocked;
+    bool                                      m_showUI;
 }; // ImGuiManager

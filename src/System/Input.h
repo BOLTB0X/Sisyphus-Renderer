@@ -17,6 +17,11 @@ public:
 	bool Frame();
 
 public: // 마우스
+	struct MouseDelta {
+        float x;
+        float y;
+    };
+
 	void GetMouseLocation(int&, int&);
 	void GetMouseDelta(int&, int&);
 	int  GetMouseWheelDelta();
@@ -24,6 +29,12 @@ public: // 마우스
 	bool IsMouseLPressed();
 	bool IsLeftMouseDown();
 	bool IsRightMouseDown();
+
+	void        SetSensitivity(float);
+    float       GetSensitivity() const;
+	void        SetCursorHidden(bool);
+	bool        IsCursorHidden() const;
+	MouseDelta  GetAdjustedMouseDelta() const { return { m_adjMouseX, m_adjMouseY }; }
 
 public: // 키보드
 	bool IsEscapePressed();
@@ -51,7 +62,11 @@ private:
 	unsigned char m_keyboardState[256];
 	DIMOUSESTATE  m_mouseState;
 
-	int  m_mouseX, m_mouseY;
-	bool m_F1_released;
-	bool m_prevMouseL;
+	int   m_mouseX, m_mouseY;
+	int   m_windowCenterX, m_windowCenterY;
+	bool  m_F1_released;
+	bool  m_prevMouseL;
+	float m_sensitivity;
+    float m_adjMouseX, m_adjMouseY;
+	bool  m_cursorHidden;
 }; // Input

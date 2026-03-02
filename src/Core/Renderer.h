@@ -20,7 +20,11 @@ public:
     bool Init(HWND, std::shared_ptr<ImGuiManager>);
     void Shutdown();
     bool Frame();
-    
+
+    Camera* GetCamera() const;
+    void    UpdateCameraRotation(float, float);
+    void    UpdateCameraZoom(float);
+
 private:
     bool Render();
 

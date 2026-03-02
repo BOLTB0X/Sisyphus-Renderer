@@ -10,6 +10,7 @@
 // Utils
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/PerformanceWidget.h"
+#include "ImGui/CameraWidget.h"
 // imgui
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -45,12 +46,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 
 LRESULT CALLBACK System::MessageHandler(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 {
+    switch (umessage) {
+        case WM_SETCURSOR:
+            if (m_Input && m_Input->IsCursorHidden() && LOWORD(lparam) == HTCLIENT) {
+                SetCursor(NULL);
+                return TRUE;
+            }
+            break;
+    }
     return DefWindowProc(hwnd, umessage, wparam, lparam);
 } // MessageHandler
 
 System::System() {
     m_Window = std::make_unique<Window>();
-    m_Input = std::make_shared<Input>();
+    m_Input = std::make_unique<Input>();
     m_Fps = std::make_unique<Fps>();
     m_Cpu = std::make_unique<Cpu>();
     m_Timer = std::make_unique<Timer>();
@@ -121,22 +130,14 @@ void System::Run() {
 } // Run
 
 bool System::Frame() {
-    if (!m_Input->Frame())
+    if (!FrameInteraction()) {
         return false;
+    }
 
-    if (m_Input->IsEscapePressed())
-        return false;
+    FramePerformance();
 
-    m_Fps->Frame();
-    m_Cpu->Frame();
-    m_Timer->Frame();
-
-    if (!m_Renderer->Frame())
-        return false;
-
-    return true;
+    return m_Renderer->Frame();
 } // Frame
-
 
 void System::InitWidgets() {
     auto perfWidget = std::make_unique<PerformanceWidget>(
@@ -144,6 +145,41 @@ void System::InitWidgets() {
         m_Cpu->GetCpuPercentage(),
         m_Timer->GetTotalTime()
     );
-
     m_ImGuiManager->AddWidget(std::move(perfWidget));
+
+    auto cameraWidget = std::make_unique<CameraWidget>(m_Renderer->GetCamera());
+    m_ImGuiManager->AddWidget(std::move(cameraWidget));
 } // InitWidgets
+
+void System::FramePerformance() {
+    m_Fps->Frame();
+    m_Cpu->Frame();
+    m_Timer->Frame();
+} // FramePerformance
+
+bool System::FrameInteraction() {
+    if (!m_Input->Frame()) {
+        return false;
+    }
+
+    if (m_Input->IsF1Toggled()) {
+        m_ImGuiManager->ToggleWidget();
+
+        bool uiVisible = m_ImGuiManager->IsVisible();
+        m_Input->SetCursorHidden(!uiVisible);
+    }
+
+    if (!m_Input->IsCursorHidden()) { 
+        if (!ImGui::GetIO().WantCaptureMouse) {
+            auto delta = m_Input->GetAdjustedMouseDelta();
+            m_Renderer->UpdateCameraRotation(delta.x, delta.y);
+            
+            int wheelDelta = m_Input->GetMouseWheelDelta();
+            if (wheelDelta != 0) {
+                m_Renderer->UpdateCameraZoom(static_cast<float>(wheelDelta));
+            }
+        }
+    }
+
+    return true;
+} // FrameInteraction

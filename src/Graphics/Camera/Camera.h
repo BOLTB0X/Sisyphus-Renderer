@@ -19,6 +19,7 @@ public:
     void AddPitch(float);
     void AddYaw(float);
     void AddFOV(float);
+    void Reset();
 
 public: // Setter & Getter
     void SetPosition(const DirectX::XMFLOAT3&);

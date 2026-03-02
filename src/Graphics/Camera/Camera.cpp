@@ -9,8 +9,9 @@ using namespace DirectX;
 using namespace SharedConstants;
 
 Camera::Camera() 
-    : m_position(0.0f, 0.0f, 0.0f),
-      m_rotation(0.0f, 0.0f, 0.0f), m_up(0.0f, 1.0f, 0.0f),
+    : m_position(CameraConstants::DEFAULT_POSITION),
+      m_rotation(CameraConstants::DEFAULT_ROTATION),
+      m_up(0.0f, 1.0f, 0.0f),
       m_fov(0.0f), m_near(0.0f), m_far(0.0f), m_aspect(0.0f) {
     m_frustum = std::make_unique<Frustum>();
     m_maxPitch = CameraConstants::MAX_PITCH;
@@ -89,6 +90,13 @@ void Camera::AddFOV(float fovDelta) {
     m_fov = MathHelper::clamp(m_fov, m_minFov, m_maxFov);
     UpdateProjection();
 } // AddFOV
+
+void Camera::Reset() {
+    m_position = CameraConstants::DEFAULT_POSITION;
+    m_rotation = CameraConstants::DEFAULT_ROTATION;
+    m_fov = CameraConstants::DEFAULT_FOV;
+    UpdateProjection();
+} // Reset
 
 void Camera::SetPosition(const XMFLOAT3& pos) { m_position = pos; }
 void Camera::SetPosition(float x, float y, float z) { m_position = { x, y, z }; }

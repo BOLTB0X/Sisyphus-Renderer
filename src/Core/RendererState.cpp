@@ -5,9 +5,10 @@
 
 using namespace SharedConstants;
 
-bool RendererState::FullScrren = ScreenConstants::FULL_SCREEN;
-bool RendererState::VsyncEnable = ScreenConstants::VSYNC_ENABLED;
-int RendererState::ScreenWidth = ScreenConstants::WIDTH;
-int RendererState::ScreenHeight = ScreenConstants::HEIGHT;
+bool  RendererState::FullScrren = ScreenConstants::FULL_SCREEN;
+bool  RendererState::VsyncEnable = ScreenConstants::VSYNC_ENABLED;
+int   RendererState::ScreenWidth = ScreenConstants::WIDTH;
+int   RendererState::ScreenHeight = ScreenConstants::HEIGHT;
 float RendererState::ScreenDepth = ScreenConstants::DEPTH;
 float RendererState::ScreenNear = ScreenConstants::NEAR_PLANE;
+float RendererState::aspectRatio = static_cast<float>(ScreenConstants::WIDTH) / static_cast<float>(ScreenConstants::HEIGHT);

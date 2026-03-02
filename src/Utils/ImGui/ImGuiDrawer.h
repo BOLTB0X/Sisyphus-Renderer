@@ -1,5 +1,7 @@
 #pragma once
 #include "imgui.h"
+// Graphics
+#include "Camera/Camera.h"
 
 namespace ImGuiDrawer {
 
@@ -22,4 +24,42 @@ namespace ImGuiDrawer {
 
         ImGui::End();
     } // DrawPerformance
+
+    inline void DrawCamera(Camera* camera) {
+        if (!camera) return;
+
+        ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
+        ImGui::Begin("CAMERA CONTROL", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+        if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
+            camera->Reset();
+        }
+        ImGui::Separator();
+
+        DirectX::XMFLOAT3 pos = camera->GetPosition();
+        if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+            camera->SetPosition(pos);
+        }
+
+        DirectX::XMFLOAT3 rot = camera->GetRotation();
+        if (ImGui::DragFloat3("Rotation", &rot.x, 0.5f, -360.0f, 360.0f)) {
+            camera->SetRotation(rot);
+        }
+
+        ImGui::Separator();
+
+        float fov = camera->GetFov();
+        if (ImGui::SliderFloat("FOV", &fov, 10.0f, 120.0f, "%.1f deg")) {
+            camera->SetFov(fov);
+        }
+
+        float nearP = camera->GetNear();
+        float farP = camera->GetFar();
+        ImGui::Text("Near: %.2f / Far: %.2f", nearP, farP);
+
+        camera->Update();
+
+        ImGui::End();
+    } // DrawCamera
+    
 } // ImGuiDrawer
