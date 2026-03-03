@@ -14,6 +14,7 @@ public:
     void Update();
     void BuildFrustum();
 
+public:
     // 조작 함수
     void AddRotation(float, float);
     void AddPitch(float);
@@ -21,7 +22,11 @@ public:
     void AddFOV(float);
     void Reset();
 
-public: // Setter & Getter
+    void MoveForwardBack(float);
+    void MoveLeftRight(float);
+    void MoveUpDown(float);
+    
+    // Setter & Getter
     void SetPosition(const DirectX::XMFLOAT3&);
     void SetPosition(float, float, float );
     void SetRotation(const DirectX::XMFLOAT3&);

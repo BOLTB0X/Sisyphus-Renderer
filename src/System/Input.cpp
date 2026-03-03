@@ -49,6 +49,7 @@ bool Input::Init(HINSTANCE hinstance, HWND hwnd) {
 	// 마우스 권한 획득
 	result = m_mouse->Acquire();
 
+	// 커서 가운데
 	RECT rect;
     GetClientRect(hwnd, &rect);
     POINT pt = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
@@ -114,9 +115,11 @@ int   Input::GetMouseWheelDelta() { return m_mouseState.lZ; }
 bool  Input::IsMouseLPressed() { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
 bool  Input::IsLeftMouseDown()  { return (m_mouseState.rgbButtons[0] & 0x80) != 0; }
 bool  Input::IsRightMouseDown() { return (m_mouseState.rgbButtons[1] & 0x80) != 0; }
-void  Input::SetSensitivity(float sensitivity) { m_sensitivity = sensitivity; }
 float Input::GetSensitivity() const { return m_sensitivity; }
+void  Input::SetSensitivity(float sensitivity) { m_sensitivity = sensitivity; }
 bool  Input::IsCursorHidden() const { return m_cursorHidden; }
+
+Input::MouseDelta Input::GetAdjustedMouseDelta() const { return { m_adjMouseX, m_adjMouseY }; }
 
 void  Input::SetCursorHidden(bool hidden) {
     m_cursorHidden = hidden;
@@ -137,10 +140,10 @@ void  Input::SetCursorHidden(bool hidden) {
 
 // 키보드 상태
 bool Input::IsEscapePressed()  { return (m_keyboardState[DIK_ESCAPE] & 0x80) != 0; }
-bool Input::IsLeftPressed()    { return (m_keyboardState[DIK_LEFT]   & 0x80) != 0; }
-bool Input::IsRightPressed()   { return (m_keyboardState[DIK_RIGHT]  & 0x80) != 0; }
-bool Input::IsUpPressed()      { return (m_keyboardState[DIK_UP]     & 0x80) != 0; }
-bool Input::IsDownPressed()    { return (m_keyboardState[DIK_DOWN]   & 0x80) != 0; }
+bool Input::IsWPressed()       { return (m_keyboardState[DIK_W] & 0x80) != 0; }
+bool Input::IsAPressed()       { return (m_keyboardState[DIK_A] & 0x80) != 0; }
+bool Input::IsSPressed()       { return (m_keyboardState[DIK_S] & 0x80) != 0; }
+bool Input::IsDPressed()       { return (m_keyboardState[DIK_D] & 0x80) != 0; }
 bool Input::IsZPressed()       { return (m_keyboardState[DIK_Z]      & 0x80) != 0; }
 bool Input::IsXPressed()       { return (m_keyboardState[DIK_X]      & 0x80) != 0; }
 bool Input::IsPgUpPressed()    { return (m_keyboardState[DIK_PGUP]   & 0x80) != 0; }
@@ -185,10 +188,6 @@ bool Input::ReadMouse() {
 			m_mouse->Acquire();
 		else return false;
 	}
-
-	if (m_cursorHidden) {
-        SetCursorPos(m_windowCenterX, m_windowCenterY);
-    }
 
 	return true;
 } // ReadMouse

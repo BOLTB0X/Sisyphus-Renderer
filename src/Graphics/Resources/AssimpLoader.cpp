@@ -2,13 +2,19 @@
 #include "AssimpLoader.h"
 #include "PBRMesh.h"
 #include "Texture.h"
+#include "TextureManager.h"
 // STL
 #include <filesystem>
+#include <objbase.h>
 
 using namespace SharedConstants::PBRTextureConstants;
 
-AssimpLoader::AssimpLoader() {}
-AssimpLoader::~AssimpLoader() {}
+AssimpLoader::AssimpLoader(std::shared_ptr<TextureManager> texMgr)
+    : m_TextureMgr(texMgr) {
+} // AssimpLoader
+
+AssimpLoader::~AssimpLoader() {
+} // ~AssimpLoader
 
 bool AssimpLoader::LoadMeshModel(ID3D11Device* device, ID3D11DeviceContext* context, const std::string& path, AssimpModel* outModel) {
     Assimp::Importer importer;
@@ -40,36 +46,60 @@ void AssimpLoader::ProcessNode(aiNode* node, const aiScene* scene,
     }
 
     // 자식 노드들도 처리
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
         ProcessNode(node->mChildren[i], scene, device, context, outModel);
+    }
 
     return;
 } // ProcessNode
 
 void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context,
     const std::string& directory, AssimpModel* outModel) {
-    std::string pbrDir = directory + "/textures/";
-    if (!std::filesystem::exists(pbrDir)) pbrDir = directory + "/";
-
+    std::string pbrDir = (std::filesystem::exists(directory + "/textures/")) ? directory + "/textures/" : directory + "/";
     std::string modelName = std::filesystem::path(directory).stem().string();
+
+    std::vector<std::future<Microsoft::WRL::ComPtr<ID3D11CommandList>>> futures;
 
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* aiMat = scene->mMaterials[i];
-        AssimpModel::Material myMaterial;
-        myMaterial.name = aiMat->GetName().C_Str();
 
-        myMaterial.albedo    = LoadMaterialElement(device, context, pbrDir, modelName, PBRTextureType::Albedo);
-        myMaterial.normal    = LoadMaterialElement(device, context, pbrDir, modelName, PBRTextureType::Normal);
-        myMaterial.metallic  = LoadMaterialElement(device, context, pbrDir, modelName, PBRTextureType::Metallic);
-        myMaterial.roughness = LoadMaterialElement(device, context, pbrDir, modelName, PBRTextureType::Roughness);
-        myMaterial.ao        = LoadMaterialElement(device, context, pbrDir, modelName, PBRTextureType::AO);
+        futures.push_back(std::async(std::launch::async, [=]() {
+            HRESULT hrCo = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-        outModel->AddMaterial(myMaterial);
+            Microsoft::WRL::ComPtr<ID3D11DeviceContext> deferredContext;
+            device->CreateDeferredContext(0, deferredContext.GetAddressOf());
+
+            AssimpModel::Material myMaterial;
+            myMaterial.name = aiMat->GetName().C_Str();
+
+            myMaterial.albedo = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Albedo);
+            myMaterial.normal = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Normal);
+            myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Metallic);
+            myMaterial.roughness = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Roughness);
+            myMaterial.ao = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::AO);
+
+            {
+                std::lock_guard<std::mutex> lock(m_cacheMutex);
+                outModel->AddMaterial(myMaterial);
+            }
+
+            Microsoft::WRL::ComPtr<ID3D11CommandList> commandList;
+            deferredContext->FinishCommandList(FALSE, commandList.GetAddressOf());
+
+            if (SUCCEEDED(hrCo)) CoUninitialize();
+
+            return commandList; // 명령 리스트 반환
+        })); // futures
+	} // for - material
+
+    for (auto& f : futures) {
+        auto cmdList = f.get();
+        if (cmdList) { context->ExecuteCommandList(cmdList.Get(), FALSE); }
     }
 } // ProcessMaterials
 
-std::unique_ptr<PBRMesh> AssimpLoader::ProcessMesh(aiMesh* mesh, 
-    const aiScene* scene, ID3D11Device* device, ID3D11DeviceContext* context)  {
+std::unique_ptr<PBRMesh> AssimpLoader::ProcessMesh(aiMesh* mesh,  const aiScene* scene,
+    ID3D11Device* device, ID3D11DeviceContext* context)  {
     std::vector<VertexTypes::FBRVertex> vertices;
     std::vector<unsigned int> indices;
 
@@ -92,7 +122,7 @@ std::unique_ptr<PBRMesh> AssimpLoader::ProcessMesh(aiMesh* mesh,
         }
 
         vertices.push_back(vertex);
-    } // for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+    } // for - i
 
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
         aiFace face = mesh->mFaces[i];
@@ -120,19 +150,17 @@ std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device,
     }
     if (!keywords) return nullptr;
 
-    static const std::vector<std::string> exts = { ".png", ".PNG", ".jpg", ".jpeg", ".JPG", ".JPEG", ".tga", ".dds"};
+    static const std::vector<std::string> exts = { ".png", ".jpg", ".jpeg", ".tga", ".dds"};
 
     for (const auto& key : *keywords) {
         for (const auto& ext : exts) {
             std::string fullPath = pbrDir + modelName + key + ext;
             if (std::filesystem::exists(fullPath)) {
-                auto texture = std::make_shared<Texture>();
-                
-                if (texture->Init(device, context, fullPath)) {
-                    return texture;
-                }
+                auto tex = m_TextureMgr->GetTexture(device, context, fullPath);
+                if (tex) { return tex; }
             }
-        }
-    }
+        } // for - ext
+    } // for - key
+
     return nullptr;
 } // LoadMaterialElement

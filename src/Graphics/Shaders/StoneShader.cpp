@@ -1,6 +1,5 @@
 #include "Pch.h"
 #include "StoneShader.h"
-#include "Resources/ConstantBufferType.h"
 
 using namespace DirectX;
 
@@ -78,19 +77,26 @@ bool StoneShader::Render(ID3D11DeviceContext* context,const RenderParams& params
 void  StoneShader::SetSampler(ID3D11SamplerState* sampler) { m_sampleState = sampler; }
 
 bool StoneShader::UpdateCameraBuffer(ID3D11DeviceContext* context, XMMATRIX world, XMMATRIX view, XMMATRIX projection, XMFLOAT3 camPos) {
-    world = XMMatrixTranspose(world);
-    view = XMMatrixTranspose(view);
-    projection = XMMatrixTranspose(projection);
+    XMMATRIX tWorld  = XMMatrixTranspose(world);
+    XMMATRIX tView = XMMatrixTranspose(view);
+    XMMATRIX tProjection = XMMatrixTranspose(projection);
+
+    ConstantBuffer::CameraBuffer currentData = { tWorld, tView, tProjection, camPos };
+
+    if (memcmp(&m_prevCameraData, &currentData, sizeof(ConstantBuffer::CameraBuffer)) == 0) {
+        return true;
+    }
 
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     if (SUCCEEDED(context->Map(m_cameraBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
         ConstantBuffer::CameraBuffer* dataPtr = (ConstantBuffer::CameraBuffer*)mappedResource.pData;
-        dataPtr->world = world;
-        dataPtr->view = view;
-        dataPtr->projection = projection;
+        dataPtr->world = tWorld;
+        dataPtr->view = tView;
+        dataPtr->projection = tProjection;
         dataPtr->cameraPosition = camPos;
         dataPtr->padding = 0.0f;
         context->Unmap(m_cameraBuffer.Get(), 0);
+        m_prevCameraData = currentData;
 
         return true;
     }
@@ -98,6 +104,11 @@ bool StoneShader::UpdateCameraBuffer(ID3D11DeviceContext* context, XMMATRIX worl
 } // UpdateCameraBuffer
 
 bool StoneShader::UpdateLightBuffer(ID3D11DeviceContext* context, XMFLOAT4 diffuse, XMFLOAT3 dir) {
+    ConstantBuffer::LightBuffer currentData = { diffuse, dir };
+    if (memcmp(&m_prevLightData, &currentData, sizeof(ConstantBuffer::LightBuffer)) == 0) {
+        return true;
+    }
+
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     if (SUCCEEDED(context->Map(m_lightBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource))) {
         auto* dataPtr = (ConstantBuffer::LightBuffer*)mappedResource.pData;
@@ -105,6 +116,7 @@ bool StoneShader::UpdateLightBuffer(ID3D11DeviceContext* context, XMFLOAT4 diffu
         dataPtr->lightDirection = dir;
         dataPtr->padding = 0.0f;
         context->Unmap(m_lightBuffer.Get(), 0);
+        m_prevLightData = currentData;
         return true;
     }
     return false;

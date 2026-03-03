@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <future>
+#include <mutex>
 
 class Texture;
 
@@ -19,4 +21,5 @@ public:
 
 private:
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_Textures;
+    std::mutex m_mutex;
 }; // TexturesManager

@@ -27,6 +27,8 @@ std::shared_ptr<Texture> TextureManager::GetTexture(
     ID3D11Device* device,
     ID3D11DeviceContext* context,
     const std::string& filename) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     auto it = m_Textures.find(filename);
     if (it != m_Textures.end())
         return it->second;
