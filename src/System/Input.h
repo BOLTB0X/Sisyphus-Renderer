@@ -30,18 +30,18 @@ public: // 마우스
 	bool IsLeftMouseDown();
 	bool IsRightMouseDown();
 
-	void        SetSensitivity(float);
+	MouseDelta  GetAdjustedMouseDelta() const;
     float       GetSensitivity() const;
+	void        SetSensitivity(float);
 	void        SetCursorHidden(bool);
 	bool        IsCursorHidden() const;
-	MouseDelta  GetAdjustedMouseDelta() const { return { m_adjMouseX, m_adjMouseY }; }
 
 public: // 키보드
 	bool IsEscapePressed();
-	bool IsLeftPressed();
-	bool IsRightPressed();
-	bool IsUpPressed();
-	bool IsDownPressed();
+	bool IsWPressed();
+	bool IsAPressed();
+	bool IsSPressed();
+	bool IsDPressed();
 	bool IsZPressed();
 	bool IsXPressed();
 	bool IsF1Toggled();

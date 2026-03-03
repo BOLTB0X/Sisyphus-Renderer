@@ -40,4 +40,6 @@
 #include <map>
 #include <unordered_map>
 #include <algorithm>
-
+#include <future>
+#include <mutex>
+#include <objbase.h>

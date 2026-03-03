@@ -1,15 +1,18 @@
 // Renderer.h
 #pragma once
 #include <windows.h>
+#include <d3d11.h>
 // STL
 #include <memory>
 
 class RendererState;
 class D3D11Manager;
 class ImGuiManager;
+class TextureManager;
 class Triangle;
 class Camera;
 class Stone;
+class D3D11State;
 
 class Renderer {
 public:
@@ -19,20 +22,26 @@ public:
 
     bool Init(HWND, std::shared_ptr<ImGuiManager>);
     void Shutdown();
-    bool Frame();
+    bool Frame(float);
 
-    Camera* GetCamera() const;
-    void    UpdateCameraRotation(float, float);
-    void    UpdateCameraZoom(float);
+    void UpdateCameraRotation(float, float);
+    void UpdateCameraZoom(float);
+    void UpdateCameraForwardBack(float);
+	void UpdateCameraLeftRight(float);
+	void UpdateCameraUpDown(float);
 
 private:
     bool Render();
+    void InitWidgets();
+    void DrawTriangle(ID3D11DeviceContext*, D3D11State*);
+	void DrawStone(ID3D11DeviceContext*, D3D11State*);
 
 private:
-    static RendererState          m_RendererState;
-    std::unique_ptr<D3D11Manager> m_D3D11Manager;
-    std::unique_ptr<Triangle>     m_Triangle;
-    std::unique_ptr<Stone>        m_Stone;
-    std::shared_ptr<ImGuiManager> m_ImGuiManager;
-    std::unique_ptr<Camera>       m_Camera;
+    static RendererState            m_RendererState;
+    std::unique_ptr<D3D11Manager>   m_D3D11Mgr;
+    std::unique_ptr<Triangle>       m_Triangle;
+    std::unique_ptr<Stone>          m_Stone;
+    std::unique_ptr<Camera>         m_Camera;
+    std::shared_ptr<TextureManager> m_TextureMgr;
+    std::shared_ptr<ImGuiManager>   m_ImGuiMgr;
 }; // Renderer

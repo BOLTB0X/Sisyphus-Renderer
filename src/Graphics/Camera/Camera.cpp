@@ -98,6 +98,27 @@ void Camera::Reset() {
     UpdateProjection();
 } // Reset
 
+void Camera::MoveForwardBack(float distance) {
+    XMVECTOR forward = GetForwardVector();
+    XMVECTOR pos = XMLoadFloat3(&m_position);
+    pos = XMVectorMultiplyAdd(XMVectorReplicate(distance), forward, pos);
+    XMStoreFloat3(&m_position, pos);
+} // MoveForwardBack
+
+void Camera::MoveLeftRight(float distance) {
+    XMVECTOR right = GetRightVector();
+    XMVECTOR pos = XMLoadFloat3(&m_position);
+    pos = XMVectorMultiplyAdd(XMVectorReplicate(distance), right, pos);
+    XMStoreFloat3(&m_position, pos);
+} // MoveLeftRight
+
+void Camera::MoveUpDown(float distance) {
+    XMVECTOR up = GetUpVector();
+    XMVECTOR pos = DirectX::XMLoadFloat3(&m_position);
+    pos = XMVectorMultiplyAdd(XMVectorReplicate(distance), up, pos);
+    XMStoreFloat3(&m_position, pos);
+} // MoveUpDown
+
 void Camera::SetPosition(const XMFLOAT3& pos) { m_position = pos; }
 void Camera::SetPosition(float x, float y, float z) { m_position = { x, y, z }; }
 void Camera::SetRotation(const XMFLOAT3& rot) { m_rotation = rot; }

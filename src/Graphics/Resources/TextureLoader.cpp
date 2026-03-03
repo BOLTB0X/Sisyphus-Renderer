@@ -11,8 +11,7 @@ bool TextureLoader::CreateTextureFromFile(
     ID3D11Device* device,
     ID3D11DeviceContext* context,
     const std::string& filename,
-    ID3D11ShaderResourceView** outSRV)
-{
+    ID3D11ShaderResourceView** outSRV) {
     HRESULT hr = S_OK;
     DirectX::ScratchImage image;
 
@@ -31,6 +30,17 @@ bool TextureLoader::CreateTextureFromFile(
     if (FAILED(hr)) {
         DebugHelper::DebugPrint(filename + " 로드 실패");
         return false;
+    }
+
+    if (image.GetMetadata().mipLevels == 1) {
+        DirectX::ScratchImage mipChain;
+        hr = DirectX::GenerateMipMaps(
+            image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+            DirectX::TEX_FILTER_DEFAULT, 0, mipChain);
+
+        if (SUCCEEDED(hr)) {
+            image = std::move(mipChain);
+        }
     }
 
     hr = DirectX::CreateShaderResourceView(

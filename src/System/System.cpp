@@ -136,7 +136,7 @@ bool System::Frame() {
 
     FramePerformance();
 
-    return m_Renderer->Frame();
+    return m_Renderer->Frame(m_Timer->GetFrameTime());
 } // Frame
 
 void System::InitWidgets() {
@@ -146,9 +146,6 @@ void System::InitWidgets() {
         m_Timer->GetTotalTime()
     );
     m_ImGuiManager->AddWidget(std::move(perfWidget));
-
-    auto cameraWidget = std::make_unique<CameraWidget>(m_Renderer->GetCamera());
-    m_ImGuiManager->AddWidget(std::move(cameraWidget));
 } // InitWidgets
 
 void System::FramePerformance() {
@@ -171,8 +168,11 @@ bool System::FrameInteraction() {
 
     if (!m_Input->IsCursorHidden()) { 
         if (!ImGui::GetIO().WantCaptureMouse) {
-            auto delta = m_Input->GetAdjustedMouseDelta();
-            m_Renderer->UpdateCameraRotation(delta.x, delta.y);
+
+            if (m_Input->IsLeftMouseDown()) {
+                auto delta = m_Input->GetAdjustedMouseDelta();
+                m_Renderer->UpdateCameraRotation(delta.x, delta.y);
+            }
             
             int wheelDelta = m_Input->GetMouseWheelDelta();
             if (wheelDelta != 0) {
@@ -180,6 +180,17 @@ bool System::FrameInteraction() {
             }
         }
     }
+
+    float speed = 1.0f * m_Timer->GetFrameTime();
+
+	if (m_Input->IsWPressed())    m_Renderer->UpdateCameraForwardBack(speed);
+	if (m_Input->IsSPressed())    m_Renderer->UpdateCameraForwardBack(-speed);
+
+    if (m_Input->IsAPressed())    m_Renderer->UpdateCameraLeftRight(speed);
+    if (m_Input->IsDPressed())    m_Renderer->UpdateCameraLeftRight(-speed);
+
+    if (m_Input->IsZPressed())    m_Renderer->UpdateCameraUpDown(speed);
+    if (m_Input->IsXPressed())    m_Renderer->UpdateCameraUpDown(-speed);
 
     return true;
 } // FrameInteraction

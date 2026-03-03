@@ -1,6 +1,7 @@
 #pragma once
 #include "Shader.h"
 #include <DirectXMath.h>
+#include "Resources/ConstantBufferType.h"
 
 class StoneShader : public Shader {
 public:
@@ -24,8 +25,11 @@ private:
     bool InitBuffer(ID3D11Device*);
     bool UpdateCameraBuffer(ID3D11DeviceContext*, DirectX::XMMATRIX, DirectX::XMMATRIX, DirectX::XMMATRIX, DirectX::XMFLOAT3);
     bool UpdateLightBuffer(ID3D11DeviceContext*, DirectX::XMFLOAT4, DirectX::XMFLOAT3);
+
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cameraBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_lightBuffer;
+    ConstantBuffer::CameraBuffer               m_prevCameraData;
+	ConstantBuffer::LightBuffer                m_prevLightData;
     ID3D11SamplerState*                        m_sampleState;
 }; // StoneShader

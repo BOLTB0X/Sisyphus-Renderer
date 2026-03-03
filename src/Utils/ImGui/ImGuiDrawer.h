@@ -2,6 +2,7 @@
 #include "imgui.h"
 // Graphics
 #include "Camera/Camera.h"
+#include "Resources/AssimpModel.h"
 
 namespace ImGuiDrawer {
 
@@ -31,9 +32,14 @@ namespace ImGuiDrawer {
         ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
         ImGui::Begin("CAMERA CONTROL", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+
         if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
             camera->Reset();
         }
+        ImGui::PopStyleColor(3);
         ImGui::Separator();
 
         DirectX::XMFLOAT3 pos = camera->GetPosition();
@@ -63,3 +69,70 @@ namespace ImGuiDrawer {
     } // DrawCamera
     
 } // ImGuiDrawer
+
+namespace ImGuiDrawer {
+    inline void DrawAssimpModel(AssimpModel* model) {
+        if (!model) return;
+
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+        // 모델 정보를 담은 메인 헤더
+        if (ImGui::CollapsingHeader("MODEL INSPECTOR", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::PopStyleColor(3);
+
+            ImGui::Indent();
+            ImGui::Spacing();
+
+            ImGui::TextDisabled("Resource Info");
+            ImGui::Text("Total Meshes: "); ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%d", model->GetMeshCount());
+
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "PBR MATERIALS STATUS");
+            ImGui::Spacing();
+
+            std::vector<AssimpModel::MaterialInfo> materials = model->GetMaterialInfos();
+
+            for (size_t i = 0; i < materials.size(); ++i) {
+                const auto& mat = materials[i];
+
+                // 각 머테리얼별 트리 노드
+                if (ImGui::TreeNode((void*)(intptr_t)i, "Material [%d]: %s", (int)i, mat.name.c_str())) {
+
+                    ImGui::BeginGroup();
+
+                    auto ShowStatus = [](const char* type, bool isLoaded) {
+                        ImGui::Text("%-10s:", type);
+                        ImGui::SameLine();
+                        if (isLoaded) {
+                            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), " [ LOADED ]");
+                        }
+                        else {
+                            ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), " [ MISSING ]");
+                        }
+                        };
+
+                    ShowStatus("Albedo", mat.hasAlbedo);
+                    ShowStatus("Normal", mat.hasNormal);
+                    ShowStatus("Metallic", mat.hasMetallic);
+                    ShowStatus("Roughness", mat.hasRoughness);
+                    ShowStatus("AO", mat.hasAO);
+
+                    ImGui::EndGroup();
+                    ImGui::Spacing();
+                    ImGui::TreePop();
+                }
+            }
+
+            ImGui::Unindent();
+        }
+        else {
+            ImGui::PopStyleColor(3);
+        }
+    } // DrawAssimpModel
+
+} // ImGuiDrawer - Model
