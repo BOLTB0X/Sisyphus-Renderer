@@ -1,21 +1,14 @@
 #include "Pch.h"
-#include "Shader.h"
+#include "ComputeShader.h"
 #include <d3dcompiler.h>
 // STL
 #include <fstream>
 
+ComputeShader::ComputeShader() {
+} // ComputeShader
 
-Shader::Shader() {
-    m_type = ShaderType::None;
-} // Shader
-
-
-bool Shader::Compile(ID3D11Device* device,
-    HWND hwnd,
-    const std::wstring& path,
-    LPCSTR entry,
-    LPCSTR profile,
-    ID3DBlob** blob) {
+bool ComputeShader::Compile(ID3D11Device* device, HWND hwnd,
+    const std::wstring& path, LPCSTR entry, LPCSTR profile, ID3DBlob** blob) {
     ID3DBlob* errorBlob = nullptr;
 
     HRESULT result = D3DCompileFromFile(
@@ -34,7 +27,7 @@ bool Shader::Compile(ID3D11Device* device,
     {
         if (errorBlob)
             OutputError(errorBlob, hwnd, path);
-        else 
+        else
             MessageBoxW(hwnd, path.c_str(), L"셰이더 파일이 없음", MB_OK);
         return false;
     }
@@ -43,7 +36,11 @@ bool Shader::Compile(ID3D11Device* device,
 } // Compile
 
 
-void Shader::OutputError(ID3DBlob* errorMsg, HWND hwnd, const std::wstring& path) {
+void ComputeShader::OutputError(
+    ID3DBlob* errorMsg,
+    HWND hwnd,
+    const std::wstring& path)
+{
     char* compileErrors = (char*)(errorMsg->GetBufferPointer());
     unsigned long long bufferSize = errorMsg->GetBufferSize();
 
@@ -56,10 +53,3 @@ void Shader::OutputError(ID3DBlob* errorMsg, HWND hwnd, const std::wstring& path
 
     MessageBoxW(hwnd, L"compiling shader 에러. shader-error.txt 확인 요망", path.c_str(), MB_OK);
 } // OutputError
-
-
-ShaderType Shader::GetShaderType() const
-{
-    return m_type;
-} // GetShaderType
-
