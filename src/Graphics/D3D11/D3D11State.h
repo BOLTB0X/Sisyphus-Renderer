@@ -11,24 +11,30 @@ public:
 
     bool Init(ID3D11Device* device);
 
-    ID3D11RasterizerState*   GetRasterizerState() const;
-    ID3D11DepthStencilState* GetDepthStencilState() const;
+    ID3D11RasterizerState*   GetCullBackState() const;
+    ID3D11RasterizerState*   GetCullNone() const;
+    ID3D11DepthStencilState* GetDepthState() const;
+    ID3D11DepthStencilState* GetDepthLessEqual() const;
     ID3D11SamplerState*      GetLinearSamplerState() const;
     ID3D11BlendState*        GetBlendState() const;
 
 private:
-    bool InitRasterizer(ID3D11Device*);
+    bool InitCullBack(ID3D11Device*);
     bool InitWireframe(ID3D11Device*);
-    bool InitDepthStencil(ID3D11Device*);
+	bool InitCullNone(ID3D11Device*);
+    bool InitDepth(ID3D11Device*);
+    bool InitDepthLess(ID3D11Device*);
     bool InitSampler(ID3D11Device*, D3D11_FILTER,
                      D3D11_TEXTURE_ADDRESS_MODE,
                      ID3D11SamplerState**);
     bool InitBlendState(ID3D11Device*);
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_rasterizerState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullBackState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_wireframeState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullNoneState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthStencilState;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthLessEqualState; // Z=W 트릭용
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearSamplerState;
     Microsoft::WRL::ComPtr<ID3D11BlendState>        m_blendState;
 }; // D3D11State

@@ -100,11 +100,11 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
 
 std::unique_ptr<PBRMesh> AssimpLoader::ProcessMesh(aiMesh* mesh,  const aiScene* scene,
     ID3D11Device* device, ID3D11DeviceContext* context)  {
-    std::vector<VertexTypes::FBRVertex> vertices;
+    std::vector<PBRMesh::FBRVertex> vertices;
     std::vector<unsigned int> indices;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        VertexTypes::FBRVertex vertex;
+        PBRMesh::FBRVertex vertex;
         
         vertex.position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 

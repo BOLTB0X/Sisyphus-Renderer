@@ -13,6 +13,9 @@ class Triangle;
 class Camera;
 class Stone;
 class D3D11State;
+class VolumeTexture;
+class NoiseGenerator;
+class Atmosphere;
 
 class Renderer {
 public:
@@ -33,6 +36,8 @@ public:
 private:
     bool Render();
     void InitWidgets();
+    void GenerateCloudNoise(ID3D11DeviceContext*);
+    
     void DrawTriangle(ID3D11DeviceContext*, D3D11State*);
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
 
@@ -42,6 +47,10 @@ private:
     std::unique_ptr<Triangle>       m_Triangle;
     std::unique_ptr<Stone>          m_Stone;
     std::unique_ptr<Camera>         m_Camera;
+    std::unique_ptr<VolumeTexture>  m_VolumeTexture;
+    std::unique_ptr<NoiseGenerator> m_NoiseGenerator;
+	std::unique_ptr<Atmosphere>     m_Atmosphere;
+
     std::shared_ptr<TextureManager> m_TextureMgr;
     std::shared_ptr<ImGuiManager>   m_ImGuiMgr;
 }; // Renderer

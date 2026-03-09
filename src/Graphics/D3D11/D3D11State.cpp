@@ -12,12 +12,11 @@ D3D11State::~D3D11State() {
 } // ~D3D11State
 
 bool D3D11State::Init(ID3D11Device* device) {
-    if (!InitRasterizer(device))
-        return false;
-    if (!InitWireframe(device))
-        return false;
-    if (!InitDepthStencil(device))
-        return false;
+    if (!InitCullBack(device)) return false;
+    if (!InitWireframe(device)) return false;
+    if (!InitCullNone(device)) return false;
+    if (!InitDepth(device)) return false;
+    if (!InitDepthLess(device)) return false;
     if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, 
                      D3D11_TEXTURE_ADDRESS_WRAP, m_linearSamplerState.GetAddressOf()))
         return false;
@@ -25,12 +24,14 @@ bool D3D11State::Init(ID3D11Device* device) {
     return true;
 } // Init
 
-ID3D11RasterizerState*   D3D11State::GetRasterizerState() const { return m_rasterizerState.Get(); }
-ID3D11DepthStencilState* D3D11State::GetDepthStencilState() const { return m_depthStencilState.Get(); }
+ID3D11RasterizerState*   D3D11State::GetCullBackState() const { return m_cullBackState.Get(); }
+ID3D11RasterizerState*   D3D11State::GetCullNone() const { return m_cullNoneState.Get(); }
+ID3D11DepthStencilState* D3D11State::GetDepthState() const { return m_depthStencilState.Get(); }
+ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthLessEqualState.Get(); }
 ID3D11SamplerState*      D3D11State::GetLinearSamplerState() const { return m_linearSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
 
-bool D3D11State::InitRasterizer(ID3D11Device* device) {
+bool D3D11State::InitCullBack(ID3D11Device* device) {
     D3D11_RASTERIZER_DESC rasterDesc = {};
     rasterDesc.AntialiasedLineEnable = false;
     rasterDesc.CullMode = D3D11_CULL_BACK;
@@ -43,8 +44,8 @@ bool D3D11State::InitRasterizer(ID3D11Device* device) {
     rasterDesc.ScissorEnable = false;
     rasterDesc.SlopeScaledDepthBias = 0.0f;
 
-    return SUCCEEDED(device->CreateRasterizerState(&rasterDesc, &m_rasterizerState));
-} // InitRasterizer
+    return SUCCEEDED(device->CreateRasterizerState(&rasterDesc, &m_cullBackState));
+} // InitCullBack
 
 bool D3D11State::InitWireframe(ID3D11Device* device) {
     D3D11_RASTERIZER_DESC wireDesc = {};
@@ -55,7 +56,15 @@ bool D3D11State::InitWireframe(ID3D11Device* device) {
     return SUCCEEDED(device->CreateRasterizerState(&wireDesc, &m_wireframeState));
 } // InitWireframe
 
-bool D3D11State::InitDepthStencil(ID3D11Device* device) {
+bool D3D11State::InitCullNone(ID3D11Device* device) {
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.CullMode = D3D11_CULL_NONE;
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.DepthClipEnable = true;
+    return SUCCEEDED(device->CreateRasterizerState(&rasterDesc, &m_cullNoneState));
+} // InitCullNone
+
+bool D3D11State::InitDepth(ID3D11Device* device) {
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
     depthStencilDesc.DepthEnable = true;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -63,7 +72,16 @@ bool D3D11State::InitDepthStencil(ID3D11Device* device) {
     depthStencilDesc.StencilEnable = false;
 
     return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState));
-} // InitDepthStencil
+} // InitDepth
+
+bool D3D11State::InitDepthLess(ID3D11Device* device) {
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+    depthStencilDesc.DepthEnable = true;
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL; // Z=W 트릭용
+    depthStencilDesc.StencilEnable = false;
+    return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthLessEqualState));
+} // InitDepthLess
 
 bool D3D11State::InitSampler(ID3D11Device* device, D3D11_FILTER filter, 
                              D3D11_TEXTURE_ADDRESS_MODE addressMode, 

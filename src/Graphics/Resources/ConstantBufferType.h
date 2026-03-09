@@ -53,4 +53,58 @@ namespace ConstantBuffer {
             : diffuseColor(diffuse), lightDirection(dir), padding(0.0f) {
         }
     }; // LightBuffer
+
+    struct NoiseBuffer {
+        // Row 1
+        DirectX::XMFLOAT3 textureSize;
+        float             perlinFreq;
+		// Row 2
+        float             worleyFreq;
+        float             detailFreqG;
+        float             detailFreqB;
+        float             detailFreqA;
+        // Row 3
+        int               octaves;
+        float             remapBias;
+        DirectX::XMFLOAT2 padding;
+
+        NoiseBuffer()
+            : textureSize(1.0f, 1.0f, 1.0f), perlinFreq(1.0f),
+              worleyFreq(1.0f), detailFreqG(1.0f), detailFreqB(1.0f), detailFreqA(1.0f),
+               octaves(1), remapBias(0.0f), padding(0.0f, 0.0f) {
+        }
+
+        NoiseBuffer(DirectX::XMFLOAT3 texSize, float perlinF,
+            float worleyF, float detailFG, float detailFB, float detailFA,
+            int octs, float remapB)
+            : textureSize(texSize), perlinFreq(perlinF),
+            worleyFreq(worleyF), detailFreqG(detailFG), detailFreqB(detailFB), detailFreqA(detailFA),
+              octaves(octs), remapBias(remapB), padding(0.0f, 0.0f) {
+		}
+    }; // NoiseBuffer
+
+    struct AtmosphereBuffer {
+        // Row 1
+        DirectX::XMFLOAT4 zenithColor;
+        // Row 2
+        DirectX::XMFLOAT4 horizonColor;
+
+        AtmosphereBuffer() 
+            : zenithColor(0.0f, 0.2f, 0.6f, 1.0f),
+              horizonColor(0.81f, 0.38f, 0.66f, 1.0f) {
+        }
+    }; // AtmosphereBuffer
+
+    struct RayBuffer {
+        DirectX::XMMATRIX invView;
+        DirectX::XMMATRIX invProjection;
+        DirectX::XMFLOAT3 camPos;
+        float             padding;
+
+        RayBuffer() : invView(DirectX::XMMatrixIdentity()),
+            invProjection(DirectX::XMMatrixIdentity()),
+            camPos(0.0f, 0.0f, 0.0f), padding(0.0f) {
+        }
+    }; // RayBuffer
+    
 } // ConstantBuffer

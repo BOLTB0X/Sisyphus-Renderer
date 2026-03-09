@@ -4,7 +4,7 @@
 PBRMesh::PBRMesh()
 : m_indexCount(0),
   m_materialIndex(0),
-  m_stride(sizeof(VertexTypes::FBRVertex)),
+  m_stride(sizeof(FBRVertex)),
   m_offset(0) {
 } // PBRMesh
 
@@ -12,7 +12,7 @@ PBRMesh::~PBRMesh() {
 } // ~PBRMesh
 
 bool PBRMesh::Init(ID3D11Device* device,
-    const std::vector<VertexTypes::FBRVertex>& vertices,
+    const std::vector<FBRVertex>& vertices,
     const std::vector<unsigned int>& indices,
     unsigned int materialIndex) {
     m_indexCount = static_cast<UINT>(indices.size());
@@ -21,7 +21,7 @@ bool PBRMesh::Init(ID3D11Device* device,
     // Vertex Buffer 생성
     D3D11_BUFFER_DESC vbd = {};
     vbd.Usage = D3D11_USAGE_DEFAULT;
-    vbd.ByteWidth = sizeof(VertexTypes::FBRVertex) * static_cast<UINT>(vertices.size());
+    vbd.ByteWidth = sizeof(FBRVertex) * static_cast<UINT>(vertices.size());
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
 

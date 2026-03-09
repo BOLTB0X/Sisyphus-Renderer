@@ -3,10 +3,9 @@
 #include "Resources/PBRMesh.h"
 #include "Resources/Texture.h"
 #include "Resources/TextureManager.h"
-#include "Resources/VertexTypes.h"
-#include "Shaders/StoneShader.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
+#include "Helpers/ShaderHelper.h"
 // define
 #define ABEDO_TEXTURE_SLOT     0
 #define NORMAL_TEXTURE_SLOT    1
@@ -18,7 +17,6 @@ using namespace DirectX;
 using namespace SharedConstants;
 
 Stone::Stone() : AssimpModel() {
-    m_shader = std::make_unique<StoneShader>();
     m_sampler = nullptr;
 	m_transform = Transform();
     m_RenderCount = 0;
@@ -34,16 +32,16 @@ bool Stone::Init(ID3D11Device* device, ID3D11DeviceContext* context, HWND hwnd,
     if (!AssimpModel::Init(device, context, m_textureMgr, path)) {
         return false;
     }
-;
-    if (!m_shader->Init(device, hwnd, PathConstants::STONE_VS, PathConstants::STONE_PS)) {
+
+    if (!InitShader(device, hwnd)) {
         return false;
-    }
+	}
 
     return true;
 } // Init
 
 void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    StoneShader::RenderParams shaderParams;
+    RenderParams shaderParams;
     shaderParams.world      = GetWorldMatrix();
     shaderParams.view       = params.view;
     shaderParams.projection = params.projection;
@@ -51,9 +49,9 @@ void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     shaderParams.diffuse    = params.diffuse;
     shaderParams.lightDir   = params.lightDir;
 
-    if (!m_shader->Render(context, shaderParams)) {
+    if (!RenderShader(context, params)) {
         return;
-    }
+	}
 
     for (const auto& mesh : m_meshes) {
         unsigned int matIndex = mesh->GetMaterialIndex();
@@ -118,7 +116,7 @@ void Stone::Rotate(float x, float y, float z) {
 } // Rotate
 
 void Stone::SetSampler(ID3D11SamplerState* sampler) {
-    m_shader->SetSampler(sampler);
+	m_sampler = sampler;
 } // SetSampler
 
 XMMATRIX Stone::GetWorldMatrix() {
@@ -128,3 +126,93 @@ XMMATRIX Stone::GetWorldMatrix() {
 unsigned int Stone::GetRenderCount() const {
     return m_RenderCount;
 } // GetRenderCount
+
+bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
+    using namespace ShaderHelper;
+    using namespace ConstantBuffer;
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+
+    if (!InitVertexShader(device, hwnd, PathConstants::STONE_VS,
+        layoutDesc, ARRAYSIZE(layoutDesc), m_vertexShader.GetAddressOf(), m_layout.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitPixelShader(device, hwnd, PathConstants::STONE_PS, m_pixelShader.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitConstantBuffer<CameraBuffer>(device, m_cameraBuffer.GetAddressOf())
+        || !InitConstantBuffer<LightBuffer>(device, m_lightBuffer.GetAddressOf())) {
+        return false;
+    }
+
+    return true;
+} // InitShader
+
+bool Stone::UpdateCameraBuffer(ID3D11DeviceContext* context,
+    const XMMATRIX& world, const XMMATRIX& view, const XMMATRIX& projection, const XMFLOAT3& camPos) {
+    using namespace ShaderHelper;
+    using namespace ConstantBuffer;
+
+    CameraBuffer buffer;
+    buffer.world = XMMatrixTranspose(world);
+    buffer.view = XMMatrixTranspose(view);
+    buffer.projection = XMMatrixTranspose(projection);
+	buffer.cameraPosition = camPos;
+
+
+    if (memcmp(&m_prevCameraData, &buffer, sizeof(CameraBuffer)) == 0) {
+        return true;
+    }
+    if (!UpdateConstantBuffer(context, m_cameraBuffer.Get(), buffer)) {
+        return false;
+    }
+
+    m_prevCameraData = buffer;
+    return true;
+} // UpdateMatrixBuffer
+
+bool Stone::UpdateLightBuffer(ID3D11DeviceContext* context,
+    const XMFLOAT4& diffuse, const XMFLOAT3& lightDir) {
+    using namespace ShaderHelper;
+    using namespace ConstantBuffer;
+
+    LightBuffer buffer;
+    buffer.diffuseColor = diffuse;
+    buffer.lightDirection = lightDir;
+
+    if (memcmp(&m_prevLightData, &buffer, sizeof(LightBuffer)) == 0) {
+        return true;
+    }
+    if (!UpdateConstantBuffer(context, m_lightBuffer.Get(), buffer)) {
+        return false;
+    }
+
+    m_prevLightData = buffer;
+    return true;
+} // UpdateLightBuffer
+
+bool Stone::RenderShader(ID3D11DeviceContext* context, const RenderParams& params) {
+    if (!UpdateCameraBuffer(context, params.world, params.view, params.projection, params.camPos))
+        return false;
+    if (!UpdateLightBuffer(context, params.diffuse, params.lightDir))
+        return false;
+
+    context->VSSetConstantBuffers(0, 1, m_cameraBuffer.GetAddressOf());
+    context->PSSetConstantBuffers(1, 1, m_lightBuffer.GetAddressOf());
+    context->IASetInputLayout(m_layout.Get());
+    context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+
+    if (m_sampler) {
+        context->PSSetSamplers(0, 1, &m_sampler);
+    }
+    return true;
+} // RenderShader

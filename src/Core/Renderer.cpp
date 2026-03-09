@@ -4,6 +4,7 @@
 // Objects
 #include "Objects/Triangle.h"
 #include "Objects/Stone.h"
+#include "Objects/Atmosphere.h"
 // D3D11
 #include "D3D11/D3D11Manager.h"
 #include "D3D11/D3D11State.h"
@@ -12,6 +13,10 @@
 #include "Camera/Camera.h"
 // Resources
 #include "Resources/TextureManager.h"
+#include "Resources/VolumeTexture.h"
+#include "Resources/ConstantBufferType.h"
+#include "Resources/NoiseGenerator.h"
+// Shaders
 // Utils
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/ImGuiDrawer.h"
@@ -19,19 +24,25 @@
 #include "ImGui/AssimpModelWidget.h"
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
+#include "Helpers/DebugHelper.h"
 
 using namespace SharedConstants;
+using namespace PathConstants;
+using namespace ConstantBuffer;
+using namespace DebugHelper;
 
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
     m_Triangle = std::make_unique<Triangle>();
     m_Stone = std::make_unique<Stone>();
     m_Camera = std::make_unique<Camera>();
+    m_VolumeTexture = std::make_unique<VolumeTexture>();
+    m_NoiseGenerator = std::make_unique<NoiseGenerator>();
+	m_Atmosphere = std::make_unique<Atmosphere>();
     m_TextureMgr = std::make_shared<TextureManager>();
 } // Renderer
 
 Renderer::Renderer(const Renderer& other) {
-    m_D3D11Mgr = std::make_unique<D3D11Manager>();
 } // Renderer
 
 Renderer::~Renderer() {
@@ -52,10 +63,21 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    // Stone 초기화 
-    if (!m_Stone->Init(device, context, hwnd, m_TextureMgr, PathConstants::STONE)) {
+    if (!m_Stone->Init(device, context, hwnd, m_TextureMgr, STONE)) {
         return false;
     }
+
+    if (!m_VolumeTexture->Init(device, 128, 128, 128, DXGI_FORMAT_R8G8B8A8_UNORM)) {
+        return false;
+    }
+
+    if (!m_NoiseGenerator->Init(device, hwnd, NOISEGEN_CS)) {
+        return false;
+    }
+
+    if (!m_Atmosphere->Init(device, context, hwnd)) {
+        return false;
+	}
 
     // ImGui 초기화
     m_ImGuiMgr = std::move(imgui);
@@ -64,6 +86,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
     InitWidgets();
+    GenerateCloudNoise(context);
     return true;
 } // Init
 
@@ -112,10 +135,22 @@ bool Renderer::Render() {
 
     m_Camera->Update();
 
+    context->RSSetState(states->GetCullNone());
+    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
+
+	Atmosphere::RenderParams atmosphereParams;
+    atmosphereParams.view = m_Camera->GetViewMatrix();
+    atmosphereParams.projection = m_Camera->GetProjectionMatrix();
+    atmosphereParams.camPos = m_Camera->GetPosition();
+    atmosphereParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+    atmosphereParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    m_Atmosphere->Render(context, atmosphereParams);
+
     // GPU 상태 세팅
-    context->RSSetState(states->GetRasterizerState());
-    context->OMSetDepthStencilState(states->GetDepthStencilState(), 1);
-    context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
     
 	DrawStone(context, states);
 
@@ -135,11 +170,27 @@ void Renderer::InitWidgets() {
     }
 } // InitWidgets
 
+void Renderer::GenerateCloudNoise(ID3D11DeviceContext* context) {
+    if (!m_NoiseGenerator || !m_VolumeTexture) return;
+
+    NoiseBuffer noiseParams;
+    noiseParams.textureSize = { 128.0f, 128.0f, 128.0f };
+    noiseParams.perlinFreq = 4.0f;
+    noiseParams.worleyFreq = 8.0f;
+    noiseParams.detailFreqG = 8.0f;
+    noiseParams.detailFreqB = 16.0f;
+    noiseParams.detailFreqA = 32.0f;
+    noiseParams.octaves = 3;
+    noiseParams.remapBias = 0.0f;
+
+    m_NoiseGenerator->Generate(context, m_VolumeTexture.get(), noiseParams);
+    DebugPrint("노이즈 굽기 완료");
+} // GenerateCloudNoise
+
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Stone) return;
 
-    ID3D11SamplerState* sampler = states->GetLinearSamplerState();
-    m_Stone->SetSampler(sampler);
+    m_Stone->SetSampler(states->GetLinearSamplerState());
 
     // 렌더링 파라미터 구성
     Stone::RenderParams stoneParams;

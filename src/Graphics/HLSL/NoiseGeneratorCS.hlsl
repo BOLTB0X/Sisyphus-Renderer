@@ -1,3 +1,4 @@
+// NoiseGeneratorCS.hlsl
 cbuffer NoiseBuffer : register(b0)
 {
     float3 textureSize; // 텍스처 해상도
