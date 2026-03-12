@@ -16,6 +16,7 @@ bool D3D11State::Init(ID3D11Device* device) {
     if (!InitWireframe(device)) return false;
     if (!InitCullNone(device)) return false;
     if (!InitDepth(device)) return false;
+    if (!InitDepthNone(device)) return false;
     if (!InitDepthLess(device)) return false;
     if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, 
                      D3D11_TEXTURE_ADDRESS_WRAP, m_linearSamplerState.GetAddressOf()))
@@ -27,6 +28,7 @@ bool D3D11State::Init(ID3D11Device* device) {
 ID3D11RasterizerState*   D3D11State::GetCullBackState() const { return m_cullBackState.Get(); }
 ID3D11RasterizerState*   D3D11State::GetCullNone() const { return m_cullNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthState() const { return m_depthStencilState.Get(); }
+ID3D11DepthStencilState* D3D11State::GetDepthNone() const { return m_depthNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthLessEqualState.Get(); }
 ID3D11SamplerState*      D3D11State::GetLinearSamplerState() const { return m_linearSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
@@ -73,6 +75,18 @@ bool D3D11State::InitDepth(ID3D11Device* device) {
 
     return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState));
 } // InitDepth
+
+bool D3D11State::InitDepthNone(ID3D11Device* device) {
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+
+    depthStencilDesc.DepthEnable = false;
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+
+    depthStencilDesc.StencilEnable = false;
+
+    return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthNoneState));
+} // InitDepthNone
 
 bool D3D11State::InitDepthLess(ID3D11Device* device) {
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};

@@ -16,11 +16,11 @@ DefaultMesh::~DefaultMesh() {
 
 bool DefaultMesh::Init(ID3D11Device* device, UINT scale, DefaultMeshType type) {
     if (type == DefaultMeshType::Cube) {
-        if (!InitCube(device, scale)) {
+        if (!InitCube(device, scale * 2)) {
             return false;
         }
     } else if (type == DefaultMeshType::Quad) {
-        if (!InitQuad(device, scale)) {
+        if (!InitQuad(device, scale * 2)) {
             return false;
         }
     } else {

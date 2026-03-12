@@ -19,6 +19,9 @@ namespace SharedConstants {
 		const std::wstring CLOUDRAY_VS = L"HLSL/CloudRayVS.hlsl";
 		const std::wstring CLOUDRAY_PS = L"HLSL/CloudRayPS.hlsl";
 
+        const std::wstring SKYBOX_VS = L"HLSL/SkyboxVS.hlsl";
+        const std::wstring SKYBOX_PS = L"HLSL/SkyboxPS.hlsl";
+
         const std::string STONE = "assets/Stone/Stone.fbx";
     } // PathConstants
 }

@@ -4,7 +4,7 @@
 // Objects
 #include "Objects/Triangle.h"
 #include "Objects/Stone.h"
-#include "Objects/Atmosphere.h"
+#include "Objects/SkyBox.h"
 // D3D11
 #include "D3D11/D3D11Manager.h"
 #include "D3D11/D3D11State.h"
@@ -16,6 +16,7 @@
 #include "Resources/VolumeTexture.h"
 #include "Resources/ConstantBufferType.h"
 #include "Resources/NoiseGenerator.h"
+#include "Resources/VolumetricCloud.h"
 // Shaders
 // Utils
 #include "ImGui/ImGuiManager.h"
@@ -38,7 +39,8 @@ Renderer::Renderer() {
     m_Camera = std::make_unique<Camera>();
     m_VolumeTexture = std::make_unique<VolumeTexture>();
     m_NoiseGenerator = std::make_unique<NoiseGenerator>();
-	m_Atmosphere = std::make_unique<Atmosphere>();
+	m_SkyBox = std::make_unique<SkyBox>();
+    m_VolumetricCloud = std::make_unique<VolumetricCloud>();
     m_TextureMgr = std::make_shared<TextureManager>();
 } // Renderer
 
@@ -75,10 +77,10 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    if (!m_Atmosphere->Init(device, context, hwnd)) {
+    auto sampler = m_D3D11Mgr->GetStates()->GetLinearSamplerState();
+    if (!m_SkyBox->Init(device, context, hwnd, sampler)) {
         return false;
 	}
-
     // ImGui 초기화
     m_ImGuiMgr = std::move(imgui);
     if (m_ImGuiMgr && !m_ImGuiMgr->Init(hwnd, device, context)) {
@@ -135,24 +137,65 @@ bool Renderer::Render() {
 
     m_Camera->Update();
 
+    static bool bBaked = false;
+    if (!bBaked) {
+        Atmosphere::RenderParams atmoParams;
+        atmoParams.camPos = m_Camera->GetPosition();
+        atmoParams.lightDir = { 0.5f, -1.0f, 0.5f };
+        atmoParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+        m_SkyBox->UpdateAtmosphere(context, states, atmoParams);
+        bBaked = true;
+    }
+
+    static float s_lastBakeCamY = FLT_MAX;
+    const float bakeThresholdY = 1.0f;
+    DirectX::XMFLOAT3 camPos = m_Camera->GetPosition();
+
+    bool needBake = false;
+    if (s_lastBakeCamY == FLT_MAX) {
+        DebugHelper::DebugPrint("첫 Bake 완료.");
+        needBake = true; // 첫 프레임
+    } else {
+        float dy = fabsf(camPos.y - s_lastBakeCamY);
+        if (dy > bakeThresholdY) {
+            needBake = true;
+            DebugHelper::DebugPrint(fmt::format("Bake 실행 Height 변경: {:.2f} -> {:.2f}", s_lastBakeCamY, camPos.y));
+        }
+    }
+
+    if (needBake) {
+        Atmosphere::RenderParams atmoParams;
+        atmoParams.camPos = camPos;
+        atmoParams.lightDir = { 0.5f, -1.0f, 0.5f };
+        atmoParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+        m_SkyBox->UpdateAtmosphere(context, states, atmoParams);
+        s_lastBakeCamY = camPos.y;
+    }
+
+	// 배경 렌더링 (대기권)
     context->RSSetState(states->GetCullNone());
     context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
 
-	Atmosphere::RenderParams atmosphereParams;
-    atmosphereParams.view = m_Camera->GetViewMatrix();
-    atmosphereParams.projection = m_Camera->GetProjectionMatrix();
-    atmosphereParams.camPos = m_Camera->GetPosition();
-    atmosphereParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-    atmosphereParams.lightDir = { 0.5f, -1.0f, 0.5f };
-    m_Atmosphere->Render(context, atmosphereParams);
+    SkyBox::RenderParams skyParams;
+    skyParams.view = m_Camera->GetViewMatrix();
+    skyParams.projection = m_Camera->GetProjectionMatrix();
+    skyParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    m_SkyBox->Render(context, skyParams);
 
-    // GPU 상태 세팅
-    context->RSSetState(states->GetCullBackState());
-    context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
-    
-	DrawStone(context, states);
+    // 레이 확인
+    //VolumetricCloud::RenderParams cloudParams;
+    //cloudParams.view = m_Camera->GetViewMatrix();
+    //cloudParams.projection = m_Camera->GetProjectionMatrix();
+    //cloudParams.camPos = m_Camera->GetPosition();
+    //m_VolumetricCloud->Render(context, cloudParams);
+
+    // 불투명 오브젝트 렌더링
+ //   context->RSSetState(states->GetCullBackState());
+ //   context->OMSetDepthStencilState(states->GetDepthState(), 1);
+ //   float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+ //   context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
+ //   
+	//DrawStone(context, states);
 
     if (m_ImGuiMgr) {
         m_ImGuiMgr->Frame(); 

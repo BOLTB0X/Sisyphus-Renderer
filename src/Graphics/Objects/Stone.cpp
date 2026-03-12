@@ -148,7 +148,7 @@ bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitConstantBuffer<CameraBuffer>(device, m_cameraBuffer.GetAddressOf())
+    if (!InitConstantBuffer<MatCameraBuffer>(device, m_cameraBuffer.GetAddressOf())
         || !InitConstantBuffer<LightBuffer>(device, m_lightBuffer.GetAddressOf())) {
         return false;
     }
@@ -161,14 +161,14 @@ bool Stone::UpdateCameraBuffer(ID3D11DeviceContext* context,
     using namespace ShaderHelper;
     using namespace ConstantBuffer;
 
-    CameraBuffer buffer;
+    MatCameraBuffer buffer;
     buffer.world = XMMatrixTranspose(world);
     buffer.view = XMMatrixTranspose(view);
     buffer.projection = XMMatrixTranspose(projection);
 	buffer.cameraPosition = camPos;
 
 
-    if (memcmp(&m_prevCameraData, &buffer, sizeof(CameraBuffer)) == 0) {
+    if (memcmp(&m_prevCameraData, &buffer, sizeof(MatCameraBuffer)) == 0) {
         return true;
     }
     if (!UpdateConstantBuffer(context, m_cameraBuffer.Get(), buffer)) {

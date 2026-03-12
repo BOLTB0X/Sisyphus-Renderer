@@ -60,6 +60,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_lightBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cameraBuffer;
-    ConstantBuffer::CameraBuffer               m_prevCameraData;
+    ConstantBuffer::MatCameraBuffer            m_prevCameraData;
     ConstantBuffer::LightBuffer                m_prevLightData;
 }; // Stone

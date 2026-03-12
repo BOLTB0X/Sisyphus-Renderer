@@ -22,9 +22,9 @@ namespace ShaderHelper {
         cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         cbd.ByteWidth = sizeof(T);
 
-        if (cbd.ByteWidth % 16 != 0) {
-            cbd.ByteWidth = (cbd.ByteWidth / 16 + 1) * 16;
-        }
+        //if (cbd.ByteWidth % 16 != 0) {
+        //    cbd.ByteWidth = (cbd.ByteWidth / 16 + 1) * 16;
+        //}
 
         return SUCCEEDED(device->CreateBuffer(&cbd, nullptr, outBuffer));
     } // InitConstantBuffer

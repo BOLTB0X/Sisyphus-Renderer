@@ -15,7 +15,8 @@ class Stone;
 class D3D11State;
 class VolumeTexture;
 class NoiseGenerator;
-class Atmosphere;
+class SkyBox;
+class VolumetricCloud;
 
 class Renderer {
 public:
@@ -42,14 +43,15 @@ private:
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
 
 private:
-    static RendererState            m_RendererState;
-    std::unique_ptr<D3D11Manager>   m_D3D11Mgr;
-    std::unique_ptr<Triangle>       m_Triangle;
-    std::unique_ptr<Stone>          m_Stone;
-    std::unique_ptr<Camera>         m_Camera;
-    std::unique_ptr<VolumeTexture>  m_VolumeTexture;
-    std::unique_ptr<NoiseGenerator> m_NoiseGenerator;
-	std::unique_ptr<Atmosphere>     m_Atmosphere;
+    static RendererState             m_RendererState;
+    std::unique_ptr<D3D11Manager>    m_D3D11Mgr;
+    std::unique_ptr<Triangle>        m_Triangle;
+    std::unique_ptr<Stone>           m_Stone;
+    std::unique_ptr<Camera>          m_Camera;
+    std::unique_ptr<VolumeTexture>   m_VolumeTexture;
+    std::unique_ptr<NoiseGenerator>  m_NoiseGenerator;
+	std::unique_ptr<SkyBox>          m_SkyBox;
+    std::unique_ptr<VolumetricCloud> m_VolumetricCloud;
 
     std::shared_ptr<TextureManager> m_TextureMgr;
     std::shared_ptr<ImGuiManager>   m_ImGuiMgr;

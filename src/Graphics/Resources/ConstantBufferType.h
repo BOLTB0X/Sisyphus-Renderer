@@ -14,7 +14,7 @@ namespace ConstantBuffer {
 		}
     }; // MatrixBuffer
 
-    struct CameraBuffer {
+    struct MatCameraBuffer {
         // Row 1
         DirectX::XMMATRIX world;
         // Row 2
@@ -25,16 +25,16 @@ namespace ConstantBuffer {
         DirectX::XMFLOAT3 cameraPosition;
         float             padding;
 
-		CameraBuffer() 
+		MatCameraBuffer() 
             : world(DirectX::XMMatrixIdentity()), view(DirectX::XMMatrixIdentity()),
               projection(DirectX::XMMatrixIdentity()), 
               cameraPosition(0.0f, 0.0f, 0.0f), padding(0.0f) {
         }
 
-        CameraBuffer(DirectX::XMMATRIX w, DirectX::XMMATRIX v, DirectX::XMMATRIX p, DirectX::XMFLOAT3 camPos)
+        MatCameraBuffer(DirectX::XMMATRIX w, DirectX::XMMATRIX v, DirectX::XMMATRIX p, DirectX::XMFLOAT3 camPos)
             : world(w), view(v), projection(p), cameraPosition(camPos), padding(0.0f) {
 		}
-    }; // CameraBuffer
+    }; // MatCameraBuffer
 
     struct LightBuffer {
         // Row 1
@@ -83,28 +83,16 @@ namespace ConstantBuffer {
 		}
     }; // NoiseBuffer
 
-    struct AtmosphereBuffer {
-        // Row 1
-        DirectX::XMFLOAT4 zenithColor;
-        // Row 2
-        DirectX::XMFLOAT4 horizonColor;
-
-        AtmosphereBuffer() 
-            : zenithColor(0.0f, 0.2f, 0.6f, 1.0f),
-              horizonColor(0.81f, 0.38f, 0.66f, 1.0f) {
-        }
-    }; // AtmosphereBuffer
-
-    struct RayBuffer {
+    struct CloudBuffer {
         DirectX::XMMATRIX invView;
         DirectX::XMMATRIX invProjection;
         DirectX::XMFLOAT3 camPos;
         float             padding;
 
-        RayBuffer() : invView(DirectX::XMMatrixIdentity()),
+        CloudBuffer() : invView(DirectX::XMMatrixIdentity()),
             invProjection(DirectX::XMMatrixIdentity()),
             camPos(0.0f, 0.0f, 0.0f), padding(0.0f) {
         }
-    }; // RayBuffer
+    }; // CloudBuffer
     
 } // ConstantBuffer

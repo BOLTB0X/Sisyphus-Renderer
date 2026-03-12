@@ -13,6 +13,7 @@ namespace SharedConstants {
         static constexpr int   HEIGHT         = 600;
         static constexpr float DEPTH          = 1000.0f;
         static constexpr float NEAR_PLANE     = 0.1f;
+        static constexpr int   CUBE_MAP_SIZE  = 512;
     } // ScreenConstants
 
 } // SharedConstants
