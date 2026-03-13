@@ -202,7 +202,7 @@ float3 calculate_ground_color(float3 ro, float3 rd, float2 planet_intersect)
     final_ground_color *= shadow;
     
     float3 bent_normal = normalize(lerp(surface_normal, L, 0.6));
-    // Skylight
+
     // 지표면에서 하늘 방향으로의 간접광 산란
     float3 sky_ambient = calculate_scattering(
             hit_pos, bent_normal, 3.0 * aAtmoRadius,
@@ -229,12 +229,6 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
     float3 rd = normalize(input.localPos); // 시선 방향
     float3 ro = cCameraPosition / 1000.0f; // 카메라 위치
-    
-    //float distToCenter = length(ro - aPlanetCenter);
-    //if (distToCenter < aPlanetRadius)
-    //{
-    //    return float4(ORIGIN, 1);
-    //}
     
     float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius);
    

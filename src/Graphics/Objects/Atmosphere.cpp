@@ -205,29 +205,6 @@ bool Atmosphere::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     using namespace ConstantBuffer;
 	using namespace SharedConstants::AtmosphereConstants;
 
-    /*m_atmosphereData.zenithColor = { 0.0f, 0.2f, 0.6f, 1.0f };
-    m_atmosphereData.horizonColor = { 0.81f, 0.38f, 0.66f, 1.0f };
-
-    m_atmosphereData.planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
-    m_atmosphereData.planetRadius = PLANET_RADIUS;
-    m_atmosphereData.atmoRadius = ATMOSPHERE_RADIUS;
-
-    m_atmosphereData.rayleighBeta = RAYLEIGH_SCATTERING_COEFFICIENT;
-    m_atmosphereData.mieBeta = MIE_BETA;
-    m_atmosphereData.absorptionBeta = MIE_SCATTERING_COEFFICIENT;
-
-    m_atmosphereData.rayleighHeight = RAYLEIGH_HEIGHT;
-    m_atmosphereData.mieHeight = MIE_HEIGHT;
-    m_atmosphereData.absorptionHeight = ABSORPTION_HEIGHT;
-    m_atmosphereData.absorptionFalloff = ABSORPTION_FALLOFF;
-    m_atmosphereData.g = 0.9f;
-    m_atmosphereData.primarySteps = 32;
-    m_atmosphereData.lightSteps = 8;
-    m_atmosphereData.intensity = 40.0f;
-    m_atmosphereData.groundColor = { 0.0f, 0.25f, 0.05f };
-    m_atmosphereData.groundPrimarySteps = 16;
-    m_atmosphereData.groundLightSteps = 4;*/
-
     if (memcmp(&m_prevAtmosphereData, &m_atmosphereData, sizeof(AtmosphereBuffer)) == 0) {
         return true;
     }
