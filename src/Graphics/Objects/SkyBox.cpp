@@ -10,7 +10,8 @@
 #include "Helpers/ShaderHelper.h"
 // define
 #define SAMPLER_SLOT 0
-#define RSV_SLOT     0
+#define RSV1_SLOT     0
+#define RSV2_SLOT     1
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -19,6 +20,7 @@ SkyBox::SkyBox() {
 	m_atmosphere = std::make_unique<Atmosphere>();
 	m_cubeMesh = std::make_unique<DefaultMesh>();
 	m_sampler = nullptr;
+	m_lastBakeCamY = FLT_MAX;
 } // SkyBox
 
 SkyBox::~SkyBox() {
@@ -47,11 +49,17 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->PSSetSamplers(SAMPLER_SLOT, 1, &m_sampler);
 
 	// 큐브맵 SRV 바인딩
-	ID3D11ShaderResourceView* srv = m_atmosphere->GetCubeMapSRV();
-	context->PSSetShaderResources(RSV_SLOT, 1, &srv);
+	ID3D11ShaderResourceView* srvCurrent = m_atmosphere->GetCubeMapSRV(m_atmosphere->GetActiveIndex());
+	ID3D11ShaderResourceView* srvNext = m_atmosphere->GetCubeMapSRV(m_atmosphere->GetTargetIndex());
 
-	// 3. 행렬 업데이트 
-	// 하늘은 항상 카메라를 중심으로 따라다녀야 하므로 View의 Translation을 제거
+	context->PSSetShaderResources(RSV1_SLOT, 1, &srvCurrent);
+	context->PSSetShaderResources(RSV2_SLOT, 1, &srvNext);
+
+	Atmosphere::BlendBuffer blendData;
+	blendData.blendFactor = m_atmosphere->IsInterpolating() ? m_atmosphere->GetBlendFactor() : 0.0f;
+
+	// Constant Buffer 업데이트 및 바인딩
+	UpdateBlendBuffer(context, blendData.blendFactor);
 	XMMATRIX view = params.view;
 	view.r[3] = XMVectorSet(0, 0, 0, 1);
 
@@ -67,14 +75,47 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 
 	// 사용 후 SRV 해제
 	ID3D11ShaderResourceView* nullSRV = nullptr;
-	context->PSSetShaderResources(RSV_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(RSV1_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(RSV2_SLOT, 1, &nullSRV);
 } // Render
 
-void SkyBox::UpdateAtmosphere(ID3D11DeviceContext* context, D3D11State* states , const Atmosphere::RenderParams& atmoParams) {
+void SkyBox::Update(float deltaTime) {
 	if (m_atmosphere) {
-		m_atmosphere->Bake(context, states, atmoParams);
+		m_atmosphere->Update(deltaTime);
 	}
-} // UpdateAtmosphere
+} // Update
+
+void SkyBox::IsAtmosphereBakeRequired(ID3D11DeviceContext* context, D3D11State* states , const DirectX::XMFLOAT3& camPos) {
+	if (!m_atmosphere) return;
+
+	bool needBake = false;
+	if (m_lastBakeCamY == FLT_MAX) {
+		//DebugHelper::DebugPrint("첫 Bake 트리거.");
+		needBake = true;
+	}
+	else {
+		float dy = fabsf(camPos.y - m_lastBakeCamY);
+		if (dy > m_bakeThresholdY) {
+			needBake = true;
+			//DebugHelper::DebugPrint(fmt::format("Bake 실행 Height 변경: {:.2f} -> {:.2f}", m_lastBakeCamY, camPos.y));
+		}
+	}
+	
+	if (needBake) {
+		Atmosphere::RenderParams atmoParams;
+		float altitudeMultiplier = 500.0f;atmoParams.camPos = camPos;
+		atmoParams.camPos.y *= altitudeMultiplier; // 테스트용
+		atmoParams.lightDir = { 0.5f, -1.0f, 0.5f };
+		atmoParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		m_atmosphere->Bake(context, states, atmoParams);
+		m_lastBakeCamY = camPos.y; // 갱신
+		//DebugHelper::DebugPrint(fmt::format("[Atmosphere] Auto Bake - 높이: {:.2f}", m_lastBakeCamY));
+	}
+} // IsAtmosphereBakeRequired
+
+void SkyBox::ForceBakeAtmosphere() { m_lastBakeCamY = FLT_MAX; }
+Atmosphere* SkyBox::GetAtmosphere() const { return m_atmosphere.get(); }
 
 bool SkyBox::InitShader(ID3D11Device* device, HWND hwnd) {
 	using namespace ShaderHelper;
@@ -95,6 +136,10 @@ bool SkyBox::InitShader(ID3D11Device* device, HWND hwnd) {
 	}
 
 	if (!InitConstantBuffer<MatrixBuffer>(device, m_matrixBuffer.GetAddressOf())) {
+		return false;
+	}
+
+	if (!InitConstantBuffer<Atmosphere::BlendBuffer>(device, m_blendBuffer.GetAddressOf())) {
 		return false;
 	}
 	return true;
@@ -120,3 +165,21 @@ bool SkyBox::UpdateMatrixBuffer(ID3D11DeviceContext* context,
 	m_prevMatrixData = buffer;
 	return true;
 } // UpdateMatrixBuffer
+
+bool SkyBox::UpdateBlendBuffer(ID3D11DeviceContext* context, float blendFactor) {
+	using namespace ShaderHelper;
+	using namespace ConstantBuffer;
+
+	Atmosphere::BlendBuffer buffer;
+	buffer.blendFactor = blendFactor;
+	buffer.padding = { 0.0f, 0.0f, 0.0f };
+
+	if (memcmp(&m_prevBlendData, &buffer, sizeof(Atmosphere::BlendBuffer)) == 0) {
+		return true;
+	}
+	if (!UpdateConstantBuffer(context, m_blendBuffer.Get(), buffer)) {
+		return false;
+	}
+	m_prevBlendData = buffer;
+	return true;
+} // UpdateBlendBuffer

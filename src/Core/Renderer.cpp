@@ -23,6 +23,7 @@
 #include "ImGui/ImGuiDrawer.h"
 #include "ImGui/CameraWidget.h"
 #include "ImGui/AssimpModelWidget.h"
+#include "ImGui/AtmosphereWidget.h"
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
 #include "Helpers/DebugHelper.h"
@@ -103,8 +104,7 @@ void Renderer::Shutdown() {
 } // Shutdown
 
 bool Renderer::Frame(float deltaTime) {
-    float rotationSpeed = 30.0f;
-    m_Stone->Rotate(0.0f, rotationSpeed * deltaTime, 0.0f);
+	m_SkyBox->Update(deltaTime);
     return Render();
 } // Frame
 
@@ -137,65 +137,10 @@ bool Renderer::Render() {
 
     m_Camera->Update();
 
-    static bool bBaked = false;
-    if (!bBaked) {
-        Atmosphere::RenderParams atmoParams;
-        atmoParams.camPos = m_Camera->GetPosition();
-        atmoParams.lightDir = { 0.5f, -1.0f, 0.5f };
-        atmoParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-        m_SkyBox->UpdateAtmosphere(context, states, atmoParams);
-        bBaked = true;
-    }
-
-    static float s_lastBakeCamY = FLT_MAX;
-    const float bakeThresholdY = 1.0f;
-    DirectX::XMFLOAT3 camPos = m_Camera->GetPosition();
-
-    bool needBake = false;
-    if (s_lastBakeCamY == FLT_MAX) {
-        DebugHelper::DebugPrint("첫 Bake 완료.");
-        needBake = true; // 첫 프레임
-    } else {
-        float dy = fabsf(camPos.y - s_lastBakeCamY);
-        if (dy > bakeThresholdY) {
-            needBake = true;
-            DebugHelper::DebugPrint(fmt::format("Bake 실행 Height 변경: {:.2f} -> {:.2f}", s_lastBakeCamY, camPos.y));
-        }
-    }
-
-    if (needBake) {
-        Atmosphere::RenderParams atmoParams;
-        atmoParams.camPos = camPos;
-        atmoParams.lightDir = { 0.5f, -1.0f, 0.5f };
-        atmoParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-        m_SkyBox->UpdateAtmosphere(context, states, atmoParams);
-        s_lastBakeCamY = camPos.y;
-    }
-
-	// 배경 렌더링 (대기권)
-    context->RSSetState(states->GetCullNone());
-    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
-
-    SkyBox::RenderParams skyParams;
-    skyParams.view = m_Camera->GetViewMatrix();
-    skyParams.projection = m_Camera->GetProjectionMatrix();
-    skyParams.lightDir = { 0.5f, -1.0f, 0.5f };
-    m_SkyBox->Render(context, skyParams);
-
-    // 레이 확인
-    //VolumetricCloud::RenderParams cloudParams;
-    //cloudParams.view = m_Camera->GetViewMatrix();
-    //cloudParams.projection = m_Camera->GetProjectionMatrix();
-    //cloudParams.camPos = m_Camera->GetPosition();
-    //m_VolumetricCloud->Render(context, cloudParams);
+    DrawSkyBox(context, states);
 
     // 불투명 오브젝트 렌더링
- //   context->RSSetState(states->GetCullBackState());
- //   context->OMSetDepthStencilState(states->GetDepthState(), 1);
- //   float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
- //   context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
- //   
-	//DrawStone(context, states);
+	DrawStone(context, states);
 
     if (m_ImGuiMgr) {
         m_ImGuiMgr->Frame(); 
@@ -210,6 +155,7 @@ void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr->AddWidget(std::make_unique<CameraWidget>(m_Camera.get()));
         m_ImGuiMgr->AddWidget(std::make_unique<AssimpModelWidget>(m_Stone.get()));
+        m_ImGuiMgr->AddWidget(std::make_unique<AtmosphereWidget>(m_SkyBox->GetAtmosphere(), m_SkyBox.get()));
     }
 } // InitWidgets
 
@@ -231,6 +177,11 @@ void Renderer::GenerateCloudNoise(ID3D11DeviceContext* context) {
 } // GenerateCloudNoise
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
+
     if (!m_Stone) return;
 
     m_Stone->SetSampler(states->GetLinearSamplerState());
@@ -255,3 +206,18 @@ void Renderer::DrawTriangle(ID3D11DeviceContext* context, D3D11State* states) {
 
     m_Triangle->Render(context);
 } // DrawTriangle
+
+void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
+    if (!m_Camera || !m_SkyBox) return;
+
+    m_SkyBox->IsAtmosphereBakeRequired(context, states, m_Camera->GetPosition());
+
+    context->RSSetState(states->GetCullNone());
+    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
+
+    SkyBox::RenderParams skyParams;
+    skyParams.view = m_Camera->GetViewMatrix();
+    skyParams.projection = m_Camera->GetProjectionMatrix();
+    skyParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    m_SkyBox->Render(context, skyParams);
+} // DrawSkyBox

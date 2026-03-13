@@ -4,11 +4,9 @@
 #include <memory>
 #include <string>
 #include <wrl/client.h>
-#include "Transform.h"
 #include "Resources/ConstantBufferType.h"
 #include "SharedConstants/AtmosphereConstants.h"
 
-class DefaultMesh;
 class CubeMap;
 class D3D11State;
 
@@ -66,7 +64,7 @@ public:
         int               lightSteps;
         float             intensity;
         // Row 9
-        DirectX::XMFLOAT3 groundColor; // 지표면 기본색
+        DirectX::XMFLOAT3 groundColor;
         float             padding2;
         // Row 10
         int               groundPrimarySteps;
@@ -74,21 +72,26 @@ public:
         DirectX::XMFLOAT2 padding3;
 
         AtmosphereBuffer() {
+            using namespace SharedConstants::AtmosphereConstants;
+
             zenithColor = { 0.0f, 0.2f, 0.6f, 1.0f };
             horizonColor = { 0.81f, 0.38f, 0.66f, 1.0f };
-            planetCenter = { 0.0f, -SharedConstants::AtmosphereConstants::PLANET_RADIUS, 0.0f };
-            planetRadius = SharedConstants::AtmosphereConstants::PLANET_RADIUS;
-            atmoRadius = SharedConstants::AtmosphereConstants::ATMOSPHERE_RADIUS;
+
+            planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
+            planetRadius = PLANET_RADIUS;
+            atmoRadius = ATMOSPHERE_RADIUS;
 			padding1 = { 0.0f, 0.0f, 0.0f };
-            rayleighBeta = SharedConstants::AtmosphereConstants::RAYLEIGH_SCATTERING_COEFFICIENT;
-            mieBeta = SharedConstants::AtmosphereConstants::MIE_BETA;
-            absorptionBeta = SharedConstants::AtmosphereConstants::MIE_SCATTERING_COEFFICIENT;
+
+            rayleighBeta = RAYLEIGH_SCATTERING_COEFFICIENT;
+            mieBeta = MIE_BETA;
+            absorptionBeta = MIE_SCATTERING_COEFFICIENT;
             ambientBeta = 0.0f;
-            rayleighHeight = SharedConstants::AtmosphereConstants::RAYLEIGH_HEIGHT;
-            mieHeight = SharedConstants::AtmosphereConstants::MIE_HEIGHT;
-            absorptionHeight = SharedConstants::AtmosphereConstants::ABSORPTION_HEIGHT;
-            absorptionFalloff = SharedConstants::AtmosphereConstants::ABSORPTION_FALLOFF;
-            g = 0.7f;
+
+            rayleighHeight =RAYLEIGH_HEIGHT;
+            mieHeight = MIE_HEIGHT;
+            absorptionHeight = ABSORPTION_HEIGHT;
+            absorptionFalloff = ABSORPTION_FALLOFF;
+            g = 0.9f;
             primarySteps = 32;
             lightSteps = 8;
             intensity = 40.0f;
@@ -101,25 +104,42 @@ public:
         }
     }; // AtmosphereBuffer
 
+    struct BlendBuffer {
+        float blendFactor;
+        DirectX::XMFLOAT3 padding;
+
+        BlendBuffer() {
+            blendFactor = 1.0f;
+            padding = { 0.0f, 0.0f, 0.0f };
+        }
+    }; // BlendBuffer
+
 public:
     Atmosphere();
     ~Atmosphere();
 
     bool Init(ID3D11Device*, ID3D11DeviceContext*, HWND);
     void Bake(ID3D11DeviceContext*, D3D11State*, const RenderParams&);
-    ID3D11ShaderResourceView* GetCubeMapSRV() const;
+    void Update(float);
+
+    ID3D11ShaderResourceView* GetCubeMapSRV(int) const;
+    float                     GetBlendFactor() const;
+	int                       GetActiveIndex() const;
+	int                       GetTargetIndex() const;
+	bool					  IsInterpolating() const;
+    AtmosphereBuffer&         GetAtmosphereBuffer();
 
 private:
 	bool InitShader(ID3D11Device*, HWND);
 	bool UpdateMatrixBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&);
 	bool UpdateLightBuffer(ID3D11DeviceContext*, const DirectX::XMFLOAT4&, const DirectX::XMFLOAT3&);
-	bool UpdateAtmosphereBuffer(ID3D11DeviceContext*, const DirectX::XMFLOAT4&, const DirectX::XMFLOAT4&);
+	bool UpdateAtmosphereBuffer(ID3D11DeviceContext*);
 	bool UpdateCameraBuffer(ID3D11DeviceContext*, const DirectX::XMFLOAT3&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&);
     void PrepareFaceRender(ID3D11DeviceContext*, int, const RenderParams&);
 
 private:
 	// Resources
-    std::unique_ptr<CubeMap>                   m_cubeMap;
+    std::unique_ptr<CubeMap>                   m_cubeMaps[2];
 	// Shader resources
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
@@ -132,7 +152,12 @@ private:
     ConstantBuffer::MatrixBuffer               m_prevMatrixData;
     ConstantBuffer::LightBuffer                m_prevLightData;
 	CameraBuffer                               m_prevCameraData;
+    AtmosphereBuffer                           m_atmosphereData;
     AtmosphereBuffer                           m_prevAtmosphereData;
     DirectX::XMFLOAT4                          m_zenithColor;
     DirectX::XMFLOAT4                          m_horizonColor;
+    int                                        m_activeIdx;
+    int                                        m_targetIdx;
+    float                                      m_blendFactor;
+    bool                                       m_isInterpolating;
 }; // Atmosphere

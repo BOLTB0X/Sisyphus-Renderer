@@ -19,22 +19,40 @@ using namespace SharedConstants;
 using namespace DebugHelper;
 
 Atmosphere::Atmosphere() {
-    m_cubeMap = std::make_unique<CubeMap>();
+	m_cubeMaps[0] = std::make_unique<CubeMap>();
+	m_cubeMaps[1] = std::make_unique<CubeMap>();
     m_zenithColor = { 0.0f, 0.2f, 0.6f, 1.0f };
     m_horizonColor = { 0.81f, 0.38f, 0.66f, 1.0f };
+    m_activeIdx = 0;
+    m_targetIdx = 0;
+    m_blendFactor = 0.0f;
+    m_isInterpolating = false;
+    m_prevAtmosphereData.groundColor = { 0.0f, 0.0f, 0.0f };
 } // Atmosphere
 
 Atmosphere::~Atmosphere() {
 } // ~Atmosphere
 
 bool Atmosphere::Init(ID3D11Device* device, ID3D11DeviceContext* context, HWND hwnd) {
-    m_cubeMap->Init(device, ScreenConstants::CUBE_MAP_SIZE, ScreenConstants::CUBE_MAP_SIZE);
+    for (unsigned int i = 0; i < 2; ++i) {
+        auto cubeMap = std::make_unique<CubeMap>();
+        cubeMap->Init(device, ScreenConstants::CUBE_MAP_SIZE, ScreenConstants::CUBE_MAP_SIZE);
+        m_cubeMaps[i] = std::move(cubeMap);
+	}
     if (!InitShader(device, hwnd))
 		return false;
 	return true;
 } // Init
 
 void Atmosphere::Bake(ID3D11DeviceContext* context, D3D11State* states, const RenderParams& params) {
+    m_targetIdx = (m_activeIdx + 1) % 2;
+    m_blendFactor = 0.0f;
+    m_isInterpolating = true;
+
+    ID3D11RenderTargetView* pPrevRTV = nullptr;
+    ID3D11DepthStencilView* pPrevDSV = nullptr;
+    context->OMGetRenderTargets(1, &pPrevRTV, &pPrevDSV);
+
     // 큐브맵 베이킹을 위한 상태 설정
     context->OMSetDepthStencilState(states->GetDepthNone(), 0);
     context->RSSetState(states->GetCullNone());
@@ -43,9 +61,9 @@ void Atmosphere::Bake(ID3D11DeviceContext* context, D3D11State* states, const Re
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-    // 공통 버퍼 업데이트 (광원, 대기 파라미터는 6면 공통)
+    // 버퍼 업데이트
     UpdateLightBuffer(context, params.diffuse, params.lightDir);
-    UpdateAtmosphereBuffer(context, m_zenithColor, m_horizonColor);
+    UpdateAtmosphereBuffer(context);
 
     // 큐브맵 전용 뷰포트 설정
     D3D11_VIEWPORT cubeVP = { 0.0f, 0.0f,
@@ -56,16 +74,33 @@ void Atmosphere::Bake(ID3D11DeviceContext* context, D3D11State* states, const Re
     for (unsigned int i = 0; i < 6; ++i) {
         PrepareFaceRender(context, i, params); // 면 설정 분리
 
-        m_cubeMap->RenderBuffer(context);
-        context->DrawIndexed(m_cubeMap->GetIndexCount(), 0, 0);
+        m_cubeMaps[m_targetIdx]->RenderBuffer(context);
+        context->DrawIndexed(m_cubeMaps[m_targetIdx]->GetIndexCount(), 0, 0);
     }
 
-    // 베이킹 후 RTV 해제
-    ID3D11RenderTargetView* nullRTV = nullptr;
-    context->OMSetRenderTargets(1, &nullRTV, nullptr);
+    context->OMSetRenderTargets(1, &pPrevRTV, pPrevDSV);
+
+    if (pPrevRTV) pPrevRTV->Release();
+    if (pPrevDSV) pPrevDSV->Release();
 } // Bake
 
-ID3D11ShaderResourceView* Atmosphere::GetCubeMapSRV() const { return m_cubeMap->GetSRV(); }
+void Atmosphere::Update(float deltaTime) {
+    if (m_isInterpolating) {
+        m_blendFactor += deltaTime * 2.0f;
+        if (m_blendFactor >= 1.0f) {
+            m_blendFactor = 1.0f;
+            m_activeIdx = m_targetIdx;
+            m_isInterpolating = false;
+        }
+    }
+} // Update
+
+ID3D11ShaderResourceView*     Atmosphere::GetCubeMapSRV(int index) const { return m_cubeMaps[index]->GetSRV(); }
+float                         Atmosphere::GetBlendFactor() const { return m_blendFactor; }
+int 					      Atmosphere::GetActiveIndex() const { return m_activeIdx; }
+int 					      Atmosphere::GetTargetIndex() const { return m_targetIdx; }
+bool                          Atmosphere::IsInterpolating() const { return m_isInterpolating; }
+Atmosphere::AtmosphereBuffer& Atmosphere::GetAtmosphereBuffer() { return m_atmosphereData; }
 
 bool Atmosphere::InitShader(ID3D11Device* device, HWND hwnd) {
 	using namespace ShaderHelper;
@@ -165,66 +200,55 @@ bool Atmosphere::UpdateCameraBuffer(ID3D11DeviceContext* context, const XMFLOAT3
     return true;
 } // UpdateCameraBuffer
 
-bool Atmosphere::UpdateAtmosphereBuffer(ID3D11DeviceContext* context,
-    const XMFLOAT4& zenith, const XMFLOAT4& horizon) {
+bool Atmosphere::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     using namespace ShaderHelper;
     using namespace ConstantBuffer;
 	using namespace SharedConstants::AtmosphereConstants;
 
-    AtmosphereBuffer buffer;
-    buffer.zenithColor = zenith;
-    buffer.horizonColor = horizon;
+    /*m_atmosphereData.zenithColor = { 0.0f, 0.2f, 0.6f, 1.0f };
+    m_atmosphereData.horizonColor = { 0.81f, 0.38f, 0.66f, 1.0f };
 
-    buffer.planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
-    buffer.planetRadius = PLANET_RADIUS;
-    buffer.atmoRadius = ATMOSPHERE_RADIUS;
+    m_atmosphereData.planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
+    m_atmosphereData.planetRadius = PLANET_RADIUS;
+    m_atmosphereData.atmoRadius = ATMOSPHERE_RADIUS;
 
-    buffer.rayleighBeta = RAYLEIGH_SCATTERING_COEFFICIENT;
-    buffer.mieBeta = MIE_BETA;
-    buffer.absorptionBeta = MIE_SCATTERING_COEFFICIENT;
+    m_atmosphereData.rayleighBeta = RAYLEIGH_SCATTERING_COEFFICIENT;
+    m_atmosphereData.mieBeta = MIE_BETA;
+    m_atmosphereData.absorptionBeta = MIE_SCATTERING_COEFFICIENT;
 
-    buffer.rayleighHeight = RAYLEIGH_HEIGHT;
-    buffer.mieHeight = MIE_HEIGHT;
-    buffer.absorptionHeight = ABSORPTION_HEIGHT;
-    buffer.absorptionFalloff = ABSORPTION_FALLOFF;
-    buffer.g = 0.9f;
-    buffer.primarySteps = 32;
-    buffer.lightSteps = 8;
-    buffer.intensity = 40.0f;
-	buffer.groundColor = { 0.0f, 0.25f, 0.05f };
-	buffer.groundPrimarySteps = 16;
-	buffer.groundLightSteps = 4;
+    m_atmosphereData.rayleighHeight = RAYLEIGH_HEIGHT;
+    m_atmosphereData.mieHeight = MIE_HEIGHT;
+    m_atmosphereData.absorptionHeight = ABSORPTION_HEIGHT;
+    m_atmosphereData.absorptionFalloff = ABSORPTION_FALLOFF;
+    m_atmosphereData.g = 0.9f;
+    m_atmosphereData.primarySteps = 32;
+    m_atmosphereData.lightSteps = 8;
+    m_atmosphereData.intensity = 40.0f;
+    m_atmosphereData.groundColor = { 0.0f, 0.25f, 0.05f };
+    m_atmosphereData.groundPrimarySteps = 16;
+    m_atmosphereData.groundLightSteps = 4;*/
 
-    if (memcmp(&m_prevAtmosphereData, &buffer, sizeof(AtmosphereBuffer)) == 0) {
+    if (memcmp(&m_prevAtmosphereData, &m_atmosphereData, sizeof(AtmosphereBuffer)) == 0) {
         return true;
     }
-    if (!UpdateConstantBuffer(context, m_atmosphereBuffer.Get(), buffer)) {
+    if (!UpdateConstantBuffer(context, m_atmosphereBuffer.Get(), m_atmosphereData)) {
         return false;
     }
 
-    m_prevAtmosphereData = buffer;
+    m_prevAtmosphereData = m_atmosphereData;
     return true;
 } // UpdateAtmosphereBuffer
 
 void Atmosphere::PrepareFaceRender(ID3D11DeviceContext* context, int faceIndex, const RenderParams& params) {
     // 현재 면의 RTV 설정 및 클리어
     float clearColor[4] = { 0, 0, 0, 1 };
-    ID3D11RenderTargetView* rtv = m_cubeMap->GetRTV(faceIndex);
+    ID3D11RenderTargetView* rtv = m_cubeMaps[m_targetIdx]->GetRTV(faceIndex);
     context->ClearRenderTargetView(rtv, clearColor);
     context->OMSetRenderTargets(1, &rtv, nullptr);
 
-    if (faceIndex == 0) { // 6개 면을 다 찍으면 너무 많으니 첫 번째 면만 확인
-        DebugPrint(fmt::format("Baking Face 0 - Passing camPos to Shader: ({:.2f}, {:.2f}, {:.2f})",
-            params.camPos.x, params.camPos.y, params.camPos.z));
-    }
-
     // 현재 면의 카메라/행렬 버퍼 업데이트
-    // 큐브맵의 View/Proj 행렬을 사용해 내부(0,0,0)에서 각 면을 바라보게 함
-    UpdateMatrixBuffer(context, XMMatrixIdentity(), m_cubeMap->GetViewMatrix(faceIndex), m_cubeMap->GetProjMatrix());
-    //DirectX::XMFLOAT3 bakeCamPos = { 0.0f, 0.0f, 0.0f };
-    //UpdateCameraBuffer(context, bakeCamPos, m_cubeMap->GetViewMatrix(faceIndex), m_cubeMap->GetProjMatrix());UpdateCameraBuffer(context, bakeCamPos, m_cubeMap->GetViewMatrix(faceIndex), m_cubeMap->GetProjMatrix());
-    UpdateCameraBuffer(context, params.camPos, m_cubeMap->GetViewMatrix(faceIndex), m_cubeMap->GetProjMatrix());
-    // 현재 면에 특화된 버퍼 바인딩
+    UpdateMatrixBuffer(context, XMMatrixIdentity(), m_cubeMaps[m_targetIdx]->GetViewMatrix(faceIndex), m_cubeMaps[m_targetIdx]->GetProjMatrix());
+    UpdateCameraBuffer(context, params.camPos, m_cubeMaps[m_targetIdx]->GetViewMatrix(faceIndex), m_cubeMaps[m_targetIdx]->GetProjMatrix());
     context->VSSetConstantBuffers(BUFFER_SLOT_MATRIX, 1, m_matrixBuffer.GetAddressOf());
     context->PSSetConstantBuffers(BUFFER_SLOT_LIGHT, 1, m_lightBuffer.GetAddressOf());
     context->PSSetConstantBuffers(BUFFER_SLOT_CAMERA, 1, m_cameraBuffer.GetAddressOf());

@@ -41,6 +41,7 @@ private:
     
     void DrawTriangle(ID3D11DeviceContext*, D3D11State*);
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
+    void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
 
 private:
     static RendererState             m_RendererState;

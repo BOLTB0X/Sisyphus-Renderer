@@ -1,6 +1,13 @@
 // SkyBoxPS.hlsl
-TextureCube tCubeMap : register(t0);
-SamplerState sLinear : register(s0);
+TextureCube CubeMapA : register(t0);
+TextureCube CubeMapB : register(t1);
+SamplerState LinerSampler : register(s0);
+
+cbuffer BlendBuffer : register(b1)
+{
+    float bBlendFactor;
+    float3 bPadding;
+}; // BlendBuffer
 
 struct PS_INPUT
 {
@@ -10,5 +17,9 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    return tCubeMap.Sample(sLinear, normalize(input.localPos));
+    float3 colA = CubeMapA.Sample(LinerSampler, input.localPos).rgb;
+    float3 colB = CubeMapB.Sample(LinerSampler, input.localPos).rgb;
+    
+    float3 finalCol = lerp(colA, colB, bBlendFactor);
+    return float4(finalCol, 1.0f);
 } // main

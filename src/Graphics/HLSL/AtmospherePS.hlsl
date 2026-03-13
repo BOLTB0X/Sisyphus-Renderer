@@ -10,7 +10,7 @@ cbuffer LightBuffer : register(b1)
 {
     float4 lDiffuseColor;
     float3 lLightDirection;
-    float lPadding;
+    float  lPadding;
 };
 
 struct PS_INPUT
@@ -200,11 +200,12 @@ float3 calculate_ground_color(float3 ro, float3 rd, float2 planet_intersect)
     float shadow = dotNL / (dotNL + dotNV);
     
     final_ground_color *= shadow;
-
+    
+    float3 bent_normal = normalize(lerp(surface_normal, L, 0.6));
     // Skylight
     // 지표면에서 하늘 방향으로의 간접광 산란
     float3 sky_ambient = calculate_scattering(
-            hit_pos, surface_normal, 3.0 * aAtmoRadius,
+            hit_pos, bent_normal, 3.0 * aAtmoRadius,
             ORIGIN, L, float3(aIntensity, aIntensity, aIntensity),
             aPlanetCenter, aPlanetRadius, aAtmoRadius,
             aRayleighBeta, aMieBeta, aAbsorptionBeta, float3(aAmbientBeta, aAmbientBeta, aAmbientBeta),
@@ -217,20 +218,36 @@ float3 calculate_ground_color(float3 ro, float3 rd, float2 planet_intersect)
     return final_ground_color;
 } // calculate_ground_color
 
+float3 sun_color(float3 rd, float3 light_dir, float intensity)
+{
+    float sunCos = dot(rd, light_dir);
+    float sunDisk = smoothstep(0.998, 1.0, sunCos);
+    return sunDisk * float3(1.0, 0.9, 0.8) * intensity * 50.0;
+} // sun_color
+
 float4 main(PS_INPUT input) : SV_TARGET
 {
     float3 rd = normalize(input.localPos); // 시선 방향
     float3 ro = cCameraPosition / 1000.0f; // 카메라 위치
     
+    //float distToCenter = length(ro - aPlanetCenter);
+    //if (distToCenter < aPlanetRadius)
+    //{
+    //    return float4(ORIGIN, 1);
+    //}
+    
     float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius);
    
     float max_dist = MAX_DIST;
-    float3 scene_color = float3(0.0, 0.0, 0.0);
+    float3 scene_color = dot(rd, lLightDirection) > 0.9998 ? 3.0 : 0.0;
     
     if (planet_intersect.y > 0.0)
     {
         max_dist = max(planet_intersect.x, 0.0);
         scene_color = calculate_ground_color(ro, rd, planet_intersect);
+    } else
+    {
+        scene_color = sun_color(rd, -lLightDirection, aIntensity);
     }
 
     float3 col = calculate_scattering(
@@ -253,7 +270,7 @@ float4 main(PS_INPUT input) : SV_TARGET
         aPrimarySteps,
         aLightSteps
     );
-
+    
     col = 1.0 - exp(-1.0 * col);
     
     // CPU 전달 및 레이 디버깅 
