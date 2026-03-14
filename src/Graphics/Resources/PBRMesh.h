@@ -2,14 +2,22 @@
 #include <d3d11.h>
 #include <vector>
 #include <wrl/client.h>
-#include "VertexTypes.h"
+//#include "VertexTypes.h"
 
 class PBRMesh {
+public:
+    struct FBRVertex {
+        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT2 texture;
+        DirectX::XMFLOAT3 normal;
+        DirectX::XMFLOAT3 tangent;
+        DirectX::XMFLOAT3 binormal;
+    }; // FBRVertex
 public:
     PBRMesh();
     ~PBRMesh();
 
-    bool         Init(ID3D11Device*, const std::vector<VertexTypes::FBRVertex>&, const std::vector<unsigned int>&, unsigned int);
+    bool         Init(ID3D11Device*, const std::vector<FBRVertex>&, const std::vector<unsigned int>&, unsigned int);
     void         RenderBuffer(ID3D11DeviceContext*);
     unsigned int GetMaterialIndex() const;
     UINT         GetIndexCount() const;

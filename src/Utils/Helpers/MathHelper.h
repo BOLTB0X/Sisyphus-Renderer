@@ -5,7 +5,7 @@ namespace MathHelper { // 수학 상수
     const float PI = 3.1415926535f;
     const float DEG_TO_RAD = PI / 180.0f;
     const float RAD_TO_DEG = 180.0f / PI;
-} // // 수학 상수
+} // 수학 상수
 
 namespace MathHelper { // 기본 수학 함수
 
@@ -31,10 +31,14 @@ namespace MathHelper { // 기본 수학 함수
 
 } // 기본 수학 함수
 
+namespace MathHelper { // 행렬 상수
+    inline const DirectX::XMMATRIX IDENTITY = DirectX::XMMatrixIdentity();
+} // 행렬 상수
+
 namespace MathHelper { // 벡터 상수
-    DirectX::XMVECTOR FRONT = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-    DirectX::XMVECTOR RIGHT = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
-    DirectX::XMVECTOR UP = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    inline const DirectX::XMVECTOR FRONT = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+    inline const DirectX::XMVECTOR RIGHT = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+    inline const DirectX::XMVECTOR UP = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 } // 벡터 상수
 
 namespace MathHelper { // 벡터 함수
@@ -84,5 +88,4 @@ namespace MathHelper { // 벡터 함수
         return DirectX::XMFLOAT3(DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw), 0.0f);
     } // VectorToRotation
 
-    
 } // 벡터 연산

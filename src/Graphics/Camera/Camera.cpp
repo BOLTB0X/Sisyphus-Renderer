@@ -59,7 +59,7 @@ void Camera::Update() {
     // 뷰 행렬 생성
     lookAt = pos + lookAt;
     m_viewMatrix = XMMatrixLookAtLH(pos, lookAt, up);
-
+    UpdateProjection();
     // 절두체 업데이트
     BuildFrustum();
 } // Update

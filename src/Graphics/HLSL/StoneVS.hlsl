@@ -1,3 +1,4 @@
+// StoneVS.hlsl
 cbuffer CameraBuffer : register(b0) {
     matrix worldMatrix;
     matrix viewMatrix;
