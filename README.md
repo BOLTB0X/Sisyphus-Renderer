@@ -46,9 +46,56 @@ start SisyphusRenderer.sln
 ## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
 
 <p align="center">
-  <img width="300" height="300" alt="돌" src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" />
+<table style="width:60%; text-align:center; border-spacing:20px;">
+<tr>
+<td style="text-align:center; vertical-align:middle;">
+<p align="center">
+<img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true"
+alt="Atmosphere Demo"
+style="object-fit:contain; border:1px solid #ddd; border-radius:4px;"/>
 </p>
+</td>
+</tr>
+<tr>
+<td style="text-align:center; font-size:14px; font-weight:bold;">
+<p align="center">
+<a>Atmospheric Scattering & Dynamic CubeMap Baking</a>
+</p>
+</td>
+</tr>
+</table>
+</p>
+
 
 - [Assimp](https://github.com/assimp/assimp) 를 통한 Model 로더
 
 - 비동기 + COM + 자동 밉맵 구조 -> 주소만 입력하면 됌
+
+---
+
+## [Cubemap - Atmospheric Scattering](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
+
+<p align="center">
+<table style="width:60%; text-align:center; border-spacing:20px;">
+<tr>
+<td style="text-align:center; vertical-align:middle;">
+<p align="center">
+<img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true"
+alt="Atmosphere Demo"
+style="object-fit:contain; border:1px solid #ddd; border-radius:4px;"/>
+</p>
+</td>
+</tr>
+<tr>
+<td style="text-align:center; font-size:14px; font-weight:bold;">
+<p align="center">
+<a>Atmospheric Scattering & Dynamic CubeMap Baking</a>
+</p>
+</td>
+</tr>
+</table>
+</p>
+
+- [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap/src) 을 통한 대기 산란 표현
+
+- 동적 재베이킹, RayMarching
