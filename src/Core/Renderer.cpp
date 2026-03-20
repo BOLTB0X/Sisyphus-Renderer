@@ -2,9 +2,9 @@
 #include "Renderer.h"
 #include "RendererState.h"
 // Objects
-#include "Objects/Triangle.h"
 #include "Objects/Stone.h"
 #include "Objects/SkyBox.h"
+#include "Objects/DirectionalLight.h"
 // D3D11
 #include "D3D11/D3D11Manager.h"
 #include "D3D11/D3D11State.h"
@@ -13,35 +13,31 @@
 #include "Camera/Camera.h"
 // Resources
 #include "Resources/TextureManager.h"
-#include "Resources/VolumeTexture.h"
 #include "Resources/ConstantBufferType.h"
-#include "Resources/NoiseGenerator.h"
-#include "Resources/VolumetricCloud.h"
 // Shaders
 // Utils
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/ImGuiDrawer.h"
 #include "ImGui/CameraWidget.h"
 #include "ImGui/AssimpModelWidget.h"
-#include "ImGui/AtmosphereWidget.h"
+#include "ImGui/FunctionWidget.h"
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
+#include "SharedConstants/BuffersConstants.h"
 #include "Helpers/DebugHelper.h"
 
 using namespace SharedConstants;
 using namespace PathConstants;
 using namespace ConstantBuffer;
+using namespace BuffersConstants;
 using namespace DebugHelper;
 
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
-    m_Triangle = std::make_unique<Triangle>();
     m_Stone = std::make_unique<Stone>();
     m_Camera = std::make_unique<Camera>();
-    m_VolumeTexture = std::make_unique<VolumeTexture>();
-    m_NoiseGenerator = std::make_unique<NoiseGenerator>();
 	m_SkyBox = std::make_unique<SkyBox>();
-    m_VolumetricCloud = std::make_unique<VolumetricCloud>();
+    m_DirectionalLight = std::make_unique<DirectionalLight>();
     m_TextureMgr = std::make_shared<TextureManager>();
 } // Renderer
 
@@ -60,9 +56,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 
     auto device = m_D3D11Mgr->GetDevice();
     auto context = m_D3D11Mgr->GetDeviceContext();
+    m_DirectionalLight->Init();
 
     if (!m_Camera->Init(CameraConstants::DEFAULT_FOV, RendererState::aspectRatio,
                         RendererState::ScreenNear, RendererState::ScreenDepth)) {
+        return false;
+    }
+
+    if (!m_TextureMgr->Init(device, context, hwnd)) {
         return false;
     }
 
@@ -70,18 +71,10 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    if (!m_VolumeTexture->Init(device, 128, 128, 128, DXGI_FORMAT_R8G8B8A8_UNORM)) {
+    auto wSampler = m_D3D11Mgr->GetStates()->GetLinearWrapSamplerState();
+    if (!m_SkyBox->Init(device, context, hwnd, wSampler, m_TextureMgr.get())) {
         return false;
     }
-
-    if (!m_NoiseGenerator->Init(device, hwnd, NOISEGEN_CS)) {
-        return false;
-    }
-
-    auto sampler = m_D3D11Mgr->GetStates()->GetLinearSamplerState();
-    if (!m_SkyBox->Init(device, context, hwnd, sampler)) {
-        return false;
-	}
     // ImGui 초기화
     m_ImGuiMgr = std::move(imgui);
     if (m_ImGuiMgr && !m_ImGuiMgr->Init(hwnd, device, context)) {
@@ -89,22 +82,18 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
     InitWidgets();
-    GenerateCloudNoise(context);
     return true;
 } // Init
 
 void Renderer::Shutdown() {
     if (m_Stone)
         m_Stone.reset();
-    if (m_Triangle)
-        m_Triangle->Shutdown();
     if (m_D3D11Mgr) {
         m_D3D11Mgr.reset();
     }
 } // Shutdown
 
 bool Renderer::Frame(float deltaTime) {
-	m_SkyBox->Update(deltaTime);
     return Render();
 } // Frame
 
@@ -136,11 +125,9 @@ bool Renderer::Render() {
     auto states  = m_D3D11Mgr->GetStates();
 
     m_Camera->Update();
-
     DrawSkyBox(context, states);
 
-    // 불투명 오브젝트 렌더링
-	DrawStone(context, states);
+    DrawStone(context, states);
 
     if (m_ImGuiMgr) {
         m_ImGuiMgr->Frame(); 
@@ -154,27 +141,18 @@ bool Renderer::Render() {
 void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr->AddWidget(std::make_unique<CameraWidget>(m_Camera.get()));
-        m_ImGuiMgr->AddWidget(std::make_unique<AssimpModelWidget>(m_Stone.get()));
-        m_ImGuiMgr->AddWidget(std::make_unique<AtmosphereWidget>(m_SkyBox->GetAtmosphere(), m_SkyBox.get()));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "SkyBox Atmosphere",
+            [this]() { m_SkyBox->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Light Control",
+            [this]() { m_DirectionalLight->OnGui(); }
+        ));
     }
 } // InitWidgets
-
-void Renderer::GenerateCloudNoise(ID3D11DeviceContext* context) {
-    if (!m_NoiseGenerator || !m_VolumeTexture) return;
-
-    NoiseBuffer noiseParams;
-    noiseParams.textureSize = { 128.0f, 128.0f, 128.0f };
-    noiseParams.perlinFreq = 4.0f;
-    noiseParams.worleyFreq = 8.0f;
-    noiseParams.detailFreqG = 8.0f;
-    noiseParams.detailFreqB = 16.0f;
-    noiseParams.detailFreqA = 32.0f;
-    noiseParams.octaves = 3;
-    noiseParams.remapBias = 0.0f;
-
-    m_NoiseGenerator->Generate(context, m_VolumeTexture.get(), noiseParams);
-    DebugPrint("노이즈 굽기 완료");
-} // GenerateCloudNoise
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
@@ -184,7 +162,7 @@ void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
 
     if (!m_Stone) return;
 
-    m_Stone->SetSampler(states->GetLinearSamplerState());
+    m_Stone->SetSampler(states->GetLinearWrapSamplerState());
 
     // 렌더링 파라미터 구성
     Stone::RenderParams stoneParams;
@@ -192,32 +170,32 @@ void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     stoneParams.view = m_Camera->GetViewMatrix();
     stoneParams.projection = m_Camera->GetProjectionMatrix();
     stoneParams.camPos = m_Camera->GetPosition();
-    stoneParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-    stoneParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    stoneParams.diffuse = m_DirectionalLight->GetDiffuse();
+    stoneParams.lightDir = m_DirectionalLight->GetDirection();
 
     m_Stone->Render(context, stoneParams);
 } // DrawStone
 
-void Renderer::DrawTriangle(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Triangle) return;
-
-    // ID3D11SamplerState* sampler = states->GetLinearSamplerState();
-    // context->PSSetSamplers(0, 1, &sampler);
-
-    m_Triangle->Render(context);
-} // DrawTriangle
-
 void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Camera || !m_SkyBox) return;
 
-    m_SkyBox->IsAtmosphereBakeRequired(context, states, m_Camera->GetPosition());
+    ID3D11RenderTargetView* rtv = m_D3D11Mgr->GetRTV();
+    context->OMSetRenderTargets(1, &rtv, nullptr);
 
     context->RSSetState(states->GetCullNone());
-    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
+    context->OMSetDepthStencilState(states->GetDepthNone(), 0);
+
+    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
 
     SkyBox::RenderParams skyParams;
     skyParams.view = m_Camera->GetViewMatrix();
     skyParams.projection = m_Camera->GetProjectionMatrix();
-    skyParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    skyParams.cameraPosition = m_Camera->GetPosition();
+    skyParams.lightDir = m_DirectionalLight->GetDirection();
+
+    ID3D11ShaderResourceView* depthSRV = m_D3D11Mgr->GetDepthSRV();
+    context->PSSetShaderResources(1, 1, &depthSRV);
     m_SkyBox->Render(context, skyParams);
+    context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 } // DrawSkyBox

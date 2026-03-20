@@ -16,7 +16,9 @@ public:
     ID3D11DepthStencilState* GetDepthState() const;
     ID3D11DepthStencilState* GetDepthNone() const;
     ID3D11DepthStencilState* GetDepthLessEqual() const;
-    ID3D11SamplerState*      GetLinearSamplerState() const;
+    ID3D11DepthStencilState* GetDepthReadOnly() const;
+    ID3D11SamplerState*      GetLinearWrapSamplerState() const;
+    ID3D11SamplerState*      GetLinearClampSamplerState() const;
     ID3D11BlendState*        GetBlendState() const;
 
 private:
@@ -26,6 +28,7 @@ private:
     bool InitDepth(ID3D11Device*);
     bool InitDepthNone(ID3D11Device*);
     bool InitDepthLess(ID3D11Device*);
+    bool InitDepthReadOnly(ID3D11Device*);
     bool InitSampler(ID3D11Device*, D3D11_FILTER,
                      D3D11_TEXTURE_ADDRESS_MODE,
                      ID3D11SamplerState**);
@@ -38,6 +41,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthNoneState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthLessEqualState;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearSamplerState;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthReadOnlyState;;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearWrapSamplerState;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearClampSamplerState;
     Microsoft::WRL::ComPtr<ID3D11BlendState>        m_blendState;
 }; // D3D11State

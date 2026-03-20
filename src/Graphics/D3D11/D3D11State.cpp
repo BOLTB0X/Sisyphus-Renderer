@@ -18,8 +18,12 @@ bool D3D11State::Init(ID3D11Device* device) {
     if (!InitDepth(device)) return false;
     if (!InitDepthNone(device)) return false;
     if (!InitDepthLess(device)) return false;
+    if (!InitDepthReadOnly(device)) return false;
     if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR, 
-                     D3D11_TEXTURE_ADDRESS_WRAP, m_linearSamplerState.GetAddressOf()))
+        D3D11_TEXTURE_ADDRESS_WRAP, m_linearWrapSamplerState.GetAddressOf()))
+        return false;
+    if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+        D3D11_TEXTURE_ADDRESS_CLAMP, m_linearClampSamplerState.GetAddressOf()))
         return false;
     if (!InitBlendState(device)) return false;
     return true;
@@ -30,7 +34,9 @@ ID3D11RasterizerState*   D3D11State::GetCullNone() const { return m_cullNoneStat
 ID3D11DepthStencilState* D3D11State::GetDepthState() const { return m_depthStencilState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthNone() const { return m_depthNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthLessEqualState.Get(); }
-ID3D11SamplerState*      D3D11State::GetLinearSamplerState() const { return m_linearSamplerState.Get(); }
+ID3D11DepthStencilState* D3D11State::GetDepthReadOnly() const { return m_depthReadOnlyState.Get(); }
+ID3D11SamplerState*      D3D11State::GetLinearWrapSamplerState() const { return m_linearWrapSamplerState.Get(); }
+ID3D11SamplerState*      D3D11State::GetLinearClampSamplerState() const { return m_linearClampSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
 
 bool D3D11State::InitCullBack(ID3D11Device* device) {
@@ -96,6 +102,16 @@ bool D3D11State::InitDepthLess(ID3D11Device* device) {
     depthStencilDesc.StencilEnable = false;
     return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthLessEqualState));
 } // InitDepthLess
+
+bool D3D11State::InitDepthReadOnly(ID3D11Device* device) {
+    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
+    depthStencilDesc.DepthEnable = true;
+    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    depthStencilDesc.StencilEnable = false;
+
+    return SUCCEEDED(device->CreateDepthStencilState(&depthStencilDesc, &m_depthReadOnlyState));
+} // InitDepthReadOnly
 
 bool D3D11State::InitSampler(ID3D11Device* device, D3D11_FILTER filter, 
                              D3D11_TEXTURE_ADDRESS_MODE addressMode, 

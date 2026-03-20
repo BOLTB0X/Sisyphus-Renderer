@@ -8,6 +8,7 @@
      enum class DefaultMeshType {
          Quad,
          Cube,
+         BoxGeometry
      }; // DefaultMeshType
 
      struct BoxVertex {
@@ -27,6 +28,7 @@
  private:
 	 bool InitCube(ID3D11Device*, UINT);
 	 bool InitQuad(ID3D11Device*, UINT);
+     bool InitBoxGeometry(ID3D11Device*, UINT);
 
  private:
      Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer;

@@ -23,6 +23,10 @@ bool DefaultMesh::Init(ID3D11Device* device, UINT scale, DefaultMeshType type) {
         if (!InitQuad(device, scale * 2)) {
             return false;
         }
+    } else if (type == DefaultMeshType::BoxGeometry) {
+        if (!InitBoxGeometry(device, scale * 2)) {
+            return false;
+        }
     } else {
         return false;
 	}
@@ -152,3 +156,55 @@ bool DefaultMesh::InitQuad(ID3D11Device* device, UINT scale) {
         ", Index: " + std::to_string(m_indexCount));
     return true;
 } // InitQuad
+
+bool DefaultMesh::InitBoxGeometry(ID3D11Device* device, UINT scale) {
+    float s = (float)scale;
+
+    std::vector<BoxVertex> vertices = {
+        { XMFLOAT3(-s, -s, -s), XMFLOAT2(0,1) }, { XMFLOAT3(-s, +s, -s), XMFLOAT2(0,0) },
+        { XMFLOAT3(+s, +s, -s), XMFLOAT2(1,0) }, { XMFLOAT3(+s, -s, -s), XMFLOAT2(1,1) },
+        { XMFLOAT3(-s, -s, +s), XMFLOAT2(0,1) }, { XMFLOAT3(-s, +s, +s), XMFLOAT2(0,0) },
+        { XMFLOAT3(+s, +s, +s), XMFLOAT2(1,0) }, { XMFLOAT3(+s, -s, +s), XMFLOAT2(1,1) }
+    };
+    m_vertexCount = static_cast<UINT>(vertices.size());
+
+    std::vector<unsigned int> indices = {
+        0, 1, 2, 0, 2, 3, // Front (-Z)
+        4, 6, 5, 4, 7, 6, // Back (+Z)
+        4, 5, 1, 4, 1, 0, // Left (-X)
+        3, 2, 6, 3, 6, 7, // Right (+X)
+        1, 5, 6, 1, 6, 2, // Top (+Y)
+        4, 0, 3, 4, 3, 7  // Bottom (-Y)
+    };
+    m_indexCount = static_cast<UINT>(indices.size());
+
+    D3D11_BUFFER_DESC vbd = {};
+    vbd.Usage = D3D11_USAGE_IMMUTABLE;
+    vbd.ByteWidth = sizeof(BoxVertex) * static_cast<UINT>(vertices.size());
+    vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    vbd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA vInitData = {};
+    vInitData.pSysMem = vertices.data();
+    HRESULT hr = device->CreateBuffer(&vbd, &vInitData, m_vertexBuffer.GetAddressOf());
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    D3D11_BUFFER_DESC ibd = {};
+    ibd.Usage = D3D11_USAGE_IMMUTABLE;
+    ibd.ByteWidth = sizeof(UINT) * m_indexCount;
+    ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    ibd.CPUAccessFlags = 0;
+    D3D11_SUBRESOURCE_DATA iInitData = {};
+    iInitData.pSysMem = indices.data();
+
+    hr = device->CreateBuffer(&ibd, &iInitData, m_indexBuffer.GetAddressOf());
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
+        ", Index: " + std::to_string(m_indexCount));
+    return true;
+} // InitBoxGeometry

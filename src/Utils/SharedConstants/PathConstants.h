@@ -19,9 +19,15 @@ namespace SharedConstants {
 		const std::wstring CLOUDRAY_VS = L"HLSL/CloudRayVS.hlsl";
 		const std::wstring CLOUDRAY_PS = L"HLSL/CloudRayPS.hlsl";
 
+        const std::wstring VOL_CLOUD_VS = L"HLSL/VolumetricCloudVS.hlsl";
+        const std::wstring VOL_CLOUD_PS = L"HLSL/VolumetricCloudPS.hlsl";
+
         const std::wstring SKYBOX_VS = L"HLSL/SkyboxVS.hlsl";
         const std::wstring SKYBOX_PS = L"HLSL/SkyboxPS.hlsl";
 
         const std::string STONE = "assets/Stone/Stone.fbx";
+        const std::string WMAP = "assets/Noise/WeatherMap.dds";
+        const std::string NOISE = "assets/Noise/noise.png";
+        const std::string BLUE_NOISE = "assets/Noise/blue-noise.png";
     } // PathConstants
 }
