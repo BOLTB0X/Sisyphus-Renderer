@@ -40,7 +40,7 @@ namespace SharedConstants {
         static constexpr float             VOL_FREQ_G = 8.0f;
         static constexpr float             VOL_FREQ_B = 16.0f;
         static constexpr float             VOL_FREQ_A = 32.0f;
-        static constexpr float             VOL_OCTAVES = 3;
+        static constexpr float             VOL_OCTAVES = 4;
         static constexpr float             VOL_REMAP_BIAS = 0.0f;
 
         static constexpr float             CLOUD_MIN_HEIGHT = 2000.0f;

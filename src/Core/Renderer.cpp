@@ -24,7 +24,6 @@
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
 #include "SharedConstants/BuffersConstants.h"
-#include "Helpers/DebugHelper.h"
 
 using namespace SharedConstants;
 using namespace PathConstants;
@@ -39,6 +38,7 @@ Renderer::Renderer() {
 	m_SkyBox = std::make_unique<SkyBox>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
     m_TextureMgr = std::make_shared<TextureManager>();
+    m_VolumeSlicer = std::make_unique<DebugHelper::VolumeSlicer>();
 } // Renderer
 
 Renderer::Renderer(const Renderer& other) {
@@ -56,6 +56,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 
     auto device = m_D3D11Mgr->GetDevice();
     auto context = m_D3D11Mgr->GetDeviceContext();
+    auto linerWrapSampler = m_D3D11Mgr->GetStates()->GetLinearWrapSamplerState();
     m_DirectionalLight->Init();
 
     if (!m_Camera->Init(CameraConstants::DEFAULT_FOV, RendererState::aspectRatio,
@@ -71,11 +72,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    auto wSampler = m_D3D11Mgr->GetStates()->GetLinearWrapSamplerState();
-    if (!m_SkyBox->Init(device, context, hwnd, wSampler, m_TextureMgr.get())) {
+    if (!m_SkyBox->Init(device, context, hwnd, linerWrapSampler, m_TextureMgr.get())) {
         return false;
     }
-    // ImGui 초기화
+
+    if (!m_VolumeSlicer->Init(device, hwnd, linerWrapSampler)) {
+        return false;
+    }
+
     m_ImGuiMgr = std::move(imgui);
     if (m_ImGuiMgr && !m_ImGuiMgr->Init(hwnd, device, context)) {
         return false;
@@ -133,6 +137,7 @@ bool Renderer::Render() {
         m_ImGuiMgr->Frame(); 
     }
 
+    DebugVolume(context);
     m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
 
     return true;
@@ -150,6 +155,11 @@ void Renderer::InitWidgets() {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",
             [this]() { m_DirectionalLight->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Volume Noise Debug",
+            [this]() { m_VolumeSlicer->OnGui(); }
         ));
     }
 } // InitWidgets
@@ -199,3 +209,10 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     m_SkyBox->Render(context, skyParams);
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 } // DrawSkyBox
+
+void Renderer::DebugVolume(ID3D11DeviceContext* context) {
+    auto cloudNoise = m_TextureMgr->GetVolumeTexture(KEY_CLOUD_VOL);
+    if (cloudNoise && m_VolumeSlicer) {
+        m_VolumeSlicer->Update(context, cloudNoise.get(), m_VolumeSlicer->GetDepth());
+    }
+} // DebugVolume

@@ -15,7 +15,7 @@ float4 permute(float4 x)
     return mod289(((x * 34.0) + 1.0) * x);
 } // permute
 
-float4 taylorInvSqrt(float4 r)
+float4 taylorInv_sqrt(float4 r)
 {
     return 1.79284291400159 - 0.85373472095314 * r;
 } // taylorInvSqrt

@@ -108,7 +108,7 @@ float4 grad4(uint4 p)
     return normalize(g);
 } // grad4
 
-float Perlin4D(float4 p)
+float perlin_4D(float4 p)
 {
     int4 i0 = (int4) floor(p);
     int4 i1 = i0 + 1;
@@ -155,9 +155,9 @@ float Perlin4D(float4 p)
     float nxyz1 = lerp(nxy01, nxy11, u.z);
 
     return lerp(nxyz0, nxyz1, u.w) * 0.5 + 0.5;
-} // Perlin4D
+} // perlin_4D
 
-float PerlinPeriodic(float3 p, int frequency = 1)
+float perlin_periodic(float3 p, int frequency = 1)
 {
     float3 a = p * frequency * TWO_PI;
 
@@ -167,13 +167,13 @@ float PerlinPeriodic(float3 p, int frequency = 1)
     p4.z = cos(a.y);
     p4.w = sin(a.y);
 
-    float n1 = Perlin4D(p4 + float4(0, 0, cos(a.z), sin(a.z)));
-    float n2 = Perlin4D(p4 + float4(0, 0, cos(a.z + 1.7), sin(a.z + 1.7)));
+    float n1 = perlin_4D(p4 + float4(0, 0, cos(a.z), sin(a.z)));
+    float n2 = perlin_4D(p4 + float4(0, 0, cos(a.z + 1.7), sin(a.z + 1.7)));
 
     return 1.0 - (n1 + n2) * 0.5;
-} // PerlinPeriodic
+} // perlin_periodic
 
-float WorleyPeriodic(float3 p, int frequency)
+float worley_periodic(float3 p, int frequency)
 {
     p *= frequency;
 
@@ -199,9 +199,9 @@ float WorleyPeriodic(float3 p, int frequency)
             }
 
     return 1.0 - sqrt(minDist);
-} // WorleyPeriodic
+} // worley_periodic
 
-float valueNoise(float3 x, float freq)
+float generate_noise(float3 x, float freq)
 {
     float3 i = floor(x);
     float3 f = frac(x);
@@ -215,24 +215,7 @@ float valueNoise(float3 x, float freq)
                           hash13(fmod(i + float3(1, 0, 1), freq)), f.x),
                      lerp(hash13(fmod(i + float3(0, 1, 1), freq)),
                           hash13(fmod(i + float3(1, 1, 1), freq)), f.x), f.y), f.z);
-} // valueNoise
-
-float gradientNoise(float3 p)
-{
-    float3 i = floor(p);
-    float3 f = frac(p);
-
-    float3 u = f * f * (3.0 - 2.0 * f);
-
-    return lerp(lerp(lerp(dot(hash33h(i + float3(0, 0, 0)), f - float3(0, 0, 0)),
-                          dot(hash33h(i + float3(1, 0, 0)), f - float3(1, 0, 0)), u.x),
-                     lerp(dot(hash33h(i + float3(0, 1, 0)), f - float3(0, 1, 0)),
-                          dot(hash33h(i + float3(1, 1, 0)), f - float3(1, 1, 0)), u.x), u.y),
-                lerp(lerp(dot(hash33h(i + float3(0, 0, 1)), f - float3(0, 0, 1)),
-                          dot(hash33h(i + float3(1, 0, 1)), f - float3(1, 0, 1)), u.x),
-                     lerp(dot(hash33h(i + float3(0, 1, 1)), f - float3(0, 1, 1)),
-                          dot(hash33h(i + float3(1, 1, 1)), f - float3(1, 1, 1)), u.x), u.y), u.z);
-} // gradientNoise
+} // generate_noise
 
 float snoise(float3 v)
 {
@@ -260,9 +243,6 @@ float snoise(float3 v)
              i.z + float4(0.0, i1.z, i2.z, 1.0))
            + i.y + float4(0.0, i1.y, i2.y, 1.0))
            + i.x + float4(0.0, i1.x, i2.x, 1.0));
-
-    // Gradients: 7x7 points over a square, mapped onto an octahedron.
-    // The ring size 17*17 = 289 is close to a multiple of 49 (49*6 = 294)
     float n_ = 0.142857142857; // 1.0/7.0
     float3 ns = n_ * D.wyz - D.xzx;
 
@@ -278,8 +258,6 @@ float snoise(float3 v)
     float4 b0 = float4(x.xy, y.xy);
     float4 b1 = float4(x.zw, y.zw);
 
-    //float4 s0 = float4(lessThan(b0,0.0))*2.0 - 1.0;
-    //float4 s1 = float4(lessThan(b1,0.0))*2.0 - 1.0;
     float4 s0 = floor(b0) * 2.0 + 1.0;
     float4 s1 = floor(b1) * 2.0 + 1.0;
     float4 sh = -step(h, float4(0, 0, 0, 0));
@@ -293,7 +271,7 @@ float snoise(float3 v)
     float3 p3 = float3(a1.zw, h.w);
 
     //Normalise gradients
-    float4 norm = taylorInvSqrt(float4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+    float4 norm = taylorInv_sqrt(float4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
     p0 *= norm.x;
     p1 *= norm.y;
     p2 *= norm.z;
@@ -306,7 +284,7 @@ float snoise(float3 v)
                                 dot(p2, x2), dot(p3, x3)));
 } // snoise
 
-float worleyNoise(float3 uv, float freq, bool tileable)
+float worley_noise(float3 uv, float freq, bool tileable)
 {
     float3 id = floor(uv);
     float3 p = frac(uv);
@@ -332,7 +310,7 @@ float worleyNoise(float3 uv, float freq, bool tileable)
     }
     
     return 1. - minDist;
-} // worleyNoise
+} // worley_noise
 
 float worley(float3 p, float scale)
 {
@@ -370,20 +348,28 @@ float worley(float3 p, float scale)
     return 1.0 - minimalDist;
 } // worley
 
-float perlinFbm(float3 p, float freq, int octaves)
+float perlin_fbm(float3 p, float freq, int octaves)
 {
     float G = .5;
     float amp = 1.;
     float noise = 0.;
     for (int i = 0; i < octaves; ++i)
     {
-        noise += amp * valueNoise(p * freq, freq);
+        noise += amp * generate_noise(p * freq, freq);
         freq *= 2.;
         amp *= G;
     }
     
     return noise;
-} // perlinFbm
+} // perlin_fbm
+
+float worley_fbm(float3 p, float freq, bool tileable)
+{
+    float fbm = worley_periodic(p, freq) * .75 +
+        	 	worley_periodic(p * 2., freq) * .25 +
+        	 	worley_periodic(p * 4., freq) * .125;
+    return max(0., fbm) * 1.5;
+} // worley_fbm 
 
 // Valentin Galea 스타일의 Cloud FBM
 // lacunarity: 주파수 배율 (보통 2.0)

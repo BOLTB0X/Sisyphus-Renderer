@@ -4,6 +4,8 @@
 #include <d3d11.h>
 // STL
 #include <memory>
+// Debug
+#include "Helpers/DebugHelper.h"
 
 class RendererState;
 class D3D11Manager;
@@ -38,6 +40,8 @@ private:
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
 
+    void DebugVolume(ID3D11DeviceContext*);
+
 private:
     static RendererState              m_RendererState;
     std::unique_ptr<D3D11Manager>     m_D3D11Mgr;
@@ -45,7 +49,9 @@ private:
     std::unique_ptr<Camera>           m_Camera;
 	std::unique_ptr<SkyBox>           m_SkyBox;
     std::unique_ptr<DirectionalLight> m_DirectionalLight;
-
     std::shared_ptr<TextureManager>   m_TextureMgr;
     std::shared_ptr<ImGuiManager>     m_ImGuiMgr;
+
+    // 디버깅
+    std::unique_ptr<DebugHelper::VolumeSlicer> m_VolumeSlicer;
 }; // Renderer

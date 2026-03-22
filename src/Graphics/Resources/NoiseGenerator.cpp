@@ -5,10 +5,9 @@
 #include "Helpers/ShaderHelper.h"
 #include "SharedConstants/PathConstants.h"
 
-using namespace ConstantBuffer;
-
 NoiseGenerator::NoiseGenerator() {
 	m_noiseBuffer = nullptr;
+    m_preNoiseBuffer.padding.x = 0.5f;
 } // NoiseGenerator
 
 NoiseGenerator::~NoiseGenerator() {
@@ -46,7 +45,6 @@ void NoiseGenerator::Generate(ID3D11DeviceContext* context, VolumeTexture* targe
 
     // 디스패치
     // 스레드 그룹 크기가 (8, 8, 8)이므로 해상도를 8로 나눈 만큼 그룹을 보내야함
-    // ex: 128 / 8 = 16그룹
     UINT groupX = static_cast<UINT>(data.textureSize.x) / 8;
     UINT groupY = static_cast<UINT>(data.textureSize.y) / 8;
     UINT groupZ = static_cast<UINT>(data.textureSize.z) / 8;
