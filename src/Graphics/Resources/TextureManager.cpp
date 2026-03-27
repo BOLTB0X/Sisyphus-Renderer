@@ -26,11 +26,6 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
         return false;
     }
 
-    auto newTexture = std::make_shared<Texture>();
-    if (newTexture->Init(device, context, PathConstants::WMAP)) {
-        m_Textures[PathConstants::WMAP] = newTexture;
-    }
-
     CreateVolumeTexture(device, PathConstants::KEY_CLOUD_VOL, 128, 128, 128, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
     NoiseGenerator::NoiseBuffer noiseParams = NoiseGenerator::NoiseBuffer();

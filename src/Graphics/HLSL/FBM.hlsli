@@ -2,7 +2,12 @@
 // https://www.shadertoy.com/view/ttcSD8
 // https://www.shadertoy.com/view/Xttcz2
 // https://www.shadertoy.com/view/3d3fWN
-#include "Maths.hlsl"
+// https://www.shadertoy.com/view/ld3BzM
+#ifndef _FBM_HLSLI_
+#define _FBM_HLSLI_
+
+#include "Maths.hlsli"
+#include "Remap.hlsli"
 #define PI     3.14159265359;
 #define TWO_PI 6.28318530718;
 #define UI0    1597334673U
@@ -73,6 +78,13 @@ float hash12(float2 p)
     return float(n) * UIF;
 } // hash12
 
+float2 hash22(float2 p)
+{
+    float n = sin(dot(p, float2(113.0, 1.0)));
+    p = frac(float2(2097152.0, 262144.0) * n) * 2.0 - 1.0;
+    return p;
+} // hash22
+
 float fade(float t)
 {
     return t * t * t * (t * (t * 6 - 15) + 10);
@@ -107,6 +119,29 @@ float4 grad4(uint4 p)
 
     return normalize(g);
 } // grad4
+
+float grad_noise2D(float2 f)
+{
+    float2 e = float2(0.0, 1.0);
+    float2 p = floor(f);
+    f -= p;
+    float2 w = f * f * (3.0 - 2.0 * f); // Cubic smoothing
+    
+    float c = lerp(
+        lerp(dot(hash22(p + e.xx), f - e.xx), dot(hash22(p + e.yx), f - e.yx), w.x),
+        lerp(dot(hash22(p + e.xy), f - e.xy), dot(hash22(p + e.yy), f - e.yy), w.x),
+        w.y
+    );
+    return c * 0.5 + 0.5; // [0, 1] 범위로 정규화
+} // grad_noise2D
+
+float grad_wave(float x, float offset)
+{
+    x = abs(frac(x / 6.2831853 + offset - 0.25) - 0.5) * 2.0;
+    float x2 = saturate(x * x * (-1.0 + 2.0 * x));
+    x = smoothstep(0.0, 1.0, x);
+    return lerp(x, x2, 0.15);
+} // grad_wave
 
 float perlin_4D(float4 p)
 {
@@ -389,3 +424,13 @@ float fbm_clouds(float3 p, float lacunarity, float init_gain, float gain)
     }
     return totalNoise;
 } // fbm_clouds
+
+float perlin_worley(float3 uvw, float freq, float octaves)
+{
+    float worley = worley_fbm(uvw, freq, true);
+    float perlin = perlin_fbm(uvw, freq, octaves);
+    return remap_new(perlin, 1.0 - worley, 1.0, 0.0, 1.0);
+} // perlin_worley
+
+
+#endif

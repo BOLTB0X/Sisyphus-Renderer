@@ -1,8 +1,8 @@
 // NoiseGeneratorCS.hlsl
 // chihirobelmo cloudmap부분 참고: https://github.com/chihirobelmo/volumetric-cloud-for-directx11/blob/main/VolumetricCloud/shaders/CloudMapGenerate.hlsl
 // maximeheckel https://blog.maximeheckel.com/posts/real-time-cloudscapes-with-volumetric-raymarching/
-#include "FBM.hlsl"
-#include "Remap.hlsl"
+#include "FBM.hlsli"
+#include "Remap.hlsli"
 
 RWTexture3D<float4> outVolume : register(u0);
 

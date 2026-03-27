@@ -19,6 +19,7 @@ public:
     ID3D11DepthStencilState* GetDepthReadOnly() const;
     ID3D11SamplerState*      GetLinearWrapSamplerState() const;
     ID3D11SamplerState*      GetLinearClampSamplerState() const;
+    ID3D11SamplerState*      GetShadowSamplerState() const;
     ID3D11BlendState*        GetBlendState() const;
 
 private:
@@ -32,6 +33,7 @@ private:
     bool InitSampler(ID3D11Device*, D3D11_FILTER,
                      D3D11_TEXTURE_ADDRESS_MODE,
                      ID3D11SamplerState**);
+    bool InitShadowSampler(ID3D11Device*);
     bool InitBlendState(ID3D11Device*);
 
 private:
@@ -44,5 +46,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthReadOnlyState;;
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearWrapSamplerState;
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearClampSamplerState;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_shadowSamplerState;
     Microsoft::WRL::ComPtr<ID3D11BlendState>        m_blendState;
 }; // D3D11State

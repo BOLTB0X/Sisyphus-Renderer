@@ -25,6 +25,7 @@ bool D3D11State::Init(ID3D11Device* device) {
     if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_LINEAR,
         D3D11_TEXTURE_ADDRESS_CLAMP, m_linearClampSamplerState.GetAddressOf()))
         return false;
+    if (!InitShadowSampler(device)) return false;
     if (!InitBlendState(device)) return false;
     return true;
 } // Init
@@ -37,6 +38,7 @@ ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthL
 ID3D11DepthStencilState* D3D11State::GetDepthReadOnly() const { return m_depthReadOnlyState.Get(); }
 ID3D11SamplerState*      D3D11State::GetLinearWrapSamplerState() const { return m_linearWrapSamplerState.Get(); }
 ID3D11SamplerState*      D3D11State::GetLinearClampSamplerState() const { return m_linearClampSamplerState.Get(); }
+ID3D11SamplerState*      D3D11State::GetShadowSamplerState() const { return m_shadowSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
 
 bool D3D11State::InitCullBack(ID3D11Device* device) {
@@ -126,6 +128,26 @@ bool D3D11State::InitSampler(ID3D11Device* device, D3D11_FILTER filter,
 
     return SUCCEEDED(device->CreateSamplerState(&samplerDesc, targetSampler));
 } // InitSampler
+
+bool D3D11State::InitShadowSampler(ID3D11Device* device) {
+    D3D11_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    // Border Color를 흰색(1.0f)으로 설정하여 깊이 비교 시 항상 '가장 먼 곳'으로 판정되게
+    samplerDesc.BorderColor[0] = 1.0f;
+    samplerDesc.BorderColor[1] = 1.0f;
+    samplerDesc.BorderColor[2] = 1.0f;
+    samplerDesc.BorderColor[3] = 1.0f;
+
+    // 현재 픽셀의 깊이가 쉐도우 맵에 기록된 깊이보다 작거나 같을 때 광원이 도달하는 것으로 판정
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    return SUCCEEDED(device->CreateSamplerState(&samplerDesc, &m_shadowSamplerState));
+} // InitShadowSampler
 
 bool D3D11State::InitBlendState(ID3D11Device* device) {
     D3D11_BLEND_DESC blendDesc = {};

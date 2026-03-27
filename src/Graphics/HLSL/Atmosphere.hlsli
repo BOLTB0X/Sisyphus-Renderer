@@ -1,4 +1,8 @@
+// Atmosphere.hlsli
 // https://www.shadertoy.com/view/wlBXWK
+#ifndef _ATMOSPHERE_HLSLI_
+#define _ATMOSPHERE_HLSLI_
+
 #define DEFAULT_LIGHT_DIR float3(0.0f, -1.0f, 0.0f)
 #define ORIGIN            float3(0.0f, 0.0f, 0.0f)
 #define MIN_DIST          float(1e-4f)
@@ -174,3 +178,5 @@ float3 calculate_scattering(
         * light_intensity
         + scene_color * opacity;
 } // calculate_scattering
+
+#endif

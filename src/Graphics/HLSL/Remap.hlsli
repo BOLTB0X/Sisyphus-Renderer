@@ -1,5 +1,8 @@
-// Remap.hlsl
+// Remap.hlsli
 // https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine
+#ifndef _REMAP_HLSLI_
+#define _REMAP_HLSLI_
+
 float remap_target(float value, float originMin, float originMax, float targetMin, float targetMax)
 {
     return targetMin + (value - originMin) * (targetMax - targetMin) / (originMax - originMin);
@@ -19,3 +22,5 @@ float remap_normalize(float value, float original_min, float original_max, float
 {
     return min(1.0, max(0.0, remap_new(value, original_min, original_max, new_min, new_max)));
 } // remap_normalize
+
+#endif // _REMAP_HLSL_

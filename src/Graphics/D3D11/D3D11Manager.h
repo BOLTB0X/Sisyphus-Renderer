@@ -20,6 +20,7 @@ public:
     
     void BeginScene(float, float, float, float);
     void EndScene(bool);
+    void RestoreViewport();
 
     ID3D11Device*             GetDevice() const;
     ID3D11DeviceContext*      GetDeviceContext() const;
@@ -30,7 +31,6 @@ public:
 private:
     bool InitViews(int, int);
     bool InitRenderTargetView();
-    bool InitDepthStencilView(int, int);
     void InitViewport(int, int);
 
 private:
@@ -38,6 +38,7 @@ private:
     std::unique_ptr<D3D11CoreResources> m_core;
     std::unique_ptr<D3D11State>         m_state;
     std::unique_ptr<RenderTexture>      m_depthBuffer;
+    std::unique_ptr<RenderTexture>      m_uav;
     // RenderTarget
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
     D3D11_VIEWPORT                                 m_viewport;

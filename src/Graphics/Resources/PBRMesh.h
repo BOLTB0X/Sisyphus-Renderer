@@ -2,7 +2,6 @@
 #include <d3d11.h>
 #include <vector>
 #include <wrl/client.h>
-//#include "VertexTypes.h"
 
 class PBRMesh {
 public:

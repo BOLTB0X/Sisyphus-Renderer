@@ -1,6 +1,7 @@
 #pragma once
 #include <wrl/client.h>
 #include <string>
+#include <directxmath.h>
 #include "Utils/SharedConstants/BuffersConstants.h"
 
 class VolumeTexture;

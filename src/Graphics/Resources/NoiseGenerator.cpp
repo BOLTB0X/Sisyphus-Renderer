@@ -4,10 +4,14 @@
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "SharedConstants/PathConstants.h"
+// define
+#define CONSTANS_SLOT 0
+#define VOLUME_SLOT   0
+#define GROUP_SIZE    8
 
 NoiseGenerator::NoiseGenerator() {
 	m_noiseBuffer = nullptr;
-    m_preNoiseBuffer.padding.x = 0.5f;
+    m_preNoiseBuffer.padding.x = -1.0f;
 } // NoiseGenerator
 
 NoiseGenerator::~NoiseGenerator() {
@@ -38,21 +42,20 @@ void NoiseGenerator::Generate(ID3D11DeviceContext* context, VolumeTexture* targe
 		return;
 
     context->CSSetShader(m_computeShader.Get(), nullptr, 0);
-    context->CSSetConstantBuffers(0, 1, m_noiseBuffer.GetAddressOf());
+    context->CSSetConstantBuffers(CONSTANS_SLOT, 1, m_noiseBuffer.GetAddressOf());
 
     ID3D11UnorderedAccessView* uav = target->GetUAV();
-    context->CSSetUnorderedAccessViews(0, 1, &uav, nullptr);
+    context->CSSetUnorderedAccessViews(VOLUME_SLOT, 1, &uav, nullptr);
 
     // 디스패치
-    // 스레드 그룹 크기가 (8, 8, 8)이므로 해상도를 8로 나눈 만큼 그룹을 보내야함
-    UINT groupX = static_cast<UINT>(data.textureSize.x) / 8;
-    UINT groupY = static_cast<UINT>(data.textureSize.y) / 8;
-    UINT groupZ = static_cast<UINT>(data.textureSize.z) / 8;
+    UINT groupX = static_cast<UINT>(data.textureSize.x) / GROUP_SIZE;
+    UINT groupY = static_cast<UINT>(data.textureSize.y) / GROUP_SIZE;
+    UINT groupZ = static_cast<UINT>(data.textureSize.z) / GROUP_SIZE;
 
     context->Dispatch(groupX, groupY, groupZ);
 
     ID3D11UnorderedAccessView* nullUAV = nullptr;
-    context->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+    context->CSSetUnorderedAccessViews(VOLUME_SLOT, 1, &nullUAV, nullptr);
     context->CSSetShader(nullptr, nullptr, 0);
     m_preNoiseBuffer = data;
 } // Generate

@@ -11,6 +11,7 @@ D3D11Manager::D3D11Manager() {
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
     m_depthBuffer = std::make_unique<RenderTexture>();
+    m_uav = std::make_unique<RenderTexture>();
     m_viewport = {0}; 
 } // D3D11Manager
 
@@ -19,6 +20,7 @@ D3D11Manager::D3D11Manager(const D3D11Manager& other) {
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
     m_depthBuffer = std::make_unique<RenderTexture>();
+    m_uav = std::make_unique<RenderTexture>();
     m_viewport = { 0 };
 } // D3D11Manager
 
@@ -35,7 +37,6 @@ bool D3D11Manager::Init(HWND hwnd, int width, int height, bool fullscreen, bool 
     if (!m_state->Init(m_core->GetDevice()))
         return false;
 
-    // 추가된 뷰 초기화 메서드 호출
     if (!InitViews(width, height))
         return false;
     return true;
@@ -48,11 +49,9 @@ void D3D11Manager::BeginScene(float r, float g, float b, float a) {
     // 화면 및 깊이 버퍼 클리어
     context->ClearRenderTargetView(m_renderTargetView.Get(), color);
     m_depthBuffer->ClearDepth(context, 1.0f, 0);
-    //context->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     // 렌더 타겟 바인딩 및 뷰포트 설정
     context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthBuffer->GetDSV());
-    //context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
     context->RSSetViewports(1, &m_viewport);
 } // BeginScene
 
@@ -60,10 +59,24 @@ void D3D11Manager::EndScene(bool vsync) {
     m_core->GetSwapChain()->Present(vsync ? 1 : 0, 0);
 } // EndScene
 
+void D3D11Manager::RestoreViewport() {
+    auto context = m_core->GetDeviceContext();
+    context->RSSetViewports(1, &m_viewport);
+} // RestoreViewport
+
 bool D3D11Manager::InitViews(int width, int height) {
-    if (!InitRenderTargetView())
+    if (!m_depthBuffer->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::Depth)) {
+        DebugHelper::DebugPrint("RenderTexture를 이용한 뎁스 버퍼 초기화 실패");
         return false;
-    if (!InitDepthStencilView(width, height))
+    }
+
+    if (!m_uav->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::UAV)) {
+        DebugHelper::DebugPrint("RenderTexture를 이용한 UAV 초기화 실패");
+        return false;
+    }
+
+
+    if (!InitRenderTargetView())
         return false;
     InitViewport(width, height);
     
@@ -88,13 +101,6 @@ bool D3D11Manager::InitRenderTargetView() {
     return true;
 } // InitRenderTargetView
 
-bool D3D11Manager::InitDepthStencilView(int width, int height) {
-    if (!m_depthBuffer->InitDepth(m_core->GetDevice(), width, height)) {
-        DebugHelper::DebugPrint("RenderTexture를 이용한 뎁스 버퍼 초기화 실패");
-        return false;
-    }
-    return true;
-} // InitDepthStencilView
 
 void D3D11Manager::InitViewport(int width, int height) {
     m_viewport.Width = (float)width;

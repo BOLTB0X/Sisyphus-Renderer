@@ -1,4 +1,7 @@
 // Raymarching.hlsli
+#ifndef _RAYMARCH_HLSLI_
+#define _RAYMARCH_HLSLI_
+
 #define CLD_MARCH_STEPS 32 
 #define CLD_THICK 90.0f
 #define CLD_START_HEIGHT 150.0f 
@@ -87,3 +90,5 @@ float4 RenderClouds(float3 viewDir, float3 sunDir, float time, Texture2D tex1, T
     float cutoff = dot(viewDir, float3(0, 1, 0));
     return float4(C, alpha * smoothstep(0.0f, 0.2f, cutoff));
 }
+
+#endif

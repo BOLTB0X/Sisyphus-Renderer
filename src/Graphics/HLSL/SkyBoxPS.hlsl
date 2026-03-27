@@ -1,10 +1,14 @@
 // SkyBoxPS.hlsl
 // GroundColor 부분 참고 https://www.shadertoy.com/view/wlBXWK
-//#include "Raymarching.hlsl"
-#include "Atmosphere.hlsl"
+#include "Atmosphere.hlsli"
+#include "Ground.hlsli"
+#include "Remap.hlsli"
 
-SamplerState LinerSampler : register(s0);
+SamplerState LinearWrapSampler : register(s0);
+
 Texture2D SceneDepthTexture : register(t1);
+Texture3D VolmeNoiseTexture : register(t2);
+Texture2D WeatherMapTexture : register(t3);
 
 cbuffer CommonBuffer : register(b0)
 {
@@ -38,34 +42,42 @@ cbuffer AtmosphereBuffer : register(b1)
     float4 aHorizonColor;
     // [Row 3] 행성 물리 데이터
     float3 aPlanetCenter;
-    float aPlanetRadius;
+    float  aPlanetRadius;
     // [Row 4] 대기권 물리 데이터
-    float aAtmoRadius;
+    float  aAtmoRadius;
     float3 aPadding;
     // [Row 5] 산란 계수 (Rayleigh)
     float3 aRayleighBeta;
-    float aMieBeta;
+    float  aMieBeta;
     // [Row 6] 흡수 및 주변광
     float3 aAbsorptionBeta;
-    float aAmbientBeta;
+    float  aAmbientBeta;
     // [Row 7] 고도 상수 (Density Falloff)
-    float aRayleighHeight;
-    float aMieHeight;
-    float aAbsorptionHeight;
-    float aAbsorptionFalloff;
+    float  aRayleighHeight;
+    float  aMieHeight;
+    float  aAbsorptionHeight;
+    float  aAbsorptionFalloff;
     // [Row 8] Mie 위상 함수 및 샘플링 설정
-    float aG;
-    int aPrimarySteps;
-    int aLightSteps;
-    float aIntensity;
+    float  aG;
+    int    aPrimarySteps;
+    int    aLightSteps;
+    float  aIntensity;
     // [Row 9] 지표면 색상
     float3 aGroundColor;
-    float aPadding2;
+    float  aPadding2;
     // [Row 10] 지표면 레이마칭 설정
-    int aGroundPrimarySteps;
-    int agroundLightSteps;
-    float aPadding3;
+    int    aGroundPrimarySteps;
+    int    agroundLightSteps;
+    float  aPadding3;
 }; // AtmosphereBuffer
+
+cbuffer CloudBuffer : register(b2)
+{
+    // [Row 1]
+    float  cCloudMinHeight; 
+    float  cCloudMaxHeight;
+    float2 cPadding3;
+}; // CloudBuffer
 
 struct PS_INPUT
 {
@@ -81,6 +93,7 @@ float3 CalculateGroundColor(float3 ro, float3 rd, float2 planet_intersect)
     float t_hit = max(planet_intersect.x, 0.0);
     float3 hit_pos = ro + rd * t_hit;
     float3 surface_normal = normalize(hit_pos - aPlanetCenter);
+    
         
     // 그림자 및 라이팅 계산
     float3 L = -cLightDirection;
@@ -123,6 +136,7 @@ float3 GetWorldPosFromDepth(float2 uv, float depth)
     return worldPos.xyz;
 } // GetWorldPosFromDepth
 
+
 float4 main(PS_INPUT input) : SV_TARGET
 {  
     //return float4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -139,7 +153,8 @@ float4 main(PS_INPUT input) : SV_TARGET
         max_dist = length(worldPos - cCameraPosition) / 1000.0f;
     }
     
-    float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius);
+    float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius - 0.1f);
+    float groundDist = (planet_intersect.x > 0) ? planet_intersect.x : MAX_DIST;
     float3 scene_color = dot(rd, cLightDirection) > 0.9998 ? 3.0 : 0.0;
     
     if (planet_intersect.y > 0.0)
