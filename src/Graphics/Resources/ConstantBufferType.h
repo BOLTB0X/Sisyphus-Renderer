@@ -1,5 +1,7 @@
 #pragma once
 #include <directxmath.h>
+#include "Utils/SharedConstants/BuffersConstants.h"
+#include "Utils/SharedConstants/ScreenConstants.h"
 
 namespace ConstantBuffer {
     struct MatrixBuffer {
@@ -36,6 +38,41 @@ namespace ConstantBuffer {
 		}
     }; // MatCameraBuffer
 
+    struct CommonBuffer {
+        // Row 1
+        DirectX::XMMATRIX world;
+        // Row 2
+        DirectX::XMMATRIX view;
+        // Row 3
+        DirectX::XMMATRIX projection;
+        // Row 4
+        DirectX::XMFLOAT3 cameraPosition;
+        float             padding1;
+        // Row 5
+        DirectX::XMMATRIX viewInv;
+        // Row 6
+        DirectX::XMMATRIX projInv;
+        // Row 7
+        DirectX::XMFLOAT3 lightDirection;
+        float             padding2;
+        // Row 8
+        DirectX::XMFLOAT4 lightDiffuse;
+        // Row 9
+        DirectX::XMFLOAT2 resolution;
+
+        CommonBuffer() :
+            world(DirectX::XMMatrixIdentity()),
+            view(DirectX::XMMatrixIdentity()),
+            projection(DirectX::XMMatrixIdentity()),
+            cameraPosition(0.0f, 0.0f, 0.0f), padding1(0.0f),
+            viewInv(DirectX::XMMatrixIdentity()),
+            projInv(DirectX::XMMatrixIdentity()),
+            lightDirection(SharedConstants::BuffersConstants::LIGHT_DIR), padding2(0.0f),
+            lightDiffuse(SharedConstants::BuffersConstants::LIGHT_DIFFUSE),
+            resolution((float)SharedConstants::ScreenConstants::WIDTH, (float)SharedConstants::ScreenConstants::HEIGHT) {
+        }
+    }; // CommonBuffer
+
     struct LightBuffer {
         // Row 1
         DirectX::XMFLOAT4 diffuseColor;
@@ -54,45 +91,46 @@ namespace ConstantBuffer {
         }
     }; // LightBuffer
 
-    struct NoiseBuffer {
+    struct ShadowBuffer {
         // Row 1
-        DirectX::XMFLOAT3 textureSize;
-        float             perlinFreq;
-		// Row 2
-        float             worleyFreq;
-        float             detailFreqG;
-        float             detailFreqB;
-        float             detailFreqA;
+        DirectX::XMMATRIX world;
+        // Row 2
+        DirectX::XMMATRIX lightView;
         // Row 3
-        int               octaves;
-        float             remapBias;
-        DirectX::XMFLOAT2 padding;
+        DirectX::XMMATRIX lightProjection;
+        // Row 4
+        float             mapWidth;
+        float             mapHeight;
+        float             bias;
+        float             spread;
+        // Row 5
+        DirectX::XMFLOAT4 padding;
 
-        NoiseBuffer()
-            : textureSize(1.0f, 1.0f, 1.0f), perlinFreq(1.0f),
-              worleyFreq(1.0f), detailFreqG(1.0f), detailFreqB(1.0f), detailFreqA(1.0f),
-               octaves(1), remapBias(0.0f), padding(0.0f, 0.0f) {
+        ShadowBuffer() {
+            world = DirectX::XMMatrixIdentity();
+            lightView = DirectX::XMMatrixIdentity();
+            lightProjection = DirectX::XMMatrixIdentity();
+            mapWidth = 0.0f;
+            mapHeight = 0.0f;
+            bias = 0.0f;
+            spread = 0.0f;
+            padding = { 0.0f, 0.0f, 0.0f, 0.0f };
+        }
+    }; // ShadowBuffer
+
+    struct CameraBuffer {
+        DirectX::XMFLOAT3 cameraPosition;
+        float padding;
+
+        DirectX::XMMATRIX viewInv;
+        DirectX::XMMATRIX projInv;
+
+        CameraBuffer() :
+            cameraPosition(0.0f, 0.0f, 0.0f), padding(0.0f) {
+            viewInv = DirectX::XMMatrixIdentity();
+            projInv = DirectX::XMMatrixIdentity();
         }
 
-        NoiseBuffer(DirectX::XMFLOAT3 texSize, float perlinF,
-            float worleyF, float detailFG, float detailFB, float detailFA,
-            int octs, float remapB)
-            : textureSize(texSize), perlinFreq(perlinF),
-            worleyFreq(worleyF), detailFreqG(detailFG), detailFreqB(detailFB), detailFreqA(detailFA),
-              octaves(octs), remapBias(remapB), padding(0.0f, 0.0f) {
-		}
-    }; // NoiseBuffer
+    }; // CameraBuffer
 
-    struct CloudBuffer {
-        DirectX::XMMATRIX invView;
-        DirectX::XMMATRIX invProjection;
-        DirectX::XMFLOAT3 camPos;
-        float             padding;
-
-        CloudBuffer() : invView(DirectX::XMMatrixIdentity()),
-            invProjection(DirectX::XMMatrixIdentity()),
-            camPos(0.0f, 0.0f, 0.0f), padding(0.0f) {
-        }
-    }; // CloudBuffer
-    
 } // ConstantBuffer

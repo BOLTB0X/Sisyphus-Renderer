@@ -3,7 +3,7 @@
 // Graphics
 #include "Camera/Camera.h"
 #include "Resources/AssimpModel.h"
-#include "Objects/Atmosphere.h"
+#include "Objects/SkyBox.h"
 
 namespace ImGuiDrawer {
 
@@ -137,67 +137,3 @@ namespace ImGuiDrawer {
     } // DrawAssimpModel
 
 } // ImGuiDrawer - Model
-
-namespace ImGuiDrawer {
-
-    inline bool DrawAtmosphere(Atmosphere::AtmosphereBuffer* buffer) {
-        if (!buffer) return false;
-        bool changed = false;
-
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.3f, 0.4f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.2f, 0.4f, 0.5f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.4f, 1.0f));
-
-        if (ImGui::CollapsingHeader("ATMOSPHERE SETTINGS", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::PopStyleColor(3);
-            ImGui::Indent();
-            ImGui::Spacing();
-
-            // 색상 설정
-            ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "[ Colors ]");
-            changed |= ImGui::ColorEdit4("Zenith", &buffer->zenithColor.x);
-            changed |= ImGui::ColorEdit4("Horizon", &buffer->horizonColor.x);
-            changed |= ImGui::ColorEdit3("Ground", &buffer->groundColor.x);
-            ImGui::Separator();
-
-            // 행성 및 대기권 크기
-            ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "[ Geometry ]");
-            changed |= ImGui::DragFloat("Planet Radius", &buffer->planetRadius, 1000.0f, 1000.0f, 1e7f, "%.0f");
-            changed |= ImGui::DragFloat("Atmo Radius", &buffer->atmoRadius, 1000.0f, 1000.0f, 1e7f, "%.0f");
-            changed |= ImGui::DragFloat3("Planet Center", &buffer->planetCenter.x, 100.0f, -1e7f, 1e7f, "%.0f");
-            ImGui::Separator();
-
-            // 산란 계수
-            ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "[ Scattering Coefficients ]");
-            changed |= ImGui::DragFloat3("Rayleigh Beta", &buffer->rayleighBeta.x, 0.000001f, 0.0f, 0.1f, "%.6f");
-            changed |= ImGui::DragFloat("Mie Beta", &buffer->mieBeta, 0.000001f, 0.0f, 0.1f, "%.6f");
-            changed |= ImGui::DragFloat3("Absorption Beta", &buffer->absorptionBeta.x, 0.000001f, 0.0f, 0.1f, "%.6f");
-            changed |= ImGui::DragFloat("Ambient Beta", &buffer->ambientBeta, 0.00001f, 0.0f, 0.1f, "%.5f");
-            ImGui::Separator();
-
-            // 고도 분포 및 위상 함수
-            ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "[ Heights & Phase ]");
-            changed |= ImGui::DragFloat("Rayleigh Height", &buffer->rayleighHeight, 100.0f, 100.0f, 50000.0f, "%.0f");
-            changed |= ImGui::DragFloat("Mie Height", &buffer->mieHeight, 100.0f, 100.0f, 50000.0f, "%.0f");
-            changed |= ImGui::DragFloat("Absorb Height", &buffer->absorptionHeight, 100.0f, 100.0f, 50000.0f, "%.0f");
-            changed |= ImGui::DragFloat("Absorb Falloff", &buffer->absorptionFalloff, 100.0f, 100.0f, 50000.0f, "%.0f");
-            changed |= ImGui::SliderFloat("Mie G (Phase)", &buffer->g, -0.99f, 0.99f);
-            changed |= ImGui::DragFloat("Intensity", &buffer->intensity, 0.1f, 0.0f, 100.0f, "%.2f");
-            ImGui::Separator();
-
-            // 레이마칭 품질
-            ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "[ Raymarching Steps ]");
-            changed |= ImGui::SliderInt("Primary Steps", &buffer->primarySteps, 4, 128);
-            changed |= ImGui::SliderInt("Light Steps", &buffer->lightSteps, 1, 32);
-            changed |= ImGui::SliderInt("Ground Pri-Steps", &buffer->groundPrimarySteps, 4, 128);
-            changed |= ImGui::SliderInt("Ground Lgt-Steps", &buffer->groundLightSteps, 1, 32);
-
-            ImGui::Unindent();
-        }
-        else {
-            ImGui::PopStyleColor(3);
-        }
-
-        return changed; // 값이 하나라도 변경되면 true 반환
-    } // DrawAtmosphere
-} // ImGuiDrawer

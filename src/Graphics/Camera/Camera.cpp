@@ -11,7 +11,7 @@ using namespace SharedConstants;
 Camera::Camera() 
     : m_position(CameraConstants::DEFAULT_POSITION),
       m_rotation(CameraConstants::DEFAULT_ROTATION),
-      m_up(0.0f, 1.0f, 0.0f),
+      m_up(0.0f, 0.0f, 0.0f),
       m_fov(0.0f), m_near(0.0f), m_far(0.0f), m_aspect(0.0f) {
     m_frustum = std::make_unique<Frustum>();
     m_maxPitch = CameraConstants::MAX_PITCH;

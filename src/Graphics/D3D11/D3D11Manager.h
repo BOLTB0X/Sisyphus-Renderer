@@ -8,6 +8,7 @@
 class DisplayInfo;
 class D3D11CoreResources;
 class D3D11State;
+class RenderTexture;
 
 class D3D11Manager {
 public:
@@ -19,25 +20,26 @@ public:
     
     void BeginScene(float, float, float, float);
     void EndScene(bool);
+    void RestoreViewport();
 
-    ID3D11Device*        GetDevice() const;
-    ID3D11DeviceContext* GetDeviceContext() const;
-    D3D11State*          GetStates() const;
+    ID3D11Device*             GetDevice() const;
+    ID3D11DeviceContext*      GetDeviceContext() const;
+    D3D11State*               GetStates() const;
+    ID3D11ShaderResourceView* GetDepthSRV() const;
+    ID3D11RenderTargetView*   GetRTV() const;
 
 private:
     bool InitViews(int, int);
     bool InitRenderTargetView();
-    bool InitDepthStencilView(int, int);
     void InitViewport(int, int);
 
 private:
     std::unique_ptr<DisplayInfo>        m_displayInfo;
     std::unique_ptr<D3D11CoreResources> m_core;
     std::unique_ptr<D3D11State>         m_state;
-
+    std::unique_ptr<RenderTexture>      m_depthBuffer;
+    std::unique_ptr<RenderTexture>      m_uav;
     // RenderTarget
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D>        m_depthStencilBuffer;
     D3D11_VIEWPORT                                 m_viewport;
 }; // D3D11Manager

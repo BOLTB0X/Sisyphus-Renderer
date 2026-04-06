@@ -4,24 +4,26 @@
 #include <d3d11.h>
 // STL
 #include <memory>
+// Debug
+#include "Helpers/DebugHelper.h"
 
 class RendererState;
 class D3D11Manager;
 class ImGuiManager;
 class TextureManager;
-class Triangle;
 class Camera;
 class Stone;
 class D3D11State;
-class VolumeTexture;
-class NoiseGenerator;
 class SkyBox;
-class VolumetricCloud;
+class DirectionalLight;
+class Ground;
+class ShadowShader;
+class DepthRecorder;
+class RenderTexture;
 
 class Renderer {
 public:
     Renderer();
-    Renderer(const Renderer&);
     ~Renderer();
 
     bool Init(HWND, std::shared_ptr<ImGuiManager>);
@@ -36,24 +38,32 @@ public:
 
 private:
     bool Render();
-    void InitWidgets();
-    void GenerateCloudNoise(ID3D11DeviceContext*);
-    
-    void DrawTriangle(ID3D11DeviceContext*, D3D11State*);
+    void MainPass(ID3D11DeviceContext*, D3D11State*);
+    void DepthPass(ID3D11DeviceContext*, D3D11State*);
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
+    void DrawGround(ID3D11DeviceContext*, D3D11State*);
+
+    //void DebugVolume(ID3D11DeviceContext*);
+    void InitWidgets();
 
 private:
-    static RendererState             m_RendererState;
-    std::unique_ptr<D3D11Manager>    m_D3D11Mgr;
-    std::unique_ptr<Triangle>        m_Triangle;
-    std::unique_ptr<Stone>           m_Stone;
-    std::unique_ptr<Camera>          m_Camera;
-    std::unique_ptr<VolumeTexture>   m_VolumeTexture;
-    std::unique_ptr<NoiseGenerator>  m_NoiseGenerator;
-	std::unique_ptr<SkyBox>          m_SkyBox;
-    std::unique_ptr<VolumetricCloud> m_VolumetricCloud;
+    static RendererState              m_RendererState;
+    std::unique_ptr<D3D11Manager>     m_D3D11Mgr;
+    std::unique_ptr<Stone>            m_Stone;
+    std::unique_ptr<Camera>           m_Camera;
+	std::unique_ptr<SkyBox>           m_SkyBox;
+    std::unique_ptr<Ground>           m_Ground;
+    std::unique_ptr<DirectionalLight> m_DirectionalLight;
+    std::unique_ptr<DepthRecorder>    m_DepthRecorder;
+    std::shared_ptr<TextureManager>   m_TextureMgr;
+    std::shared_ptr<ImGuiManager>     m_ImGuiMgr;
+    std::unique_ptr<RenderTexture>    m_shadowMapTexture;
 
-    std::shared_ptr<TextureManager> m_TextureMgr;
-    std::shared_ptr<ImGuiManager>   m_ImGuiMgr;
+    ID3D11RenderTargetView*           m_nullRTV;
+    ID3D11ShaderResourceView*         m_nullSRV;
+    float                             m_renderingTime;
+    float                             m_blendFactor[4];
+    // 디버깅
+    //std::unique_ptr<DebugHelper::VolumeSlicer> m_VolumeSlicer;
 }; // Renderer

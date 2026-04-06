@@ -3,12 +3,15 @@
 #include "D3D11CoreResources.h"
 #include "D3D11State.h"
 #include "DisplayInfo.h"
+#include "RenderTexture.h"
 #include "Helpers/DebugHelper.h"
 
 D3D11Manager::D3D11Manager() {
     m_displayInfo = std::make_unique<DisplayInfo>();
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
+    m_depthBuffer = std::make_unique<RenderTexture>();
+    m_uav = std::make_unique<RenderTexture>();
     m_viewport = {0}; 
 } // D3D11Manager
 
@@ -16,6 +19,8 @@ D3D11Manager::D3D11Manager(const D3D11Manager& other) {
     m_displayInfo = std::make_unique<DisplayInfo>();
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
+    m_depthBuffer = std::make_unique<RenderTexture>();
+    m_uav = std::make_unique<RenderTexture>();
     m_viewport = { 0 };
 } // D3D11Manager
 
@@ -32,7 +37,6 @@ bool D3D11Manager::Init(HWND hwnd, int width, int height, bool fullscreen, bool 
     if (!m_state->Init(m_core->GetDevice()))
         return false;
 
-    // 추가된 뷰 초기화 메서드 호출
     if (!InitViews(width, height))
         return false;
     return true;
@@ -44,10 +48,10 @@ void D3D11Manager::BeginScene(float r, float g, float b, float a) {
 
     // 화면 및 깊이 버퍼 클리어
     context->ClearRenderTargetView(m_renderTargetView.Get(), color);
-    context->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_depthBuffer->ClearDepth(context, 1.0f, 0);
 
     // 렌더 타겟 바인딩 및 뷰포트 설정
-    context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+    context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthBuffer->GetDSV());
     context->RSSetViewports(1, &m_viewport);
 } // BeginScene
 
@@ -55,10 +59,24 @@ void D3D11Manager::EndScene(bool vsync) {
     m_core->GetSwapChain()->Present(vsync ? 1 : 0, 0);
 } // EndScene
 
+void D3D11Manager::RestoreViewport() {
+    auto context = m_core->GetDeviceContext();
+    context->RSSetViewports(1, &m_viewport);
+} // RestoreViewport
+
 bool D3D11Manager::InitViews(int width, int height) {
-    if (!InitRenderTargetView())
+    if (!m_depthBuffer->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::Depth)) {
+        DebugHelper::DebugPrint("RenderTexture를 이용한 뎁스 버퍼 초기화 실패");
         return false;
-    if (!InitDepthStencilView(width, height))
+    }
+
+    if (!m_uav->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::UAV)) {
+        DebugHelper::DebugPrint("RenderTexture를 이용한 UAV 초기화 실패");
+        return false;
+    }
+
+
+    if (!InitRenderTargetView())
         return false;
     InitViewport(width, height);
     
@@ -83,32 +101,6 @@ bool D3D11Manager::InitRenderTargetView() {
     return true;
 } // InitRenderTargetView
 
-bool D3D11Manager::InitDepthStencilView(int width, int height) {
-    D3D11_TEXTURE2D_DESC depthBufferDesc = {};
-    depthBufferDesc.Width = width;
-    depthBufferDesc.Height = height;
-    depthBufferDesc.MipLevels = 1;
-    depthBufferDesc.ArraySize = 1;
-    depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 24비트 깊이, 8비트 스텐실
-    depthBufferDesc.SampleDesc.Count = 1;
-    depthBufferDesc.SampleDesc.Quality = 0;
-    depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-    HRESULT hr = m_core->GetDevice()->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer);
-    if (FAILED(hr)) {
-        DebugHelper::DebugPrint("Depth Buffer 생성 실패");
-        return false ;
-    }
-
-    hr = m_core->GetDevice()->CreateDepthStencilView(m_depthStencilBuffer.Get(), nullptr, &m_depthStencilView);
-    if (FAILED(hr)) {
-        DebugHelper::DebugPrint("Depth Stencil View 생성 실패");
-        return false;
-    }
-
-    return true;
-} // InitDepthStencilView
 
 void D3D11Manager::InitViewport(int width, int height) {
     m_viewport.Width = (float)width;
@@ -119,6 +111,8 @@ void D3D11Manager::InitViewport(int width, int height) {
     m_viewport.TopLeftY = 0.0f;
 } // InitViewport
 
-ID3D11Device*        D3D11Manager::GetDevice() const  { return m_core->GetDevice(); }
-ID3D11DeviceContext* D3D11Manager::GetDeviceContext() const { return m_core->GetDeviceContext(); }
-D3D11State*          D3D11Manager::GetStates() const { return m_state.get(); }
+ID3D11Device*             D3D11Manager::GetDevice() const  { return m_core->GetDevice(); }
+ID3D11DeviceContext*      D3D11Manager::GetDeviceContext() const { return m_core->GetDeviceContext(); }
+D3D11State*               D3D11Manager::GetStates() const { return m_state.get(); }
+ID3D11ShaderResourceView* D3D11Manager::GetDepthSRV() const { return m_depthBuffer->GetSRV(); }
+ID3D11RenderTargetView*   D3D11Manager::GetRTV() const { return m_renderTargetView.Get(); }

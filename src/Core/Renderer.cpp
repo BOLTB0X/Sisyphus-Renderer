@@ -2,50 +2,56 @@
 #include "Renderer.h"
 #include "RendererState.h"
 // Objects
-#include "Objects/Triangle.h"
 #include "Objects/Stone.h"
 #include "Objects/SkyBox.h"
+#include "Objects/DirectionalLight.h"
+#include "Objects/Ground.h"
 // D3D11
 #include "D3D11/D3D11Manager.h"
 #include "D3D11/D3D11State.h"
 #include "D3D11/D3D11CoreResources.h"
+#include "D3D11/RenderTexture.h"
 // Camera
 #include "Camera/Camera.h"
 // Resources
 #include "Resources/TextureManager.h"
-#include "Resources/VolumeTexture.h"
 #include "Resources/ConstantBufferType.h"
-#include "Resources/NoiseGenerator.h"
-#include "Resources/VolumetricCloud.h"
-// Shaders
+#include "Resources/DepthRecorder.h"
 // Utils
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/ImGuiDrawer.h"
 #include "ImGui/CameraWidget.h"
 #include "ImGui/AssimpModelWidget.h"
-#include "ImGui/AtmosphereWidget.h"
+#include "ImGui/FunctionWidget.h"
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
-#include "Helpers/DebugHelper.h"
+#include "SharedConstants/BuffersConstants.h"
+#include "SharedConstants/ShadowConstants.h"
 
+using namespace DirectX;
 using namespace SharedConstants;
 using namespace PathConstants;
 using namespace ConstantBuffer;
+using namespace BuffersConstants;
 using namespace DebugHelper;
 
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
-    m_Triangle = std::make_unique<Triangle>();
     m_Stone = std::make_unique<Stone>();
     m_Camera = std::make_unique<Camera>();
-    m_VolumeTexture = std::make_unique<VolumeTexture>();
-    m_NoiseGenerator = std::make_unique<NoiseGenerator>();
 	m_SkyBox = std::make_unique<SkyBox>();
-    m_VolumetricCloud = std::make_unique<VolumetricCloud>();
+    m_Ground = std::make_unique<Ground>();
+    m_DirectionalLight = std::make_unique<DirectionalLight>();
+    m_DepthRecorder = std::make_unique<DepthRecorder>();
+    m_shadowMapTexture = std::make_unique<RenderTexture>();
     m_TextureMgr = std::make_shared<TextureManager>();
-} // Renderer
-
-Renderer::Renderer(const Renderer& other) {
+    m_nullRTV = nullptr;
+    m_nullSRV = nullptr;
+    m_blendFactor[0] = 0.0f;
+    m_blendFactor[1] = 0.0f;
+    m_blendFactor[2] = 0.0f;
+    m_blendFactor[3] = 0.0f;
+    m_renderingTime = 0.0f;
 } // Renderer
 
 Renderer::~Renderer() {
@@ -60,51 +66,96 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 
     auto device = m_D3D11Mgr->GetDevice();
     auto context = m_D3D11Mgr->GetDeviceContext();
+    auto linerWrapSampler = m_D3D11Mgr->GetStates()->GetLinearWrapSamplerState();
+    auto linerCampSampler = m_D3D11Mgr->GetStates()->GetLinearClampSamplerState();
+
+    if (!m_DirectionalLight->Init(device, hwnd)) {
+        return false;
+    }
 
     if (!m_Camera->Init(CameraConstants::DEFAULT_FOV, RendererState::aspectRatio,
                         RendererState::ScreenNear, RendererState::ScreenDepth)) {
         return false;
     }
 
-    if (!m_Stone->Init(device, context, hwnd, m_TextureMgr, STONE)) {
+    if (!m_TextureMgr->Init(device, context, hwnd)) {
         return false;
     }
 
-    if (!m_VolumeTexture->Init(device, 128, 128, 128, DXGI_FORMAT_R8G8B8A8_UNORM)) {
+    Stone::InitParams stoneInitParams;
+    stoneInitParams.device = device;
+    stoneInitParams.context = context;
+    stoneInitParams.hwnd = hwnd;
+    stoneInitParams.textMgr = m_TextureMgr;
+    stoneInitParams.path = STONE;
+
+    if (!m_Stone->Init(stoneInitParams)) {
         return false;
     }
 
-    if (!m_NoiseGenerator->Init(device, hwnd, NOISEGEN_CS)) {
+    SkyBox::InitParams skyInitParams;
+    skyInitParams.device = device;
+    skyInitParams.context = context;
+    skyInitParams.hwnd = hwnd;
+    skyInitParams.noiseTexture = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_CLOUD_VOL);
+    skyInitParams.sampler = linerWrapSampler;
+    skyInitParams.depth = m_D3D11Mgr->GetDepthSRV();
+
+    if (!m_SkyBox->Init(skyInitParams)) {
         return false;
     }
 
-    auto sampler = m_D3D11Mgr->GetStates()->GetLinearSamplerState();
-    if (!m_SkyBox->Init(device, context, hwnd, sampler)) {
+    Ground::InitParams groundInitParams;
+    groundInitParams.device = device;
+    groundInitParams.hwnd = hwnd;
+
+    if (!m_Ground->Init(groundInitParams)) {
         return false;
-	}
-    // ImGui 초기화
+    }
+
+    if (!m_shadowMapTexture->Init(device, 
+        ShadowConstants::SHADOWMAP_WIDTH, ShadowConstants::SHADOWMAP_HEIGHT, RenderTexture::RenderTextureType::Depth)) {
+        return false;
+    }
+
+    DepthRecorder::InitParams depthParams;
+    depthParams.device = device;
+    depthParams.hwnd = hwnd;
+    if (!m_DepthRecorder->Init(depthParams)) {
+        return false;
+    }
+
+    //if (!m_VolumeSlicer->Init(device, hwnd, linerWrapSampler)) {
+    //    return false;
+    //}
+
     m_ImGuiMgr = std::move(imgui);
     if (m_ImGuiMgr && !m_ImGuiMgr->Init(hwnd, device, context)) {
         return false;
     }
 
     InitWidgets();
-    GenerateCloudNoise(context);
     return true;
 } // Init
 
 void Renderer::Shutdown() {
-    if (m_Stone)
-        m_Stone.reset();
-    if (m_Triangle)
-        m_Triangle->Shutdown();
-    if (m_D3D11Mgr) {
-        m_D3D11Mgr.reset();
-    }
+    if (m_Stone)            m_Stone.reset();
+    if (m_Ground)           m_Ground.reset();
+    if (m_SkyBox)           m_SkyBox.reset();
+    if (m_DirectionalLight) m_DirectionalLight.reset();
+    if (m_Camera)           m_Camera.reset();
+
+    if (m_DepthRecorder)    m_DepthRecorder.reset();
+    if (m_shadowMapTexture) m_shadowMapTexture.reset();
+    if (m_TextureMgr)       m_TextureMgr.reset();
+
+    if (m_ImGuiMgr)         m_ImGuiMgr.reset();
+    if (m_D3D11Mgr)         m_D3D11Mgr.reset();
 } // Shutdown
 
 bool Renderer::Frame(float deltaTime) {
-	m_SkyBox->Update(deltaTime);
+    m_renderingTime += deltaTime;
+    m_DirectionalLight->Rotate(deltaTime);
     return Render();
 } // Frame
 
@@ -131,93 +182,150 @@ void Renderer::UpdateCameraUpDown(float delta) {
 } // UpdateCameraUpDown
 
 bool Renderer::Render() {
-    m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
     m_Camera->Update();
+    m_DirectionalLight->Update();
 
-    DrawSkyBox(context, states);
+    DepthPass(context, states);
 
-    // 불투명 오브젝트 렌더링
-	DrawStone(context, states);
-
-    if (m_ImGuiMgr) {
-        m_ImGuiMgr->Frame(); 
-    }
-
-    m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
-
+    MainPass(context, states);
     return true;
 } // Render
 
-void Renderer::InitWidgets() {
+void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
+    m_D3D11Mgr->RestoreViewport();
+    m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
+
+    DrawSkyBox(context, states);
+    DrawGround(context, states);
+    DrawStone(context, states);
+
     if (m_ImGuiMgr) {
-        m_ImGuiMgr->AddWidget(std::make_unique<CameraWidget>(m_Camera.get()));
-        m_ImGuiMgr->AddWidget(std::make_unique<AssimpModelWidget>(m_Stone.get()));
-        m_ImGuiMgr->AddWidget(std::make_unique<AtmosphereWidget>(m_SkyBox->GetAtmosphere(), m_SkyBox.get()));
+        m_ImGuiMgr->Frame();
     }
-} // InitWidgets
 
-void Renderer::GenerateCloudNoise(ID3D11DeviceContext* context) {
-    if (!m_NoiseGenerator || !m_VolumeTexture) return;
+    //DebugVolume(context);
+    m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
+} // MainPass
 
-    NoiseBuffer noiseParams;
-    noiseParams.textureSize = { 128.0f, 128.0f, 128.0f };
-    noiseParams.perlinFreq = 4.0f;
-    noiseParams.worleyFreq = 8.0f;
-    noiseParams.detailFreqG = 8.0f;
-    noiseParams.detailFreqB = 16.0f;
-    noiseParams.detailFreqA = 32.0f;
-    noiseParams.octaves = 3;
-    noiseParams.remapBias = 0.0f;
+void Renderer::DepthPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->OMSetRenderTargets(1, &m_nullRTV, m_shadowMapTexture->GetDSV());
+    m_shadowMapTexture->ClearDepth(context);
 
-    m_NoiseGenerator->Generate(context, m_VolumeTexture.get(), noiseParams);
-    DebugPrint("노이즈 굽기 완료");
-} // GenerateCloudNoise
+    D3D11_VIEWPORT shadowViewport = {};
+    shadowViewport.Width = static_cast<float>(m_shadowMapTexture->GetWidth());
+    shadowViewport.Height = static_cast<float>(m_shadowMapTexture->GetHeight());
+    shadowViewport.MinDepth = 0.0f;
+    shadowViewport.MaxDepth = 1.0f;
+    context->RSSetViewports(1, &shadowViewport);
+
+    DepthRecorder::RenderParams depthParams;
+    depthParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    depthParams.projectionMatrix = m_DirectionalLight->GetProjection();
+
+    if (m_Stone) {
+        depthParams.worldMatrix = m_Stone->GetWorldMatrix();
+        m_DepthRecorder->Render(context, depthParams);
+        m_Stone->DrawIndexed(context);
+    }
+
+    context->PSSetShaderResources(10, 1, &m_nullSRV);
+} // DepthPass
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    context->OMSetBlendState(states->GetBlendState(), blendFactor, 0xffffffff);
+    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     if (!m_Stone) return;
 
-    m_Stone->SetSampler(states->GetLinearSamplerState());
+    m_Stone->SetSampler(states->GetLinearWrapSamplerState());
 
-    // 렌더링 파라미터 구성
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
     stoneParams.view = m_Camera->GetViewMatrix();
     stoneParams.projection = m_Camera->GetProjectionMatrix();
     stoneParams.camPos = m_Camera->GetPosition();
-    stoneParams.diffuse = { 1.0f, 1.0f, 1.0f, 1.0f };
-    stoneParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    stoneParams.diffuse = m_DirectionalLight->GetDiffuse();
+    stoneParams.lightDir = m_DirectionalLight->GetDirection();
 
     m_Stone->Render(context, stoneParams);
 } // DrawStone
 
-void Renderer::DrawTriangle(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Triangle) return;
-
-    // ID3D11SamplerState* sampler = states->GetLinearSamplerState();
-    // context->PSSetSamplers(0, 1, &sampler);
-
-    m_Triangle->Render(context);
-} // DrawTriangle
-
 void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Camera || !m_SkyBox) return;
 
-    m_SkyBox->IsAtmosphereBakeRequired(context, states, m_Camera->GetPosition());
+    ID3D11RenderTargetView* rtv = m_D3D11Mgr->GetRTV();
+    context->OMSetRenderTargets(1, &rtv, nullptr);
 
     context->RSSetState(states->GetCullNone());
-    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
+    context->OMSetDepthStencilState(states->GetDepthNone(), 0);
+    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     SkyBox::RenderParams skyParams;
     skyParams.view = m_Camera->GetViewMatrix();
     skyParams.projection = m_Camera->GetProjectionMatrix();
-    skyParams.lightDir = { 0.5f, -1.0f, 0.5f };
+    skyParams.cameraPosition = m_Camera->GetPosition();
+    skyParams.lightDir = m_DirectionalLight->GetDirection();
+    skyParams.time = m_renderingTime;
+
     m_SkyBox->Render(context, skyParams);
+    context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 } // DrawSkyBox
+
+void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
+    if (!m_Ground) return;
+
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
+
+    Ground::RenderParams groundParams;
+    groundParams.view = m_Camera->GetViewMatrix();
+    groundParams.projection = m_Camera->GetProjectionMatrix();
+    groundParams.cameraPosition = m_Camera->GetPosition();
+    groundParams.lightDir = m_DirectionalLight->GetDirection();
+    groundParams.lightDiffuse = m_DirectionalLight->GetDiffuse();
+    groundParams.time = m_renderingTime;
+    groundParams.lightView = m_DirectionalLight->GetViewMatrix();
+    groundParams.lightProjection = m_DirectionalLight->GetProjection();
+
+    m_Ground->SetShadowMap(m_shadowMapTexture->GetSRV());
+    m_Ground->SetShadowSampler(m_D3D11Mgr->GetStates()->GetShadowSamplerState());
+    m_Ground->Render(context, groundParams);
+} // DrawGround
+
+//void Renderer::DebugVolume(ID3D11DeviceContext* context) {
+//    auto cloudNoise = m_TextureMgr->GetVolumeTexture(KEY_CLOUD_VOL);
+//    if (cloudNoise && m_VolumeSlicer) {
+//        m_VolumeSlicer->Update(context, cloudNoise.get(), m_VolumeSlicer->GetDepth());
+//    }
+//} // DebugVolume
+
+void Renderer::InitWidgets() {
+    if (m_ImGuiMgr) {
+        m_ImGuiMgr->AddWidget(std::make_unique<CameraWidget>(m_Camera.get()));
+
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "SkyBox Atmosphere",
+        //    [this]() { m_SkyBox->OnGui(); }
+        //));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Light Control",
+            [this]() { m_DirectionalLight->OnGui(); }
+        ));
+
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Volume Noise Debug",
+        //    [this]() { m_VolumeSlicer->OnGui(); }
+        //));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Ground Control",
+            [this]() { m_Ground->OnGui(); }
+        ));
+    }
+} // InitWidgets

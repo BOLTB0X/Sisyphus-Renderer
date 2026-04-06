@@ -3,7 +3,7 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <wrl/client.h>
-#include "Transform.h"
+#include "Resources/Transform.h"
 #include "Resources/AssimpModel.h"
 #include "Resources/ConstantBufferType.h"
 
@@ -11,6 +11,14 @@ class TextureManager;
 
 class Stone : public AssimpModel {
 public:
+    struct InitParams {
+        ID3D11Device*                   device;
+        ID3D11DeviceContext*            context;
+        HWND                            hwnd;
+        std::shared_ptr<TextureManager> textMgr;
+        std::string                     path;
+    }; // InitParams
+
     struct RenderParams {
         DirectX::XMMATRIX world;
         DirectX::XMMATRIX view;
@@ -18,13 +26,15 @@ public:
         DirectX::XMFLOAT3 camPos;
         DirectX::XMFLOAT4 diffuse;
         DirectX::XMFLOAT3 lightDir;
-    };
+    }; // RenderParams
 
+public:
     Stone();
     virtual ~Stone();
     
-    bool Init(ID3D11Device*, ID3D11DeviceContext*, HWND, std::shared_ptr<TextureManager>, const std::string&);
+    bool Init(const InitParams&);
     void Render(ID3D11DeviceContext*, const RenderParams&);
+    void DrawIndexed(ID3D11DeviceContext*);
 
 	void SetPosition(const DirectX::XMFLOAT3&);
     void SetPosition(float, float, float);

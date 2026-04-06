@@ -26,16 +26,19 @@ Stone::~Stone() {
     m_sampler = nullptr;
 } // ~Stone
 
-bool Stone::Init(ID3D11Device* device, ID3D11DeviceContext* context, HWND hwnd,
-    std::shared_ptr<TextureManager> textureMgr, const std::string& path) {
-    m_textureMgr = textureMgr;
-    if (!AssimpModel::Init(device, context, m_textureMgr, path)) {
+bool Stone::Init(const InitParams& params) {
+    if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
 
-    if (!InitShader(device, hwnd)) {
+    m_textureMgr = params.textMgr;
+    if (!AssimpModel::Init(params.device, params.context, m_textureMgr, params.path)) {
         return false;
-	}
+    }
+
+    if (!InitShader(params.device, params.hwnd)) {
+        return false;
+    }
 
     return true;
 } // Init
@@ -74,6 +77,14 @@ void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     } // for
     m_RenderCount++;
 } // Render
+
+void Stone::DrawIndexed(ID3D11DeviceContext* context) {
+    for (const auto& mesh : m_meshes) {
+        mesh->RenderBuffer(context);
+
+        context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
+    }
+} // DrawIndexed
 
 void Stone::SetPosition(const XMFLOAT3& pos) {
     m_transform.SetPosition(pos);
