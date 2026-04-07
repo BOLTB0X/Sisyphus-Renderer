@@ -20,6 +20,7 @@ class Ground;
 class ShadowShader;
 class DepthRecorder;
 class RenderTexture;
+class WeatherGenerator;
 
 class Renderer {
 public:
@@ -44,26 +45,28 @@ private:
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 
-    //void DebugVolume(ID3D11DeviceContext*);
     void InitWidgets();
 
 private:
-    static RendererState              m_RendererState;
-    std::unique_ptr<D3D11Manager>     m_D3D11Mgr;
-    std::unique_ptr<Stone>            m_Stone;
-    std::unique_ptr<Camera>           m_Camera;
-	std::unique_ptr<SkyBox>           m_SkyBox;
-    std::unique_ptr<Ground>           m_Ground;
-    std::unique_ptr<DirectionalLight> m_DirectionalLight;
-    std::unique_ptr<DepthRecorder>    m_DepthRecorder;
-    std::shared_ptr<TextureManager>   m_TextureMgr;
-    std::shared_ptr<ImGuiManager>     m_ImGuiMgr;
-    std::unique_ptr<RenderTexture>    m_shadowMapTexture;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightBuffer;
 
-    ID3D11RenderTargetView*           m_nullRTV;
-    ID3D11ShaderResourceView*         m_nullSRV;
-    float                             m_renderingTime;
-    float                             m_blendFactor[4];
-    // 디버깅
-    //std::unique_ptr<DebugHelper::VolumeSlicer> m_VolumeSlicer;
+    static RendererState                 m_RendererState;
+    std::unique_ptr<D3D11Manager>        m_D3D11Mgr;
+    std::unique_ptr<Stone>               m_Stone;
+    std::unique_ptr<Camera>              m_Camera;
+	std::unique_ptr<SkyBox>              m_SkyBox;
+    std::unique_ptr<Ground>              m_Ground;
+    std::unique_ptr<DirectionalLight>    m_DirectionalLight;
+    std::unique_ptr<DepthRecorder>       m_DepthRecorder;
+    std::unique_ptr<WeatherGenerator>    m_WeatherGenerator;
+    std::shared_ptr<TextureManager>      m_TextureMgr;
+    std::shared_ptr<ImGuiManager>        m_ImGuiMgr;
+    std::unique_ptr<RenderTexture>       m_shadowMapTexture;
+    std::unique_ptr<RenderTexture>       m_weatherMapTexture;
+
+    ID3D11RenderTargetView*              m_nullRTV;
+    ID3D11ShaderResourceView*            m_nullSRV;
+    float                                m_renderingTime;
+    float                                m_blendFactor[4];
 }; // Renderer

@@ -1,40 +1,17 @@
 // SkyBoxPS.hlsl
 // GroundColor 부분 참고 https://www.shadertoy.com/view/wlBXWK
+#include "Common.hlsli"
 #include "Atmosphere.hlsli"
 #include "Ground.hlsli"
 #include "Remap.hlsli"
 
-SamplerState LinearWrapSampler : register(s0);
-
-Texture2D SceneDepthTexture : register(t1);
-Texture3D VolmeNoiseTexture : register(t2);
-Texture2D WeatherMapTexture : register(t3);
-
-cbuffer CommonBuffer : register(b0)
+struct PS_INPUT
 {
-    // [Row 1]
-    matrix cWorld;
-    // [Row 2]
-    matrix cView;
-    // [Row 3]
-    matrix cProj;
-    // [Row 4]
-    float3 cCameraPosition;
-    float  cPadding1;
-    // [Row 5]
-    matrix cViewInv;
-    // [Row 6]
-    matrix cProjInv;
-    // [Row 7]
-    float3 cLightDirection;
-    float  cPadding2;
-    // [Row 8]
-    float4 cLightDiffuse;
-    // [Row 9]
-    float2 cResolution;
-}; // CommonBuffer
+    float4 position : SV_POSITION;
+    float3 localPos : TEXCOORD0;
+}; // PS_INPUT
 
-cbuffer AtmosphereBuffer : register(b1)
+cbuffer AtmosphereBuffer : register(b3)
 {
     // [Row 1] 단순 그라데이션
     float4 aZenithColor;
@@ -71,19 +48,11 @@ cbuffer AtmosphereBuffer : register(b1)
     float  aPadding3;
 }; // AtmosphereBuffer
 
-cbuffer CloudBuffer : register(b2)
-{
-    // [Row 1]
-    float  cCloudMinHeight; 
-    float  cCloudMaxHeight;
-    float2 cPadding3;
-}; // CloudBuffer
-
-struct PS_INPUT
-{
-    float4 position : SV_POSITION;
-    float3 localPos : TEXCOORD0;
-}; // PS_INPUT
+SamplerState LinearWrapSampler : register(s0);
+Texture2D    SceneDepthTexture : register(t1);
+Texture2D    WeatherMapTexture : register(t2);
+Texture3D    BaseNoiseTexture : register(t3);
+Texture3D    DetailNoiseTexture : register(t4);
 
 float3 CalculateGroundColor(float3 ro, float3 rd, float2 planet_intersect)
 {
@@ -136,13 +105,12 @@ float3 GetWorldPosFromDepth(float2 uv, float depth)
     return worldPos.xyz;
 } // GetWorldPosFromDepth
 
-
 float4 main(PS_INPUT input) : SV_TARGET
 {  
     //return float4(1.0f, 0.0f, 0.0f, 1.0f);
     float3 rd = normalize(input.localPos); // 시선 방향
     float3 ro = cCameraPosition / 1000.0f; // 카메라 위치
-    float2 uv = input.position.xy / float2(cResolution.x, cResolution.y);
+    float2 uv = input.position.xy / float2(cScreenResolution.x, cScreenResolution.y);
     float depth = SceneDepthTexture.Load(int3(input.position.xy, 0)).r;
 
     float max_dist = MAX_DIST;

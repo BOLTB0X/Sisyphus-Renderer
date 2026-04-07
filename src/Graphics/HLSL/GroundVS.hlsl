@@ -1,19 +1,5 @@
 // GroundVS.hlsl
-cbuffer CommonBuffer : register(b0)
-{
-    // [Row 1]
-    matrix cWorld;
-    // [Row 2]
-    matrix cView;
-    // [Row 3]
-    matrix cProjection;
-    // [Row 4]
-    float3 cCameraPos;
-    float  cTime;
-    // [Row 5]
-    float3 cLightDir;
-    float  cPadding;
-}; // CommonBuffer
+#include "Common.hlsli"
 
 struct VS_IN
 {
@@ -27,6 +13,11 @@ struct PS_INPUT
     float3 worldPos : POSITION;
     float2 uv : TEXCOORD;
 }; // PS_INPUT
+
+cbuffer WorldBuffer : register(b2)
+{
+    matrix cWorld;
+}; // WorldBuffer
 
 PS_INPUT main(VS_IN input)
 {

@@ -3,8 +3,7 @@
 #include <wrl/client.h>
 #include <memory>
 #include <DirectXMath.h>
-#include "Resources/ConstantBufferType.h"
-#include "Resources/CloudMap.h"
+#include "Utils/SharedConstants/BuffersConstants.h"
 
 class DefaultMesh;
 class D3D11State;
@@ -17,18 +16,22 @@ public:
         ID3D11Device*                  device;
         ID3D11DeviceContext*           context;
         HWND                           hwnd;
-        std::shared_ptr<VolumeTexture> noiseTexture;
         ID3D11SamplerState*            sampler;
         ID3D11ShaderResourceView*      depth;
+        ID3D11ShaderResourceView*      weather;
+        ID3D11ShaderResourceView*      baseNoise;
+        ID3D11ShaderResourceView*      detailNoise;
+
+        InitParams() : device(nullptr), context(nullptr), hwnd(nullptr),
+            weather(nullptr), baseNoise(nullptr), detailNoise(nullptr),
+            sampler(nullptr), depth(nullptr) {
+		}
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX projection;
-        DirectX::XMFLOAT3 cameraPosition;
-        DirectX::XMFLOAT3 lightDir;
-        DirectX::XMFLOAT4 lightDiffuse;
         float             time;
+		RenderParams() : time(0.0f) {
+        }
     }; // RenderParams
 
 public:
@@ -40,6 +43,14 @@ public:
     void OnGui(); // Imgui 용
 
 private:
+    struct WolrdBuffer {
+        DirectX::XMMATRIX world;
+        
+        WolrdBuffer() {
+            world = DirectX::XMMatrixIdentity();
+		}
+	}; // WorldBuffer;
+
     struct AtmosphereBuffer {
         // Row 1
         DirectX::XMFLOAT4 zenithColor;
@@ -108,50 +119,48 @@ private:
         }
     }; // AtmosphereBuffer
 
-    struct CloudBuffer {
-        float cloudMinHeight;
-        float cloudMaxHeight;
-        DirectX::XMFLOAT2 padding;
+    //struct CloudBuffer {
+    //    float cloudMinHeight;
+    //    float cloudMaxHeight;
+    //    DirectX::XMFLOAT2 padding;
 
-        CloudBuffer() {
-            using namespace SharedConstants::BuffersConstants;
-            cloudMinHeight = CLOUD_MIN_HEIGHT;
-            cloudMaxHeight = CLOUD_MAX_HEIGHT;
-            padding = { 0.0f, 0.0f };
-        }
-    }; // CloudBuffer
+    //    CloudBuffer() {
+    //        using namespace SharedConstants::BuffersConstants;
+    //        cloudMinHeight = CLOUD_MIN_HEIGHT;
+    //        cloudMaxHeight = CLOUD_MAX_HEIGHT;
+    //        padding = { 0.0f, 0.0f };
+    //    }
+    //}; // CloudBuffer
 
 private:
     bool InitShader(ID3D11Device*, HWND);
-    bool UpdateCommonBuffer(ID3D11DeviceContext*, 
-        const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, 
-        const DirectX::XMFLOAT3&, const DirectX::XMFLOAT3&, const DirectX::XMFLOAT4&);
     bool UpdateAtmosphereBuffer(ID3D11DeviceContext*);
-    bool UpdateCloudBuffer(ID3D11DeviceContext*);
+    //bool UpdateCloudBuffer(ID3D11DeviceContext*);
     void GuiAtmosphere();
-    void GuiWeatherMap();
 
 private:
     std::unique_ptr<DefaultMesh>               m_CubeMesh;
-    std::unique_ptr<CloudMap>                  m_CloudMap;
     // shader resources
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_compositeVS;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_compositePS;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_commonBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_atmosphereBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cloudBuffer;
     // buffers
     AtmosphereBuffer                           m_atmosphereData;
     AtmosphereBuffer                           m_prevAtmosphereData;
-    CloudBuffer                                m_cloudData;
-    CloudBuffer                                m_prevCloudData;
-    ConstantBuffer::CommonBuffer               m_CommonData;
-    ConstantBuffer::CommonBuffer               m_prevCommonData;
-    CloudMap::CloudMapBuffer                   m_cloudMapData;
+    //CloudBuffer                                m_cloudData;
+    //CloudBuffer                                m_prevCloudData;
+    WolrdBuffer                                m_WolrdData;
     // textures
-    std::shared_ptr<VolumeTexture>             m_noise;
-    std::unique_ptr<RenderTexture>             m_weatherMapRT;
+    std::unique_ptr<RenderTexture>             m_volumetricRT;
     ID3D11SamplerState*                        m_linerWrapSampler;
     ID3D11ShaderResourceView*                  m_depthSRV;
+    ID3D11ShaderResourceView*                  m_weatherSRV;
+    ID3D11ShaderResourceView*                  m_baseNoiseSRV;
+    ID3D11ShaderResourceView*                  m_detailNoiseSRV;
+
 }; // SkyBox

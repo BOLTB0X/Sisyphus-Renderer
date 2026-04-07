@@ -14,17 +14,17 @@ public:
     struct InitParams {
         ID3D11Device* device;
         HWND          hwnd;
+
+		InitParams() : device(nullptr), hwnd(nullptr) {
+        }
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX projection;
         DirectX::XMFLOAT3 cameraPosition;
-        DirectX::XMFLOAT3 lightDir;
-        DirectX::XMFLOAT4 lightDiffuse;
         float             time;
-        DirectX::XMMATRIX lightView;
-        DirectX::XMMATRIX lightProjection;
+
+        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f) {
+        }
     }; // RenderParams
 
 public:
@@ -56,26 +56,32 @@ private:
     }; // GroundBuffer
 
 private:
+    struct WorldBuffer {
+        DirectX::XMMATRIX world;
+
+        WorldBuffer() {
+            world = DirectX::XMMatrixIdentity();
+        }
+    }; // WorldBuffer;
+
+private:
     bool InitShader(ID3D11Device*, HWND);
-    bool UpdateCommonBuffer(ID3D11DeviceContext*,
-        const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&,
-        const DirectX::XMFLOAT3&, const DirectX::XMFLOAT3&, const DirectX::XMFLOAT4&);
+
     bool UpdateGroundBuffer(ID3D11DeviceContext*);
-    bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&);
+    bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&);
 
 private:
     std::unique_ptr<DefaultMesh>               m_mesh;
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_commonBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_groundBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_shadowBuffer;
 
+    WorldBuffer                                m_worldData;
     GroundBuffer                               m_GoundData;
     GroundBuffer                               m_prevGoundData;
-    ConstantBuffer::CommonBuffer               m_CommonData;
-    ConstantBuffer::CommonBuffer               m_prevCommonData;
     ConstantBuffer::ShadowBuffer               m_ShadowData;
     ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;

@@ -7,7 +7,7 @@
 #include <memory>
 #include <future>
 #include <mutex>
-#include "NoiseGenerator.h"
+#include "Compute/NoiseGenerator.h"
 
 class Texture;
 class VolumeTexture;

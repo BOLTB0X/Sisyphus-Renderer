@@ -22,6 +22,7 @@ public:
     void Shutdown();
     void Run();
     bool Frame();
+	void OnGui();
     LRESULT CALLBACK MessageHandler(HWND, UINT, WPARAM, LPARAM);
 
 private:

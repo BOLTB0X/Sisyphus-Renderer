@@ -1,61 +1,9 @@
 // GroundPS.hlsl
+#include "Common.hlsli"
 #include "Maths.hlsli"
 #include "FBM.hlsli"
 #include "ShadowMap.hlsli"
 #include "Ground.hlsli"
-
-Texture2D shadowMap : register(t10);
-SamplerComparisonState shadowSampler : register(s5);
-//SamplerState shadowSampler : register(s5);
-
-cbuffer CommonBuffer : register(b0)
-{
-    // [Row 1]
-    matrix cWorld;
-    // [Row 2]
-    matrix cView;
-    // [Row 3]
-    matrix cProj;
-    // [Row 4]
-    float3 cCameraPosition;
-    float cPadding1;
-    // [Row 5]
-    matrix cViewInv;
-    // [Row 6]
-    matrix cProjInv;
-    // [Row 7]
-    float3 cLightDirection;
-    float cPadding2;
-    // [Row 8]
-    float4 cLightDiffuse;
-}; // CommonBuffer
-
-cbuffer GroundBuffer : register(b1)
-{
-    // [Row 1]
-    float3 gDarkSand;
-    float  gPadding1;
-    // [Row 2]
-    float3 gLightSand;
-    float  gPadding2;
-}; // CommonBuffer
-
-cbuffer ShadowBuffer : register(b2)
-{
-    // [Row 1]
-    matrix sShadowWorld;
-    // [Row 2]
-    matrix sLightView;
-    // [Row 3]
-    matrix sLightProj;
-    // [Row 4]
-    float  sMapWidth;
-    float  sMapHeight;
-    float  sBias;
-    float  sSpread;
-    // [Row 5]
-    float4 sPadding;
-}; // ShadowBuffer
 
 struct PS_IN
 {
@@ -63,6 +11,36 @@ struct PS_IN
     float3 worldPos : POSITION;
     float2 uv : TEXCOORD;
 }; // PS_IN
+
+cbuffer WorldBuffer : register(b2)
+{
+    matrix cWorld;
+}; // WorldBuffer
+
+cbuffer GroundBuffer : register(b3)
+{
+    // [Row 1]
+    float3 gDarkSand;
+    float gPadding1;
+    // [Row 2]
+    float3 gLightSand;
+    float gPadding2;
+}; // GroundBuffer
+
+cbuffer ShadowBuffer : register(b4)
+{
+    // [Row 1]
+    matrix sShadowWorld;
+    float sMapWidth;
+    float sMapHeight;
+    float sBias;
+    float sSpread;
+    // [Row 5]
+    float4 sPadding;
+}; // ShadowBuffer
+
+Texture2D shadowMap : register(t10);
+SamplerComparisonState shadowSampler : register(s5);
 
 float4 main(PS_IN input) : SV_TARGET
 {
@@ -75,8 +53,8 @@ float4 main(PS_IN input) : SV_TARGET
     float3 normal = float3(0, 1, 0);
     float diff = saturate(dot(normal, -cLightDirection));
     
-    float4 lightViewPos = mul(float4(input.worldPos, 1.0f), sLightView);
-    float4 lightClipPos = mul(lightViewPos, sLightProj);
+    float4 lightViewPos = mul(float4(input.worldPos, 1.0f), cLightView);
+    float4 lightClipPos = mul(lightViewPos, cLightProj);
     
     float2 shadowMapSize = float2(sMapWidth, sMapHeight);
     float shadowFactor = calculate_poisson_shadow(shadowSampler, shadowMap, lightClipPos, shadowMapSize, sSpread, sBias);

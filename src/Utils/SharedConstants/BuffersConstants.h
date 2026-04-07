@@ -47,14 +47,8 @@ namespace SharedConstants {
 
 
         // CloudMap
-        static constexpr DirectX::XMFLOAT2 RESOLUTION = { SharedConstants::ScreenConstants::WIDTH, SharedConstants::ScreenConstants::HEIGHT };
+        static constexpr DirectX::XMFLOAT2 RESOLUTION = { 1024, 1024 };
         static constexpr float             COVERAGE = 0.4f;
-        static constexpr float             PERLIN_FBM_FREQ = 8.0f; // 8
-        static constexpr float             PERLIN_OCTAVES = 4.0f; // 4
-        static constexpr float             PERLIN_BIAS = 0.25f; // 0.25
-        static constexpr float             WORLEY_FBM_FREQ = 8.0f; // 8
-        static constexpr DirectX::XMFLOAT2 WIND_DIRECTION = { 1.0f, 0.0f }; // 바람이 부는 2D 방향 (예: 1.0, 0.0 이면 X축 이동)
-        static constexpr float             WIND_SPEED = 0.4f; // 바람의 세기
 
         // Ground
         static constexpr DirectX::XMFLOAT3 DARK_SAND = { 0.6f, 0.45f, 0.3f };

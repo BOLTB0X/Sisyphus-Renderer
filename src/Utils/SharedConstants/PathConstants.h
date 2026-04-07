@@ -12,8 +12,10 @@ namespace SharedConstants {
         const std::wstring STONE_PS = L"HLSL/StonePS.hlsl";
 
         const std::wstring NOISEGEN_CS = L"HLSL/NoiseGeneratorCS.hlsl";
+        const std::wstring BASE_NOISE_CS = L"HLSL/BaseNoiseCS.hlsl";
+        const std::wstring DETAIL_NOISE_CS = L"HLSL/DetailNoiseCS.hlsl";
         const std::wstring SLICER_CS = L"HLSL/VolumeSlicerCS.hlsl";
-        const std::wstring CLOUDMAP_CS = L"HLSL/CloudMapCS.hlsl";
+        const std::wstring WMAP_CS = L"HLSL/WeatherMapCS.hlsl";
 
         const std::wstring ATMOSPHERE_VS = L"HLSL/AtmosphereVS.hlsl";
         const std::wstring ATMOSPHERE_PS = L"HLSL/AtmospherePS.hlsl";
@@ -25,8 +27,12 @@ namespace SharedConstants {
         const std::wstring GROUND_PS = L"HLSL/GroundPS.hlsl";
 
         const std::wstring DEPTH_VS = L"HLSL/DepthVS.hlsl";
+        const std::wstring COMPOSITE_VS = L"HLSL/CompositeVS.hlsl";
+        const std::wstring COMPOSITE_PS = L"HLSL/CompositePS.hlsl";
 
         const std::string STONE = "assets/Stone/Stone.fbx";
         const std::string KEY_CLOUD_VOL = "CloudNoise";
+        const std::string KEY_BASE_VOL = "BaseNoise";
+        const std::string KEY_DETAIL_VOL = "DetailNoise";
     } // PathConstants
 }

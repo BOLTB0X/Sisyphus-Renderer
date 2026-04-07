@@ -10,9 +10,9 @@
 // define
 #define TEXTURE_SLOT       10
 #define SAMPLER_SLOT       5
-#define BUFFER_SLOT_COMMON 0
-#define BUFFER_SLOT_GROUND 1
-#define BUFFER_SLOT_SHADOW 2
+#define BUFFER_SLOT_WORLD  2
+#define BUFFER_SLOT_GROUND 3
+#define BUFFER_SLOT_SHADOW 4
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -23,7 +23,7 @@ Ground::Ground() {
 	m_mesh = std::make_unique<DefaultMesh>();
     m_transform = Transform();
 	m_prevGoundData.padding1 = -1.0f;
-	m_prevCommonData.padding1 = -1.0f;
+	//m_prevCommonData.padding1 = -1.0f;
     m_prevShadowData.padding.x = -1.0f;
 
     m_shadowSRV = nullptr;
@@ -71,16 +71,23 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     XMMATRIX trans = XMMatrixTranslation(camX, -1.0f, camZ);
     XMMATRIX world = scale * rot * trans;
 
-    if (UpdateCommonBuffer(context, world, params.view, params.projection, params.cameraPosition, params.lightDir, params.lightDiffuse)) {
-        context->VSSetConstantBuffers(BUFFER_SLOT_COMMON, 1, m_commonBuffer.GetAddressOf());
-        context->PSSetConstantBuffers(BUFFER_SLOT_COMMON, 1, m_commonBuffer.GetAddressOf());
+    m_worldData.world = XMMatrixTranspose(world);
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
+        DebugHelper::DebugPrint("Failed to update world buffer");
+        return;
     }
+    context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
+    context->PSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
+    //if (UpdateCommonBuffer(context, world, params.view, params.projection, params.cameraPosition, params.lightDir, params.lightDiffuse)) {
+    //    context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_commonBuffer.GetAddressOf());
+    //    context->PSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_commonBuffer.GetAddressOf());
+    //}
 
     if (UpdateGroundBuffer(context)) {
         context->PSSetConstantBuffers(BUFFER_SLOT_GROUND, 1, m_groundBuffer.GetAddressOf());
     }
 
-    if (UpdateShadowBuffer(context, world, params.lightView, params.lightProjection)) {
+    if (UpdateShadowBuffer(context, world)) {
         context->PSSetConstantBuffers(BUFFER_SLOT_SHADOW, 1, m_shadowBuffer.GetAddressOf());
     }
 
@@ -139,7 +146,7 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitConstantBuffer<CommonBuffer>(device, m_commonBuffer.GetAddressOf()) ||
+    if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf()) ||
         !InitConstantBuffer<GroundBuffer>(device, m_groundBuffer.GetAddressOf()) ||
         !InitConstantBuffer<ShadowBuffer>(device, m_shadowBuffer.GetAddressOf())) {
         return false;
@@ -148,43 +155,43 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
     return true;
 } // InitShader
 
-bool Ground::UpdateCommonBuffer(ID3D11DeviceContext* context,
-    const XMMATRIX& world, const XMMATRIX& view, const XMMATRIX& projection,
-    const XMFLOAT3& camPos, const XMFLOAT3& lightDir, const XMFLOAT4& lightDiff) {
-    using namespace ShaderHelper;
-    using namespace ConstantBuffer;
-
-    CommonBuffer buffer;
-
-    // 행렬 전치
-    buffer.world = XMMatrixTranspose(world);
-    buffer.view = XMMatrixTranspose(view);
-    buffer.projection = XMMatrixTranspose(projection);
-    buffer.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, view));
-    buffer.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, projection));
-    buffer.cameraPosition = camPos;
-
-    XMVECTOR ld = XMLoadFloat3(&lightDir);
-    if (XMVectorGetX(XMVector3Length(ld)) < 1e-6f) {
-        buffer.lightDirection = { 0.0f, -1.0f, 0.0f };
-    }
-    else {
-        XMStoreFloat3(&buffer.lightDirection, XMVector3Normalize(ld));
-    }
-
-    buffer.lightDiffuse = lightDiff;
-
-    if (memcmp(&m_prevCommonData, &buffer, sizeof(CommonBuffer)) == 0) {
-        return true;
-    }
-
-    if (!UpdateConstantBuffer(context, m_commonBuffer.Get(), buffer)) {
-        return false;
-    }
-
-    m_prevCommonData = buffer;
-    return true;
-} // UpdateCommonBuffer
+//bool Ground::UpdateCommonBuffer(ID3D11DeviceContext* context,
+//    const XMMATRIX& world, const XMMATRIX& view, const XMMATRIX& projection,
+//    const XMFLOAT3& camPos, const XMFLOAT3& lightDir, const XMFLOAT4& lightDiff) {
+//    using namespace ShaderHelper;
+//    using namespace ConstantBuffer;
+//
+//    CommonBuffer buffer;
+//
+//    // 행렬 전치
+//    buffer.world = XMMatrixTranspose(world);
+//    buffer.view = XMMatrixTranspose(view);
+//    buffer.projection = XMMatrixTranspose(projection);
+//    buffer.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, view));
+//    buffer.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, projection));
+//    buffer.cameraPosition = camPos;
+//
+//    XMVECTOR ld = XMLoadFloat3(&lightDir);
+//    if (XMVectorGetX(XMVector3Length(ld)) < 1e-6f) {
+//        buffer.lightDirection = { 0.0f, -1.0f, 0.0f };
+//    }
+//    else {
+//        XMStoreFloat3(&buffer.lightDirection, XMVector3Normalize(ld));
+//    }
+//
+//    buffer.lightDiffuse = lightDiff;
+//
+//    if (memcmp(&m_prevCommonData, &buffer, sizeof(CommonBuffer)) == 0) {
+//        return true;
+//    }
+//
+//    if (!UpdateConstantBuffer(context, m_commonBuffer.Get(), buffer)) {
+//        return false;
+//    }
+//
+//    m_prevCommonData = buffer;
+//    return true;
+//} // UpdateCommonBuffer
 
 bool Ground::UpdateGroundBuffer(ID3D11DeviceContext* context) {
     using namespace ShaderHelper;
@@ -201,14 +208,10 @@ bool Ground::UpdateGroundBuffer(ID3D11DeviceContext* context) {
     return true;
 } // UpdateGroundBuffer
 
-bool Ground::UpdateShadowBuffer(ID3D11DeviceContext* context,
-    const DirectX::XMMATRIX& world, const DirectX::XMMATRIX& lightView, const DirectX::XMMATRIX& lightProjection) {
+bool Ground::UpdateShadowBuffer(ID3D11DeviceContext* context, const DirectX::XMMATRIX& world) {
     using namespace ShaderHelper;
 
     m_ShadowData.world = XMMatrixTranspose(world);
-    m_ShadowData.lightView = XMMatrixTranspose(lightView);
-    m_ShadowData.lightProjection = XMMatrixTranspose(lightProjection);
-
 
     if (memcmp(&m_prevShadowData, &m_ShadowData, sizeof(ShadowBuffer)) == 0) {
         return true;

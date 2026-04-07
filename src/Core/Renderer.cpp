@@ -16,17 +16,21 @@
 // Resources
 #include "Resources/TextureManager.h"
 #include "Resources/ConstantBufferType.h"
-#include "Resources/DepthRecorder.h"
+#include "Resources/VolumeTexture.h"
+// Compute
+#include "Compute/DepthRecorder.h"
+#include "Compute/WeatherGenerator.h"
 // Utils
+#include "Helpers/ShaderHelper.h"
 #include "ImGui/ImGuiManager.h"
-#include "ImGui/ImGuiDrawer.h"
-#include "ImGui/CameraWidget.h"
-#include "ImGui/AssimpModelWidget.h"
 #include "ImGui/FunctionWidget.h"
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/CameraConstants.h"
 #include "SharedConstants/BuffersConstants.h"
 #include "SharedConstants/ShadowConstants.h"
+// define
+#define FRAME_CB_SLOT 0
+#define DIRL_CB_SLOT  1
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -34,6 +38,7 @@ using namespace PathConstants;
 using namespace ConstantBuffer;
 using namespace BuffersConstants;
 using namespace DebugHelper;
+using namespace ShaderHelper;
 
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
@@ -43,7 +48,9 @@ Renderer::Renderer() {
     m_Ground = std::make_unique<Ground>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
     m_DepthRecorder = std::make_unique<DepthRecorder>();
+	m_WeatherGenerator = std::make_unique<WeatherGenerator>();
     m_shadowMapTexture = std::make_unique<RenderTexture>();
+    m_weatherMapTexture = std::make_unique<RenderTexture>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_nullRTV = nullptr;
     m_nullSRV = nullptr;
@@ -69,6 +76,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     auto linerWrapSampler = m_D3D11Mgr->GetStates()->GetLinearWrapSamplerState();
     auto linerCampSampler = m_D3D11Mgr->GetStates()->GetLinearClampSamplerState();
 
+    if (!InitConstantBuffer<FrameBuffer>(device, m_frameBuffer.GetAddressOf())) {
+        return false;
+    }
+    
+    if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
+		return false;
+    }
+
     if (!m_DirectionalLight->Init(device, hwnd)) {
         return false;
     }
@@ -79,6 +94,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
     if (!m_TextureMgr->Init(device, context, hwnd)) {
+		DebugHelper::DebugPrint("Failed to initialize TextureManager.");
         return false;
     }
 
@@ -93,11 +109,31 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
+    if (!m_weatherMapTexture->Init(device, 1024, 1024,
+        RenderTexture::RenderTextureType::UAV, DXGI_FORMAT_R16G16_FLOAT)) {
+        return false;
+    }
+
+    WeatherGenerator::InitParams weatherParams;
+    weatherParams.device = device;
+    weatherParams.hwnd = hwnd;
+    weatherParams.path = PathConstants::WMAP_CS;
+    if (!m_WeatherGenerator->Init(weatherParams)) {
+        return false;
+    }
+    else {
+        WeatherGenerator::GenerateParams weatherGenParams;
+        weatherGenParams.target = m_weatherMapTexture->GetUAV();
+        m_WeatherGenerator->Generate(context, weatherGenParams);
+    }
+
     SkyBox::InitParams skyInitParams;
     skyInitParams.device = device;
     skyInitParams.context = context;
     skyInitParams.hwnd = hwnd;
-    skyInitParams.noiseTexture = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_CLOUD_VOL);
+	skyInitParams.weather = m_weatherMapTexture->GetSRV();
+    skyInitParams.baseNoise = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_BASE_VOL)->GetSRV();
+    skyInitParams.detailNoise = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_DETAIL_VOL)->GetSRV();
     skyInitParams.sampler = linerWrapSampler;
     skyInitParams.depth = m_D3D11Mgr->GetDepthSRV();
 
@@ -124,10 +160,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     if (!m_DepthRecorder->Init(depthParams)) {
         return false;
     }
-
-    //if (!m_VolumeSlicer->Init(device, hwnd, linerWrapSampler)) {
-    //    return false;
-    //}
 
     m_ImGuiMgr = std::move(imgui);
     if (m_ImGuiMgr && !m_ImGuiMgr->Init(hwnd, device, context)) {
@@ -198,15 +230,45 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_D3D11Mgr->RestoreViewport();
     m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
 
-    DrawSkyBox(context, states);
+    FrameBuffer fData;
+    fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
+    fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
+    fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, fData.view));
+    fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, fData.projection));
+    fData.cameraPosition = m_Camera->GetPosition();
+    fData.screenResolution = XMFLOAT2((float)RendererState::ScreenWidth, (float)RendererState::ScreenHeight);
+    fData.time = m_renderingTime;
+
+    DirectionalLightBuffer lData;
+    lData.direction = m_DirectionalLight->GetDirection();
+    lData.ambient = m_DirectionalLight->GetAmbient();
+    lData.diffuse = m_DirectionalLight->GetDiffuse();
+    lData.lightViewMatrix = XMMatrixTranspose(m_DirectionalLight->GetViewMatrix());
+    lData.lightProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetProjection());
+
+    if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
+        DebugPrint("프레이버퍼 확인 필요");
+    }
+    if (!UpdateConstantBuffer(context, m_lightBuffer.Get(), lData)) {
+        DebugPrint("방향광 버퍼 확인 필요");
+    }
+
+    // Slot 0: Frame, Slot 1: Light
+    context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+    context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+    context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+
     DrawGround(context, states);
     DrawStone(context, states);
+    DrawSkyBox(context, states);
 
     if (m_ImGuiMgr) {
         m_ImGuiMgr->Frame();
     }
 
-    //DebugVolume(context);
     m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
 } // MainPass
 
@@ -245,30 +307,17 @@ void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
 
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
-    stoneParams.view = m_Camera->GetViewMatrix();
-    stoneParams.projection = m_Camera->GetProjectionMatrix();
-    stoneParams.camPos = m_Camera->GetPosition();
-    stoneParams.diffuse = m_DirectionalLight->GetDiffuse();
-    stoneParams.lightDir = m_DirectionalLight->GetDirection();
-
     m_Stone->Render(context, stoneParams);
 } // DrawStone
 
 void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Camera || !m_SkyBox) return;
 
-    ID3D11RenderTargetView* rtv = m_D3D11Mgr->GetRTV();
-    context->OMSetRenderTargets(1, &rtv, nullptr);
-
     context->RSSetState(states->GetCullNone());
-    context->OMSetDepthStencilState(states->GetDepthNone(), 0);
+    context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     SkyBox::RenderParams skyParams;
-    skyParams.view = m_Camera->GetViewMatrix();
-    skyParams.projection = m_Camera->GetProjectionMatrix();
-    skyParams.cameraPosition = m_Camera->GetPosition();
-    skyParams.lightDir = m_DirectionalLight->GetDirection();
     skyParams.time = m_renderingTime;
 
     m_SkyBox->Render(context, skyParams);
@@ -283,49 +332,35 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     Ground::RenderParams groundParams;
-    groundParams.view = m_Camera->GetViewMatrix();
-    groundParams.projection = m_Camera->GetProjectionMatrix();
     groundParams.cameraPosition = m_Camera->GetPosition();
-    groundParams.lightDir = m_DirectionalLight->GetDirection();
-    groundParams.lightDiffuse = m_DirectionalLight->GetDiffuse();
     groundParams.time = m_renderingTime;
-    groundParams.lightView = m_DirectionalLight->GetViewMatrix();
-    groundParams.lightProjection = m_DirectionalLight->GetProjection();
 
     m_Ground->SetShadowMap(m_shadowMapTexture->GetSRV());
     m_Ground->SetShadowSampler(m_D3D11Mgr->GetStates()->GetShadowSamplerState());
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
-//void Renderer::DebugVolume(ID3D11DeviceContext* context) {
-//    auto cloudNoise = m_TextureMgr->GetVolumeTexture(KEY_CLOUD_VOL);
-//    if (cloudNoise && m_VolumeSlicer) {
-//        m_VolumeSlicer->Update(context, cloudNoise.get(), m_VolumeSlicer->GetDepth());
-//    }
-//} // DebugVolume
-
 void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {
-        m_ImGuiMgr->AddWidget(std::make_unique<CameraWidget>(m_Camera.get()));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Stone Control",
+            [this]() { m_Camera->OnGui(); }
+		));
 
-        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-        //    "SkyBox Atmosphere",
-        //    [this]() { m_SkyBox->OnGui(); }
-        //));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "SkyBox Atmosphere",
+            [this]() { m_SkyBox->OnGui(); }
+        ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",
             [this]() { m_DirectionalLight->OnGui(); }
         ));
 
-        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-        //    "Volume Noise Debug",
-        //    [this]() { m_VolumeSlicer->OnGui(); }
-        //));
-
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Ground Control",
             [this]() { m_Ground->OnGui(); }
         ));
+
     }
 } // InitWidgets

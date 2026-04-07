@@ -3,6 +3,7 @@
 // https://www.shadertoy.com/view/Xttcz2
 // https://www.shadertoy.com/view/3d3fWN
 // https://www.shadertoy.com/view/ld3BzM
+// https://cv.ulichney.com/papers/1994-filter-design.pdf
 #ifndef _FBM_HLSLI_
 #define _FBM_HLSLI_
 
@@ -142,6 +143,36 @@ float grad_wave(float x, float offset)
     x = smoothstep(0.0, 1.0, x);
     return lerp(x, x2, 0.15);
 } // grad_wave
+
+float blue_noise(float3 p, float freq)
+{
+    float3 ip = floor(p * freq);
+    float3 fp = frac(p * freq);
+    float3 offset = hash33(ip);
+    
+    float noise = 0.0;
+    float w = 1.0;
+    
+    [unroll]
+    for (int i = -1; i <= 1; i++)
+    {
+        for (int j = -1; j <= 1; j++)
+        {
+            for (int k = -1; k <= 1; k++)
+            {
+                float3 pos = float3(i, j, k) - fp;
+                float3 cellOffset = hash33(ip + float3(i, j, k));
+                float dist = length(pos + (cellOffset - offset));
+                float weight = exp(-4.0 * dist * dist);
+                
+                noise += weight;
+                w += weight;
+            }
+        }
+    }
+    
+    return 1.0 - (noise / w);
+} // blue_noise
 
 float perlin_4D(float4 p)
 {
