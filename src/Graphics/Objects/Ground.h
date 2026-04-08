@@ -3,8 +3,8 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <memory>
+#include "Components/Transform.h"
 #include "Resources/ConstantBufferType.h"
-#include "Resources/Transform.h"
 #include "Utils/SharedConstants/BuffersConstants.h"
 
 class DefaultMesh;

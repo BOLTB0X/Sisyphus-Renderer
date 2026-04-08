@@ -3,7 +3,7 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <wrl/client.h>
-#include "Resources/Transform.h"
+#include "Components/Transform.h"
 #include "Resources/AssimpModel.h"
 #include "Resources/ConstantBufferType.h"
 

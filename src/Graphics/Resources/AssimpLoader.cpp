@@ -2,7 +2,7 @@
 #include "AssimpLoader.h"
 #include "PBRMesh.h"
 #include "Texture.h"
-#include "TextureManager.h"
+#include "Components/TextureManager.h"
 // STL
 #include <filesystem>
 #include <objbase.h>

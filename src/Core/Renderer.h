@@ -45,7 +45,7 @@ private:
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 
-    void InitWidgets();
+    void UpadteWidgets();
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;

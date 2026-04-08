@@ -1,9 +1,10 @@
 #include "Pch.h"
 #include "TextureManager.h"
-#include "Texture.h"
-#include "VolumeTexture.h"
-// Compute
-#include "Compute/NoiseGenerator.h"
+// Resources
+#include "Resources/Texture.h"
+#include "Resources/VolumeTexture.h"
+// Data
+#include "Data/NoiseGenerator.h"
 // Utils
 #include "Helpers/DebugHelper.h"
 #include "SharedConstants/PathConstants.h"

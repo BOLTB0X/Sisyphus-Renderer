@@ -4,22 +4,23 @@
 // Objects
 #include "Objects/Stone.h"
 #include "Objects/SkyBox.h"
-#include "Objects/DirectionalLight.h"
 #include "Objects/Ground.h"
+// Components
+#include "Components/DirectionalLight.h"
+#include "Components/Camera.h"
+#include "Components/D3D11Manager.h"
+#include "Components/TextureManager.h"
 // D3D11
-#include "D3D11/D3D11Manager.h"
 #include "D3D11/D3D11State.h"
 #include "D3D11/D3D11CoreResources.h"
-#include "D3D11/RenderTexture.h"
-// Camera
-#include "Camera/Camera.h"
+// Data
+#include "Data/RenderTexture.h"
 // Resources
-#include "Resources/TextureManager.h"
 #include "Resources/ConstantBufferType.h"
 #include "Resources/VolumeTexture.h"
-// Compute
-#include "Compute/DepthRecorder.h"
-#include "Compute/WeatherGenerator.h"
+// Data
+#include "Data/DepthRecorder.h"
+#include "Data/WeatherGenerator.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "ImGui/ImGuiManager.h"
@@ -166,28 +167,58 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    InitWidgets();
+    UpadteWidgets();
     return true;
 } // Init
 
 void Renderer::Shutdown() {
-    if (m_Stone)            m_Stone.reset();
-    if (m_Ground)           m_Ground.reset();
-    if (m_SkyBox)           m_SkyBox.reset();
-    if (m_DirectionalLight) m_DirectionalLight.reset();
-    if (m_Camera)           m_Camera.reset();
+    // [최상위 UI 레이어]
+    if (m_ImGuiMgr) {
+        m_ImGuiMgr.reset();
+    }
 
-    if (m_DepthRecorder)    m_DepthRecorder.reset();
-    if (m_shadowMapTexture) m_shadowMapTexture.reset();
-    if (m_TextureMgr)       m_TextureMgr.reset();
-
-    if (m_ImGuiMgr)         m_ImGuiMgr.reset();
-    if (m_D3D11Mgr)         m_D3D11Mgr.reset();
-} // Shutdown
+    //  [렌더링 객체]
+    if (m_SkyBox) {
+        m_SkyBox.reset();
+    }
+    if (m_Stone) {
+        m_Stone.reset();
+    }
+    if (m_Ground) {
+        m_Ground.reset();
+    }
+    // [리소스 생성기 및 중간 데이터]
+    if (m_WeatherGenerator) {
+        m_WeatherGenerator.reset();
+    }
+    if (m_weatherMapTexture) {
+        m_weatherMapTexture.reset();
+    }
+    if (m_DepthRecorder) {
+        m_DepthRecorder.reset();
+    }
+    if (m_shadowMapTexture) {
+        m_shadowMapTexture.reset();
+    }
+    // [렌더러 핵심 컴포넌트]
+    if (m_DirectionalLight) {
+        m_DirectionalLight.reset();
+    }
+    if (m_Camera) {
+        m_Camera.reset();
+    }
+    if (m_TextureMgr) {
+        m_TextureMgr.reset();
+    }
+    // 그래픽스 API 코어
+    if (m_D3D11Mgr) {
+        m_D3D11Mgr.reset();
+    }
+} // Renderer
 
 bool Renderer::Frame(float deltaTime) {
     m_renderingTime += deltaTime;
-    m_DirectionalLight->Rotate(deltaTime);
+    //m_DirectionalLight->Rotate(deltaTime);
     return Render();
 } // Frame
 
@@ -318,6 +349,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     SkyBox::RenderParams skyParams;
+	skyParams.camPos = m_Camera->GetPosition();
     skyParams.time = m_renderingTime;
 
     m_SkyBox->Render(context, skyParams);
@@ -340,7 +372,7 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
-void Renderer::InitWidgets() {
+void Renderer::UpadteWidgets() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Stone Control",
@@ -363,4 +395,4 @@ void Renderer::InitWidgets() {
         ));
 
     }
-} // InitWidgets
+} // UpadteWidgets

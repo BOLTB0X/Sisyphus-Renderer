@@ -1,10 +1,14 @@
 #include "Pch.h"
 #include "SkyBox.h"
+// Resources
 #include "Resources/DefaultMesh.h"
 #include "Resources/VolumeTexture.h"
+// Data
+#include "Data/RenderTexture.h"
 // D3D11
-#include "D3D11/RenderTexture.h"
 #include "D3D11/D3D11State.h"
+// Post
+#include "Post/Composite.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
@@ -14,7 +18,7 @@
 #define WEATHER_SIZE           1024
 #define BUFFER_SLOT_WORLD      2
 #define BUFFER_SLOT_ATMOSPHERE 3
-#define BUFFER_SLOT_CLOUD      4
+#define BUFFER_SLOT_CLOUDBOX   4
 #define SAMPLER_SLOT           0
 #define TEX_SLOT_DEPTH         1
 #define TEX_SLOT_WMAP          2
@@ -27,6 +31,7 @@ using namespace PathConstants;
 
 SkyBox::SkyBox() {
 	m_CubeMesh = std::make_unique<DefaultMesh>();
+	m_Composite = std::make_unique<Composite>();
 	m_volumetricRT = std::make_unique<RenderTexture>();
     m_linerWrapSampler = nullptr;
     m_depthSRV = nullptr;
@@ -34,7 +39,7 @@ SkyBox::SkyBox() {
 	m_baseNoiseSRV = nullptr;
 	m_detailNoiseSRV = nullptr;
     m_prevAtmosphereData.padding1.x = -1.0f;
-    //m_prevCloudData.padding.x = -1.0f;
+    m_prevCloudBoxData.padding = -1.0f;
 } // SkyBox
 
 SkyBox::~SkyBox() {
@@ -64,6 +69,15 @@ bool SkyBox::Init(const InitParams& params) {
         return false;
     }
 
+	Composite::InitParams compositeParams;
+	compositeParams.device = params.device;
+	compositeParams.hwnd = params.hwnd;
+	compositeParams.vPath = PathConstants::COMPOSITE_VS;
+	compositeParams.pPath = PathConstants::COMPOSITE_PS;
+    if (!m_Composite->Init(compositeParams)) {
+        return false;
+	}
+
 	m_weatherSRV = params.weather;
     m_baseNoiseSRV = params.baseNoise;
     m_detailNoiseSRV = params.detailNoise;
@@ -89,18 +103,9 @@ bool SkyBox::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitVertexShader(device, hwnd, PathConstants::COMPOSITE_VS,
-        nullptr, 0, m_compositeVS.GetAddressOf(), nullptr)) {
-        return false;
-    }
-
-    if (!InitPixelShader(device, hwnd, PathConstants::COMPOSITE_PS, m_compositePS.GetAddressOf())) {
-        return false;
-    }
-
     if (!InitConstantBuffer<WolrdBuffer>(device, m_worldBuffer.GetAddressOf()) ||
-        !InitConstantBuffer<AtmosphereBuffer>(device, m_atmosphereBuffer.GetAddressOf()) /* ||
-        !InitConstantBuffer<CloudBuffer>(device, m_cloudBuffer.GetAddressOf())*/) {
+        !InitConstantBuffer<AtmosphereBuffer>(device, m_atmosphereBuffer.GetAddressOf()) ||
+        !InitConstantBuffer<CloudBoxBuffer>(device, m_cloudBoxBuffer.GetAddressOf())) {
         return false;
     }
 
@@ -153,6 +158,10 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
         context->PSSetConstantBuffers(BUFFER_SLOT_ATMOSPHERE, 1, m_atmosphereBuffer.GetAddressOf());
     }
 
+    if (UpdateCloudBoxBuffer(context, params.camPos)) {
+        context->PSSetConstantBuffers(BUFFER_SLOT_CLOUDBOX, 1, m_cloudBoxBuffer.GetAddressOf());
+	}
+
     m_CubeMesh->RenderBuffer(context);
     context->DrawIndexed(m_CubeMesh->GetIndexCount(), 0, 0);
 
@@ -165,17 +174,7 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 
     // 합성용 셰이더 설정
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-    context->IASetInputLayout(nullptr);
-    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    context->VSSetShader(m_compositeVS.Get(), nullptr, 0);
-    context->PSSetShader(m_compositePS.Get(), nullptr, 0);
-
-    // 저해상도 결과물을 입력으로 전달
-    auto lowResSRV = m_volumetricRT->GetSRV();
-    context->PSSetShaderResources(0, 1, &lowResSRV);
-    context->PSSetSamplers(0, 1, &m_linerWrapSampler);
-
-    context->Draw(3, 0); // 큰 삼각형 하나 그리기
+	m_Composite->Render(context, m_volumetricRT->GetSRV(), m_linerWrapSampler);
     // 리소스 반납
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
     context->PSSetShaderResources(0, 5, nullSRVs);
@@ -189,10 +188,9 @@ void SkyBox::OnGui() {
     GuiAtmosphere();
 
     ImGui::Separator();
-    \
+    
     ImGui::End();
 } // OnGui
-
 
 bool SkyBox::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     using namespace ShaderHelper;
@@ -208,20 +206,23 @@ bool SkyBox::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     return true;
 } // UpdateAtmosphereBuffer
 
-//bool SkyBox::UpdateCloudBuffer(ID3D11DeviceContext* context) {
-//    using namespace ShaderHelper;
-//
-//    if (memcmp(&m_prevCloudData, &m_cloudData, sizeof(CloudBuffer)) == 0) {
-//        return true;
-//    }
-//
-//    if (!UpdateConstantBuffer(context, m_cloudBuffer.Get(), m_cloudData)) {
-//        return false;
-//    }
-//
-//    m_prevCloudData = m_cloudData;
-//    return true;
-//} // UpdateCloudBuffer
+bool SkyBox::UpdateCloudBoxBuffer(ID3D11DeviceContext* context, const DirectX::XMFLOAT3& camPos) {
+    using namespace ShaderHelper;
+
+    float boxCenterY = m_cloudBoxData.cloudMinHeight + (m_cloudBoxData.boxSize.y * 0.5f); // 1500 + 1500 = 3000
+    m_cloudBoxData.boxCenter = DirectX::XMFLOAT4(camPos.x, boxCenterY, camPos.z, 1.0f);
+
+    if (memcmp(&m_prevCloudBoxData, &m_cloudBoxData, sizeof(CloudBoxBuffer)) == 0) {
+        return true;
+    }
+
+    if (!UpdateConstantBuffer(context, m_cloudBoxBuffer.Get(), m_cloudBoxData)) {
+        return false;
+    }
+
+    m_prevCloudBoxData = m_cloudBoxData;
+    return true;
+} // UpdateCloudBoxBuffer
 
 void SkyBox::GuiAtmosphere() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));

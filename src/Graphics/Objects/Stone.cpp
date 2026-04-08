@@ -1,8 +1,10 @@
 #include "Pch.h"
 #include "Objects/Stone.h"
+// Components
+#include "Components/TextureManager.h"
+// Resources
 #include "Resources/PBRMesh.h"
 #include "Resources/Texture.h"
-#include "Resources/TextureManager.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
 #include "Helpers/ShaderHelper.h"

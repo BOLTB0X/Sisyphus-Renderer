@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "VertexTypes.h"
 
 class AssimpLoader;
 class Texture;

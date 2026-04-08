@@ -2,8 +2,8 @@
 #include "AssimpModel.h"
 #include "AssimpLoader.h"
 #include "Texture.h"
-#include "TextureManager.h"
 #include "PBRMesh.h"
+#include "Components/TextureManager.h"
 
 AssimpModel::AssimpModel() {
 } // AssimpModel

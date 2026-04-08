@@ -15,10 +15,16 @@ bool Composite::Init(const InitParams& params) {
 	if (!params.device || !params.hwnd) {
 		return false;
 	}
-	if (!InitVertexShader(params.device, params.hwnd, params.vPath, nullptr, 0, m_vertexShader.GetAddressOf(), nullptr) ||
-		!InitPixelShader(params.device, params.hwnd, params.pPath, m_pixelShader.GetAddressOf())) {
+
+	if (!InitVertexShader(params.device, params.hwnd, params.vPath,
+		nullptr, 0, m_vertexShader.GetAddressOf(), nullptr)) {
 		return false;
 	}
+
+	if (!InitPixelShader(params.device, params.hwnd, params.pPath, m_pixelShader.GetAddressOf())) {
+		return false;
+	}
+
 	return true;
 } // Init
 

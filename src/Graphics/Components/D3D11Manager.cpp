@@ -1,9 +1,9 @@
 #include "Pch.h"
 #include "D3D11Manager.h"
-#include "D3D11CoreResources.h"
-#include "D3D11State.h"
-#include "DisplayInfo.h"
-#include "RenderTexture.h"
+#include "D3D11/D3D11CoreResources.h"
+#include "D3D11//D3D11State.h"
+#include "D3D11/DisplayInfo.h"
+#include "Data/RenderTexture.h"
 #include "Helpers/DebugHelper.h"
 
 D3D11Manager::D3D11Manager() {
