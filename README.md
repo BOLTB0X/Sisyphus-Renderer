@@ -141,7 +141,7 @@ style="object-fit:contain; border:1px solid #ddd; border-radius:4px;"/>
       </td>
       <td style="text-align:center; vertical-align:middle;">
         <p align="center">
-        <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_05%ED%8F%AC%EC%9D%B8%ED%8A%B8.png?raw=true" 
+        <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_06%ED%8F%AC%EC%9D%B8%ED%8A%B8.png?raw=true" 
              alt="image 2" 
              style="width:350px; height:250px; object-fit:contain; border:1px solid #ddd; border-radius:4px;"/>
         </p>
