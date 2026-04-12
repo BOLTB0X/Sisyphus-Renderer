@@ -14,11 +14,10 @@ namespace SharedConstants {
         const std::wstring NOISEGEN_CS = L"HLSL/NoiseGeneratorCS.hlsl";
         const std::wstring BASE_NOISE_CS = L"HLSL/BaseNoiseCS.hlsl";
         const std::wstring DETAIL_NOISE_CS = L"HLSL/DetailNoiseCS.hlsl";
-        const std::wstring SLICER_CS = L"HLSL/VolumeSlicerCS.hlsl";
         const std::wstring WMAP_CS = L"HLSL/WeatherMapCS.hlsl";
 
-        const std::wstring ATMOSPHERE_VS = L"HLSL/AtmosphereVS.hlsl";
-        const std::wstring ATMOSPHERE_PS = L"HLSL/AtmospherePS.hlsl";
+        const std::wstring ATMOSPHERE_CS = L"HLSL/AtmosphereCS.hlsl";
+        const std::wstring VOLUMETRIC_CLOUD_CS = L"HLSL/VolumetricCloudCS.hlsl";
 
         const std::wstring SKYBOX_VS = L"HLSL/SkyboxVS.hlsl";
         const std::wstring SKYBOX_PS = L"HLSL/SkyboxPS.hlsl";
@@ -31,6 +30,7 @@ namespace SharedConstants {
         const std::wstring COMPOSITE_PS = L"HLSL/CompositePS.hlsl";
 
         const std::string STONE = "assets/Stone/Stone.fbx";
+        const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";
         const std::string KEY_CLOUD_VOL = "CloudNoise";
         const std::string KEY_BASE_VOL = "BaseNoise";
         const std::string KEY_DETAIL_VOL = "DetailNoise";

@@ -2,6 +2,9 @@
 #ifndef _COMMON_HLSLI_
 #define _COMMON_HLSLI_
 
+#define KM           1000.0f
+#define PI           3.14159265f
+
 cbuffer FrameBuffer : register(b0)
 {
     matrix cView;
@@ -42,7 +45,6 @@ static float depth_to_meter(float z, matrix proj)
 
 static float meter_to_depth(float distanceFeet, matrix proj)
 {
-    // 전치된 Projection_ 행렬에서 필요한 paraFeets를 추출
     float c = proj._33;
     float d = proj._43;
     float z = c + d / distanceFeet;
@@ -65,11 +67,32 @@ static float3 get_world_from_depth(float2 uv, float depth, float4x4 invView, flo
     return worldPos.xyz;
 } // get_world_from_depth
 
+static float3 ray_direction_restore(float2 uv, matrix projInv, matrix viewInv)
+{
+    float2 ndc = uv * 2.0f - 1.0f;
+    ndc.y = -ndc.y;
+
+    float4 target = mul(float4(ndc.x, ndc.y, 1.0f, 1.0f), projInv);
+    target /= target.w; // Perspective Divide
+
+    float3 worldDir = mul(target.xyz, (float3x3) viewInv);
+    
+    return normalize(worldDir);
+} // ray_direction_restore
+
 static float3 get_box_uvw(float3 worldPos, float3 boxPos, float3 boxSize)
 {
     float3 boxMin = boxPos - boxSize * 0.5f;
     float3 boxMax = boxPos + boxSize * 0.5f;
     return saturate((worldPos - boxMin) / (boxMax - boxMin));
 } // get_box_uvw
+
+static float2 get_spherical_uv(float3 rd)
+{
+    float2 uv;
+    uv.x = atan2(rd.x, rd.z) / (2.0f * PI) + 0.5f;
+    uv.y = 0.5f - (asin(clamp(rd.y, -1.0f, 1.0f)) / PI);
+    return uv;
+} // get_spherical_uv
 
 #endif // _COMMON_HLSLI_

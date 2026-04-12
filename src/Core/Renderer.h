@@ -17,10 +17,12 @@ class D3D11State;
 class SkyBox;
 class DirectionalLight;
 class Ground;
-class ShadowShader;
+class VolumetricCloud;
 class DepthRecorder;
 class RenderTexture;
 class WeatherGenerator;
+class Atmosphere;
+class Composite;
 
 class Renderer {
 public:
@@ -51,22 +53,25 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightBuffer;
 
-    static RendererState                 m_RendererState;
-    std::unique_ptr<D3D11Manager>        m_D3D11Mgr;
-    std::unique_ptr<Stone>               m_Stone;
-    std::unique_ptr<Camera>              m_Camera;
-	std::unique_ptr<SkyBox>              m_SkyBox;
-    std::unique_ptr<Ground>              m_Ground;
-    std::unique_ptr<DirectionalLight>    m_DirectionalLight;
-    std::unique_ptr<DepthRecorder>       m_DepthRecorder;
-    std::unique_ptr<WeatherGenerator>    m_WeatherGenerator;
-    std::shared_ptr<TextureManager>      m_TextureMgr;
-    std::shared_ptr<ImGuiManager>        m_ImGuiMgr;
-    std::unique_ptr<RenderTexture>       m_shadowMapTexture;
-    std::unique_ptr<RenderTexture>       m_weatherMapTexture;
+    static RendererState                  m_RendererState;
+    std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
+    std::unique_ptr<Stone>                m_Stone;
+    std::unique_ptr<Camera>               m_Camera;
+	std::unique_ptr<SkyBox>               m_SkyBox;
+    std::unique_ptr<Ground>               m_Ground;
+    std::unique_ptr<DirectionalLight>     m_DirectionalLight;
+    std::unique_ptr<VolumetricCloud>      m_VolumetricCloud;
+    std::unique_ptr<DepthRecorder>        m_DepthRecorder;
+    std::unique_ptr<WeatherGenerator>     m_WeatherGenerator;
+    std::unique_ptr<Atmosphere>           m_AtmosphereLUT;
+    std::unique_ptr<Composite>            m_Composite;
+    std::shared_ptr<TextureManager>       m_TextureMgr;
+    std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
+    std::unique_ptr<RenderTexture>        m_shadowMapTexture;
+    std::unique_ptr<RenderTexture>        m_weatherMapTexture;
 
-    ID3D11RenderTargetView*              m_nullRTV;
-    ID3D11ShaderResourceView*            m_nullSRV;
-    float                                m_renderingTime;
-    float                                m_blendFactor[4];
+    ID3D11RenderTargetView*               m_nullRTV;
+    ID3D11ShaderResourceView*             m_nullSRV;
+    float                                 m_renderingTime;
+    float                                 m_blendFactor[4];
 }; // Renderer

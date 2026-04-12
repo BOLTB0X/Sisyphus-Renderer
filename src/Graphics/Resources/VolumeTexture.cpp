@@ -63,3 +63,6 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
 ID3D11ShaderResourceView*  VolumeTexture::GetSRV() const { return m_srv.Get(); }
 ID3D11UnorderedAccessView* VolumeTexture::GetUAV() const { return m_uav.Get(); }
 ID3D11Texture3D*           VolumeTexture::GetTexture() const { return m_texture.Get(); }
+UINT                       VolumeTexture::GetWidth() const { return m_width; }
+UINT                       VolumeTexture::GetHeight() const { return m_height; }
+UINT VolumeTexture::GetDepth() const { return m_depth; }

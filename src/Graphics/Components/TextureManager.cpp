@@ -80,7 +80,6 @@ void TextureManager::CreateCloudNoise(ID3D11DeviceContext* context, const std::s
 		params.target = volumeTex.get();
 		params.data = noiseParams;
         m_NoiseGenerator->Generate(context, params);
-        //m_NoiseGenerator->Generate(context, volumeTex.get(), noiseParams);
     }
 } // CreateNoise
 

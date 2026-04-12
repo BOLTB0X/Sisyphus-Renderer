@@ -4,7 +4,7 @@
 #define _GROUND_HLSLI_
 
 #include "Maths.hlsli"
-#include "FBM.hlsli"
+#include "Noise.hlsli"
 
 float sand_layer(float2 p)
 {

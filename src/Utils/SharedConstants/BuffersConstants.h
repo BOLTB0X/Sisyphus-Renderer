@@ -28,12 +28,10 @@ namespace SharedConstants {
         static constexpr DirectX::XMFLOAT4 HORIZON_COLOR = { 0.81f, 0.38f, 0.66f, 1.0f };
         static constexpr DirectX::XMFLOAT3 GROUND_COLOR = { 0.0f, 0.25f, 0.05f };
 
-
         // Light
         static constexpr DirectX::XMFLOAT3 LIGHT_DIR = { 0.5f, -1.0f, 0.5f };
         static constexpr DirectX::XMFLOAT4 LIGHT_DIFFUSE = { 1.0f, 1.0f, 1.0f, 1.0f };
         static constexpr DirectX::XMFLOAT4 LIGHT_AMBIENT = { 0.15f, 0.15f, 0.15f, 1.0f };
-
 
         // VolumeTextures
         static constexpr DirectX::XMFLOAT3 TEXTURE_SIZE = { 128.0f, 128.0f, 128.0f };
@@ -46,10 +44,9 @@ namespace SharedConstants {
         static constexpr float             VOL_REMAP_BIAS = 0.0f;
 
 
-        // CloudMap
-        static constexpr DirectX::XMFLOAT2 RESOLUTION = { 1024, 1024 };
-        static constexpr float             COVERAGE = 0.4f;
-
+        // WeatherMap
+        static constexpr DirectX::XMFLOAT2 WEATHER_MAP_RESOLUTION = { 1024.0f, 1024.0f };
+\
         // Ground
         static constexpr DirectX::XMFLOAT3 DARK_SAND = { 0.6f, 0.45f, 0.3f };
         static constexpr DirectX::XMFLOAT3 LIGHT_SAND = { 0.85f, 0.7f, 0.5f };

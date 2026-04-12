@@ -148,7 +148,8 @@ float3 calculate_atmosphere_scattering(
         ((1.0 - gg) * (mumu + 1.0)) /
         (pow(max(denom_phase, 1e-6), 1.5) * (2.0 + gg))
         : 0.0;
-
+    
+    [loop]
     for (int i = 0; i < steps_i; ++i)
     {
         float3 pos_i = start + dir * ray_pos_i;

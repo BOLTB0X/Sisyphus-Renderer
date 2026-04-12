@@ -15,12 +15,16 @@
 #include "D3D11/D3D11CoreResources.h"
 // Data
 #include "Data/RenderTexture.h"
+#include "Data/Atmosphere.h"
+#include "Data/VolumetricCloud.h"
+#include "Data/DepthRecorder.h"
+#include "Data/WeatherGenerator.h"
 // Resources
 #include "Resources/ConstantBufferType.h"
 #include "Resources/VolumeTexture.h"
-// Data
-#include "Data/DepthRecorder.h"
-#include "Data/WeatherGenerator.h"
+#include "Resources/Texture.h"
+// Post
+#include "Post/Composite.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "ImGui/ImGuiManager.h"
@@ -48,10 +52,13 @@ Renderer::Renderer() {
 	m_SkyBox = std::make_unique<SkyBox>();
     m_Ground = std::make_unique<Ground>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
+	m_VolumetricCloud = std::make_unique<VolumetricCloud>();
     m_DepthRecorder = std::make_unique<DepthRecorder>();
 	m_WeatherGenerator = std::make_unique<WeatherGenerator>();
     m_shadowMapTexture = std::make_unique<RenderTexture>();
     m_weatherMapTexture = std::make_unique<RenderTexture>();
+	m_AtmosphereLUT = std::make_unique<Atmosphere>();
+	m_Composite = std::make_unique<Composite>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_nullRTV = nullptr;
     m_nullSRV = nullptr;
@@ -128,13 +135,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         m_WeatherGenerator->Generate(context, weatherGenParams);
     }
 
+	Atmosphere::InitParams atmoParams;
+	atmoParams.device = device;
+	atmoParams.context = context;
+	atmoParams.hwnd = hwnd;
+	atmoParams.linerWrapSampler = linerWrapSampler;
+
+    if (!m_AtmosphereLUT->Init(atmoParams)) {
+        return false;
+	}
+
     SkyBox::InitParams skyInitParams;
     skyInitParams.device = device;
     skyInitParams.context = context;
     skyInitParams.hwnd = hwnd;
-	skyInitParams.weather = m_weatherMapTexture->GetSRV();
-    skyInitParams.baseNoise = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_BASE_VOL)->GetSRV();
-    skyInitParams.detailNoise = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_DETAIL_VOL)->GetSRV();
     skyInitParams.sampler = linerWrapSampler;
     skyInitParams.depth = m_D3D11Mgr->GetDepthSRV();
 
@@ -150,6 +164,19 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
+	VolumetricCloud::InitParams cloudInitParams;
+	cloudInitParams.device = device;
+	cloudInitParams.hwnd = hwnd;
+	cloudInitParams.weatherMapSRV = m_weatherMapTexture->GetSRV();
+	cloudInitParams.baseNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_BASE_VOL)->GetSRV();
+	cloudInitParams.detailNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_DETAIL_VOL)->GetSRV();
+	cloudInitParams.blueNoiseSRV = m_TextureMgr->GetTexture(device, context, PathConstants::BLUE_NOISE)->GetSRV();
+	cloudInitParams.sampler = linerWrapSampler;
+
+    //if (!m_VolumetricCloud->Init(cloudInitParams)) {
+    //    return false;
+    //}
+
     if (!m_shadowMapTexture->Init(device, 
         ShadowConstants::SHADOWMAP_WIDTH, ShadowConstants::SHADOWMAP_HEIGHT, RenderTexture::RenderTextureType::Depth)) {
         return false;
@@ -159,6 +186,15 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     depthParams.device = device;
     depthParams.hwnd = hwnd;
     if (!m_DepthRecorder->Init(depthParams)) {
+        return false;
+    }
+    
+    Composite::InitParams compositeParams;
+    compositeParams.device = device;
+    compositeParams.hwnd = hwnd;
+    compositeParams.vPath = PathConstants::COMPOSITE_VS;
+    compositeParams.pPath = PathConstants::COMPOSITE_PS;
+    if (!m_Composite->Init(compositeParams)) {
         return false;
     }
 
@@ -176,11 +212,13 @@ void Renderer::Shutdown() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr.reset();
     }
-
     //  [렌더링 객체]
     if (m_SkyBox) {
         m_SkyBox.reset();
     }
+    if (m_AtmosphereLUT) {
+        m_AtmosphereLUT.reset();
+	}
     if (m_Stone) {
         m_Stone.reset();
     }
@@ -194,6 +232,9 @@ void Renderer::Shutdown() {
     if (m_weatherMapTexture) {
         m_weatherMapTexture.reset();
     }
+    if (m_Composite) {
+        m_Composite.reset();
+	}
     if (m_DepthRecorder) {
         m_DepthRecorder.reset();
     }
@@ -264,8 +305,8 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     FrameBuffer fData;
     fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
     fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
-    fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, fData.view));
-    fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, fData.projection));
+    fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetViewMatrix()));
+    fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
     fData.cameraPosition = m_Camera->GetPosition();
     fData.screenResolution = XMFLOAT2((float)RendererState::ScreenWidth, (float)RendererState::ScreenHeight);
     fData.time = m_renderingTime;
@@ -348,9 +389,17 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
+    Atmosphere::ExecuteParams atmoExecParams;
+    atmoExecParams.LightDirection = m_DirectionalLight->GetDirection();
+	atmoExecParams.CameraPosition = m_Camera->GetPosition();
+    atmoExecParams.time = m_renderingTime;
+
+    m_AtmosphereLUT->Execute(context, atmoExecParams);
+
     SkyBox::RenderParams skyParams;
 	skyParams.camPos = m_Camera->GetPosition();
     skyParams.time = m_renderingTime;
+	skyParams.skyLUT = m_AtmosphereLUT->GetLUT();
 
     m_SkyBox->Render(context, skyParams);
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
@@ -380,11 +429,6 @@ void Renderer::UpadteWidgets() {
 		));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "SkyBox Atmosphere",
-            [this]() { m_SkyBox->OnGui(); }
-        ));
-
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",
             [this]() { m_DirectionalLight->OnGui(); }
         ));
@@ -392,6 +436,11 @@ void Renderer::UpadteWidgets() {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Ground Control",
             [this]() { m_Ground->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Atmosphere Control",
+            [this]() { m_AtmosphereLUT->OnGui(); }
         ));
 
     }

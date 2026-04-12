@@ -19,13 +19,16 @@ public:
     struct WeatherMapBuffer {
         // [Row 1]
         DirectX::XMFLOAT2 resolution;
-        float  time;
-        float  coverage; // 구름 분포도 (0.0: 맑음 ~ 1.0: 흐림)
+        DirectX::XMFLOAT2 padding1;
+		// [Row 2]
+        DirectX::XMFLOAT3 seed;
+		float             padding2;
 
         WeatherMapBuffer() {
-            resolution = SharedConstants::BuffersConstants::RESOLUTION;
-            time = 0.0f;
-            coverage = SharedConstants::BuffersConstants::COVERAGE;
+            resolution = SharedConstants::BuffersConstants::WEATHER_MAP_RESOLUTION;
+            padding1 = DirectX::XMFLOAT2(0.0f, 0.0f);
+			seed = DirectX::XMFLOAT3(13.0f, 17.0f, 19.0f);
+			padding2 = 0.0f;
         }
     }; // WeatherMapBuffer
 

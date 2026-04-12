@@ -12,7 +12,7 @@ using namespace ShaderHelper;
 using namespace SharedConstants;
 
 WeatherGenerator::WeatherGenerator() 
-    : m_gridSize(8.0f), m_dispatchCount(1){
+    : m_gridSize(16.0f), m_dispatchCount(1){
 } // CloudMap
 
 WeatherGenerator::~WeatherGenerator() {
