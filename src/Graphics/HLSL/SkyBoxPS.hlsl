@@ -1,15 +1,5 @@
 // SkyBoxPS.hlsl
 // https://www.shadertoy.com/view/wlBXWK
-// https://github.com/chihirobelmo/volumetric-cloud-for-directx11/blob/main/VolumetricCloud/shaders/RayMarch.hlsl
-// https://github.com/fede-vaccaro/TerrainEngine-OpenGL/blob/master/shaders/volumetric_clouds.comp
-// https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html
-// https://www.jpgrenier.org/clouds.html
-// https://erk.fe.uni-lj.si/2025/papers/loboda%28real_time_volumetric%29.pdf
-// https://forums.unrealengine.com/t/distorting-textures-with-flow-maps/68111
-// https://forums.odforce.net/topic/23724-flow-map-from-fluid-velocity-for-game-application/
-// https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine
-// https://www.guerrilla-games.com/media/News/Files/The-Real-time-Volumetric-Cloudscapes-of-Horizon-Zero-Dawn.pdf
-// https://github.com/microsoft/DirectX-Graphics-Samples/tree/master
 #include "Common.hlsli"
 #include "Atmosphere.hlsli"
 #include "Remap.hlsli"

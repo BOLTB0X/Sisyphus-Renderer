@@ -8,17 +8,17 @@ namespace SharedConstants {
     namespace BuffersConstants {
 
         // Atmoshpere
-        static constexpr float PLANET_RADIUS = 6371.0f;
-        static constexpr float ATMOSPHERE_RADIUS = 6471.0;
-        static constexpr float ATMOSPHERE_HEIGHT = 100.0f;
-        static constexpr float RAYLEIGH_HEIGHT = 8.0f;
-        static constexpr float MIE_HEIGHT = 1.2;
-        static constexpr float ABSORPTION_HEIGHT = 30.0f;
-        static constexpr float ABSORPTION_FALLOFF = 4.0f;
+        static constexpr float PLANET_RADIUS = 6371000.0f;
+        static constexpr float ATMOSPHERE_RADIUS = 6471000.0f;
+        static constexpr float ATMOSPHERE_HEIGHT = 100000.0f;
+        static constexpr float RAYLEIGH_HEIGHT = 8000.0f;
+        static constexpr float MIE_HEIGHT = 1.2e3f;
+        static constexpr float ABSORPTION_HEIGHT = 30000.0f;
+        static constexpr float ABSORPTION_FALLOFF = 4000.0f;
 
-        static constexpr DirectX::XMFLOAT3 RAYLEIGH_SCATTERING_COEFFICIENT = { 5.8e-3f, 13.5e-3f, 33.1e-3f };
-        static constexpr float             MIE_BETA = 21e-3f;
-        static constexpr DirectX::XMFLOAT3 MIE_SCATTERING_COEFFICIENT = { 21e-3f, 21e-3f, 21e-3f };
+        static constexpr DirectX::XMFLOAT3 RAYLEIGH_SCATTERING_COEFFICIENT = { 5.8e-6f, 13.5e-6f, 33.1e-6f };
+        static constexpr float             MIE_BETA = 21e-6f;
+        static constexpr DirectX::XMFLOAT3 MIE_SCATTERING_COEFFICIENT = { 21e-6f, 21e-6f, 21e-6f };
 
         static constexpr float             AMBIENT_BETA = 0.0f;
         static constexpr float             G = 0.9f;
@@ -43,7 +43,6 @@ namespace SharedConstants {
         static constexpr float             VOL_OCTAVES = 4;
         static constexpr float             VOL_REMAP_BIAS = 0.0f;
 
-
         // WeatherMap
         static constexpr DirectX::XMFLOAT2 WEATHER_MAP_RESOLUTION = { 1024.0f, 1024.0f };
 \
@@ -58,8 +57,18 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 2.0f;
 
         // Cloud
-        static constexpr float             CLOUD_MIN_HEIGHT = 1.5f;
-        static constexpr float             CLOUD_MAX_HEIGHT = 2.5f;
+        static constexpr float             CLOUD_BOTTOM = 1500.0f;
+        static constexpr float             CLOUD_TOP = 2500.0f;
+		static constexpr float             CLOUD_COVERAGE = 0.52f;
+        static constexpr float             CLOUD_DENSITY = 0.03f;
+        static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
+        static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
+        static constexpr float             CLOUD_FORWARD_SCATTERING_G = 0.8f;
+        static constexpr float             CLOUD_BACKWARD_SCATTERING_G = -0.2f;
+        static constexpr float             CLOUD_SCATTERING_LERP = 0.5f;
+        static constexpr float             CLOUD_MIN_TRANSMITTANCE = 0.1f;
+        static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_TOP = { 149.0f * (1.5f / 255.0f), 167.0f * (1.5f / 255.0f), 200.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_BOTTOM = { 39.0f * (1.5f / 255.0f), 67.0f * (1.5f / 255.0f), 87.0f * (1.5f / 255.0f) };
 
     } // BuffersConstants
 }

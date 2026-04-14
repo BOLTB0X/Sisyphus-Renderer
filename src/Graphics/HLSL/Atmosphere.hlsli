@@ -346,7 +346,7 @@ float3 calculate_sunlight_color(float3 sunDir, float earthRadius)
         color.xyz *= shadow;
     }
 
-    return color;
+    return color.xyz;
 } // calculate_sunlight_color
 
 #endif // _ATMOSPHERE_HLSLI_

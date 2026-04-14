@@ -3,7 +3,7 @@
 #include "Common.hlsli"
 #include "Atmosphere.hlsli"
 
-cbuffer AtmosphereBuffer : register(b3)
+cbuffer AtmosphereBuffer : register(b2)
 {
     // [Row 1] 단순 그라데이션
     float4 aZenithColor;
@@ -40,7 +40,7 @@ cbuffer AtmosphereBuffer : register(b3)
     float2 aPadding3;
 }; // AtmosphereBuffer
 
-cbuffer ResolutionBuffer : register(b4)
+cbuffer ResolutionBuffer : register(b3)
 {
     float2 rResolution;
     float2 rPadding;
@@ -65,10 +65,10 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float phi = (0.5f - uv.y) * PI; // -PI/2 ~ PI/2
     
     float3 rd = float3(cos(phi) * sin(theta), sin(phi), cos(phi) * cos(theta));
-    float3 ro = cCameraPosition / KM;
+    float3 ro = cCameraPosition;
     float max_dist = MAX_DIST;
 
-    float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius - 0.1f);
+    float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius - 100.0f);
     float groundDist = (planet_intersect.x > 0) ? planet_intersect.x : max_dist;
     float3 scene_color = dot(rd, cLightDirection) > 0.9998 ? 3.0 : 0.0;
 

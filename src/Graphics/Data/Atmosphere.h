@@ -107,14 +107,6 @@ private:
         }
     }; // AtmosphereBuffer
 
-    struct ResolutionBuffer {
-		DirectX::XMFLOAT2 resolution;
-		DirectX::XMFLOAT2 padding;
-
-        ResolutionBuffer() : resolution(1024.0f, 512.0f), padding(0.0f, 0.0f) {
-        }
-    }; // ResolutionBuffer
-
 private:
     void Compute(ID3D11DeviceContext*);
     bool UpdateAtmosphereBuffer(ID3D11DeviceContext*);
@@ -129,9 +121,9 @@ private:
     ID3D11SamplerState*                         m_linerWrapSampler;
     // etc
     AtmosphereBuffer                            m_atmosphereData;
-    ResolutionBuffer                            m_resolutionData;
+    ConstantBuffer::ResolutionBuffer            m_resolutionData;
     AtmosphereBuffer                            m_prevAtmosphereData;
-    ResolutionBuffer                            m_prevResolutionData;
+    ConstantBuffer::ResolutionBuffer            m_prevResolutionData;
     DirectX::XMFLOAT3                           m_preLightDirection;
     DirectX::XMFLOAT3                           m_preCameraPosition;
 }; // Atmosphere

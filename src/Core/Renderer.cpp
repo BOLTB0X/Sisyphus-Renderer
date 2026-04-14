@@ -18,7 +18,7 @@
 #include "Data/Atmosphere.h"
 #include "Data/VolumetricCloud.h"
 #include "Data/DepthRecorder.h"
-#include "Data/WeatherGenerator.h"
+#include "Data/CloudMap.h"
 // Resources
 #include "Resources/ConstantBufferType.h"
 #include "Resources/VolumeTexture.h"
@@ -54,9 +54,8 @@ Renderer::Renderer() {
     m_DirectionalLight = std::make_unique<DirectionalLight>();
 	m_VolumetricCloud = std::make_unique<VolumetricCloud>();
     m_DepthRecorder = std::make_unique<DepthRecorder>();
-	m_WeatherGenerator = std::make_unique<WeatherGenerator>();
-    m_shadowMapTexture = std::make_unique<RenderTexture>();
-    m_weatherMapTexture = std::make_unique<RenderTexture>();
+	m_CloudMapLUT = std::make_unique<CloudMap>();
+    m_shadowRT = std::make_unique<RenderTexture>();
 	m_AtmosphereLUT = std::make_unique<Atmosphere>();
 	m_Composite = std::make_unique<Composite>();
     m_TextureMgr = std::make_shared<TextureManager>();
@@ -117,22 +116,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    if (!m_weatherMapTexture->Init(device, 1024, 1024,
-        RenderTexture::RenderTextureType::UAV, DXGI_FORMAT_R16G16_FLOAT)) {
-        return false;
-    }
-
-    WeatherGenerator::InitParams weatherParams;
-    weatherParams.device = device;
-    weatherParams.hwnd = hwnd;
-    weatherParams.path = PathConstants::WMAP_CS;
-    if (!m_WeatherGenerator->Init(weatherParams)) {
+    CloudMap::InitParams cloudMapParams;
+    cloudMapParams.device = device;
+    cloudMapParams.hwnd = hwnd;
+    if (!m_CloudMapLUT->Init(cloudMapParams)) {
         return false;
     }
     else {
-        WeatherGenerator::GenerateParams weatherGenParams;
-        weatherGenParams.target = m_weatherMapTexture->GetUAV();
-        m_WeatherGenerator->Generate(context, weatherGenParams);
+        m_CloudMapLUT->Generate(context);
     }
 
 	Atmosphere::InitParams atmoParams;
@@ -167,17 +158,16 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 	VolumetricCloud::InitParams cloudInitParams;
 	cloudInitParams.device = device;
 	cloudInitParams.hwnd = hwnd;
-	cloudInitParams.weatherMapSRV = m_weatherMapTexture->GetSRV();
-	cloudInitParams.baseNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_BASE_VOL)->GetSRV();
-	cloudInitParams.detailNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_DETAIL_VOL)->GetSRV();
+	cloudInitParams.CloudMapLUTSRV = m_CloudMapLUT->GetSRV();
+	cloudInitParams.worleyNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_WORLEY_NOISE)->GetSRV();
 	cloudInitParams.blueNoiseSRV = m_TextureMgr->GetTexture(device, context, PathConstants::BLUE_NOISE)->GetSRV();
 	cloudInitParams.sampler = linerWrapSampler;
 
-    //if (!m_VolumetricCloud->Init(cloudInitParams)) {
-    //    return false;
-    //}
+    if (!m_VolumetricCloud->Init(cloudInitParams)) {
+        return false;
+    }
 
-    if (!m_shadowMapTexture->Init(device, 
+    if (!m_shadowRT->Init(device, 
         ShadowConstants::SHADOWMAP_WIDTH, ShadowConstants::SHADOWMAP_HEIGHT, RenderTexture::RenderTextureType::Depth)) {
         return false;
     }
@@ -226,11 +216,8 @@ void Renderer::Shutdown() {
         m_Ground.reset();
     }
     // [리소스 생성기 및 중간 데이터]
-    if (m_WeatherGenerator) {
-        m_WeatherGenerator.reset();
-    }
-    if (m_weatherMapTexture) {
-        m_weatherMapTexture.reset();
+    if (m_CloudMapLUT) {
+        m_CloudMapLUT.reset();
     }
     if (m_Composite) {
         m_Composite.reset();
@@ -238,8 +225,8 @@ void Renderer::Shutdown() {
     if (m_DepthRecorder) {
         m_DepthRecorder.reset();
     }
-    if (m_shadowMapTexture) {
-        m_shadowMapTexture.reset();
+    if (m_shadowRT) {
+        m_shadowRT.reset();
     }
     // [렌더러 핵심 컴포넌트]
     if (m_DirectionalLight) {
@@ -308,6 +295,7 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetViewMatrix()));
     fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
     fData.cameraPosition = m_Camera->GetPosition();
+	fData.cameraFov = m_Camera->GetFov();
     fData.screenResolution = XMFLOAT2((float)RendererState::ScreenWidth, (float)RendererState::ScreenHeight);
     fData.time = m_renderingTime;
 
@@ -333,6 +321,8 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 
+	Compute(context, states);
+
     DrawGround(context, states);
     DrawStone(context, states);
     DrawSkyBox(context, states);
@@ -345,12 +335,12 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
 } // MainPass
 
 void Renderer::DepthPass(ID3D11DeviceContext* context, D3D11State* states) {
-    context->OMSetRenderTargets(1, &m_nullRTV, m_shadowMapTexture->GetDSV());
-    m_shadowMapTexture->ClearDepth(context);
+    context->OMSetRenderTargets(1, &m_nullRTV, m_shadowRT->GetDSV());
+    m_shadowRT->ClearDepth(context);
 
     D3D11_VIEWPORT shadowViewport = {};
-    shadowViewport.Width = static_cast<float>(m_shadowMapTexture->GetWidth());
-    shadowViewport.Height = static_cast<float>(m_shadowMapTexture->GetHeight());
+    shadowViewport.Width = static_cast<float>(m_shadowRT->GetWidth());
+    shadowViewport.Height = static_cast<float>(m_shadowRT->GetHeight());
     shadowViewport.MinDepth = 0.0f;
     shadowViewport.MaxDepth = 1.0f;
     context->RSSetViewports(1, &shadowViewport);
@@ -389,13 +379,6 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
-    Atmosphere::ExecuteParams atmoExecParams;
-    atmoExecParams.LightDirection = m_DirectionalLight->GetDirection();
-	atmoExecParams.CameraPosition = m_Camera->GetPosition();
-    atmoExecParams.time = m_renderingTime;
-
-    m_AtmosphereLUT->Execute(context, atmoExecParams);
-
     SkyBox::RenderParams skyParams;
 	skyParams.camPos = m_Camera->GetPosition();
     skyParams.time = m_renderingTime;
@@ -416,10 +399,24 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     groundParams.cameraPosition = m_Camera->GetPosition();
     groundParams.time = m_renderingTime;
 
-    m_Ground->SetShadowMap(m_shadowMapTexture->GetSRV());
+    m_Ground->SetShadowMap(m_shadowRT->GetSRV());
     m_Ground->SetShadowSampler(m_D3D11Mgr->GetStates()->GetShadowSamplerState());
     m_Ground->Render(context, groundParams);
 } // DrawGround
+
+void Renderer::Compute(ID3D11DeviceContext* context, D3D11State* states) {
+    Atmosphere::ExecuteParams atmoExecParams;
+    atmoExecParams.LightDirection = m_DirectionalLight->GetDirection();
+    atmoExecParams.CameraPosition = m_Camera->GetPosition();
+    atmoExecParams.time = m_renderingTime;
+
+    m_AtmosphereLUT->Execute(context, atmoExecParams);
+
+    VolumetricCloud::ExecuteParams cloudExecParams;
+    cloudExecParams.time = m_renderingTime;
+    cloudExecParams.SkyLUTSRV = m_AtmosphereLUT->GetLUT();
+    m_VolumetricCloud->Execute(context, cloudExecParams);
+} // Compute
 
 void Renderer::UpadteWidgets() {
     if (m_ImGuiMgr) {
@@ -428,20 +425,25 @@ void Renderer::UpadteWidgets() {
             [this]() { m_Camera->OnGui(); }
 		));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Light Control",
-            [this]() { m_DirectionalLight->OnGui(); }
-        ));
+  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+  //          "Light Control",
+  //          [this]() { m_DirectionalLight->OnGui(); }
+  //      ));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Ground Control",
-            [this]() { m_Ground->OnGui(); }
-        ));
+  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+  //          "Ground Control",
+  //          [this]() { m_Ground->OnGui(); }
+  //      ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Atmosphere Control",
             [this]() { m_AtmosphereLUT->OnGui(); }
         ));
 
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Volumetric Cloud Control",
+            [this]() { m_VolumetricCloud->OnGui(); }
+        ));
     }
 } // UpadteWidgets

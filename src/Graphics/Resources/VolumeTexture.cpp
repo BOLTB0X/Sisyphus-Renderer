@@ -25,9 +25,7 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
     // 밉맵 생성을 위해서는 반드시 RENDER_TARGET 바인드 플래그가 필요 (DirectX 11 제약 사항)
     texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
     texDesc.Usage = D3D11_USAGE_DEFAULT;
-    // SRV(읽기)와 UAV(쓰기) 권한을 모두 부여
-    // 구름 밀도는 컴퓨트 셰이더에서 기록되고, 레이마칭 셰이더에서 읽히므로 둘 다 필요
-    //texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS; 
+
 
     HRESULT hr = device->CreateTexture3D(&texDesc, nullptr, m_texture.GetAddressOf());
     if (FAILED(hr)) {

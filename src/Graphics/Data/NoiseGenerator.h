@@ -19,28 +19,11 @@ public:
         }
 	}; // InitParams
 
-    struct NoiseBuffer {
-        // Row 1
-        DirectX::XMFLOAT3 textureSize;
-        float             padding;
-
-        NoiseBuffer() {
-            textureSize = { 0.0f, 0.0f, 0.0f };
-			padding = 0.0f;
-        }
-
-        NoiseBuffer(DirectX::XMFLOAT3 texSize) {
-            textureSize = texSize;
-            padding = 0.0f;
-        }
-
-    }; // NoiseBuffer
-
     struct GenerateParams {
-        VolumeTexture* target;
-        NoiseBuffer    data;
+        VolumeTexture*     target;
+        DirectX::XMFLOAT3  resolution;
 
-        GenerateParams() : target(nullptr), data() {
+        GenerateParams() : target(nullptr), resolution(0.0f, 0.0f, 0.0f) {
         }
 	}; // GenerateParams
 
@@ -53,6 +36,5 @@ public:
 
 private:
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_computeShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>        m_noiseBuffer;
     int                                         m_grupeSize;
 }; // NoiseGenerator

@@ -16,7 +16,6 @@ namespace ConstantBuffer {
 		}
     }; // MatrixBuffer
 
-   
     struct ShadowBuffer {
         // Row 1
         DirectX::XMMATRIX world;
@@ -42,7 +41,7 @@ namespace ConstantBuffer {
         DirectX::XMMATRIX viewInv;
         DirectX::XMMATRIX projInv;
         DirectX::XMFLOAT3 cameraPosition;
-        float             padding1;
+        float             cameraFov;
         DirectX::XMFLOAT2 screenResolution;
         float             time;
         float             padding2;
@@ -52,7 +51,7 @@ namespace ConstantBuffer {
             projection(DirectX::XMMatrixIdentity()),
             viewInv(DirectX::XMMatrixIdentity()),
             projInv(DirectX::XMMatrixIdentity()),
-            cameraPosition(0.0f, 0.0f, 0.0f), padding1(0.0f),
+            cameraPosition(0.0f, 0.0f, 0.0f), cameraFov(0.0f),
             screenResolution((float)SharedConstants::ScreenConstants::WIDTH, (float)SharedConstants::ScreenConstants::HEIGHT),
             time(0.0f), padding2(0.0f) {
 		}
@@ -77,5 +76,13 @@ namespace ConstantBuffer {
             lightProjectionMatrix(DirectX::XMMatrixIdentity()) {
         }
     }; // DirectionalLightBuffer
+
+    struct ResolutionBuffer {
+        DirectX::XMFLOAT2 resolution;
+        DirectX::XMFLOAT2 padding;
+
+        ResolutionBuffer() : resolution(1024.0f, 512.0f), padding(0.0f, 0.0f) {
+        }
+    }; // ResolutionBuffer
 
 } // ConstantBuffer

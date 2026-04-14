@@ -2,8 +2,8 @@
 #ifndef _COMMON_HLSLI_
 #define _COMMON_HLSLI_
 
-#define KM           1000.0f
-#define PI           3.14159265f
+#define KM 1000.0f
+#define PI 3.14159265f
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -13,7 +13,7 @@ cbuffer FrameBuffer : register(b0)
     matrix cProjInv;
     
     float3 cCameraPosition;
-    float  fPadding1;
+    float  cCameraFov;
     
     float2 cScreenResolution;
     float  cTime;
@@ -94,5 +94,6 @@ static float2 get_spherical_uv(float3 rd)
     uv.y = 0.5f - (asin(clamp(rd.y, -1.0f, 1.0f)) / PI);
     return uv;
 } // get_spherical_uv
+
 
 #endif // _COMMON_HLSLI_

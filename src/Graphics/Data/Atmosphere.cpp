@@ -15,8 +15,8 @@
 #define UAV_SLOT_LUT           0
 #define TEX_SLOT_DEPTH         1
 #define TEX_SLOT_LUT           2
-#define CONSTANS_SLOT1         3
-#define CONSTANS_SLOT2         4
+#define CONSTANS_SLOT1         2
+#define CONSTANS_SLOT2         3
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -152,8 +152,6 @@ void Atmosphere::OnGui() {
     ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[ Debug Textures ]");
 
     ImGui::Spacing();
-
-    static int sliceIndex = 0;
 
     if (m_LUT) {
         ImGui::Text("Volume SRV Preview (Base Layer):");

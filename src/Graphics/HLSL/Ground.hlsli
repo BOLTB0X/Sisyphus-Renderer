@@ -2,7 +2,6 @@
 // https://www.shadertoy.com/view/ld3BzM
 #ifndef _GROUND_HLSLI_
 #define _GROUND_HLSLI_
-
 #include "Maths.hlsli"
 #include "Noise.hlsli"
 

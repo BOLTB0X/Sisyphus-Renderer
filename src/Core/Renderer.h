@@ -20,7 +20,7 @@ class Ground;
 class VolumetricCloud;
 class DepthRecorder;
 class RenderTexture;
-class WeatherGenerator;
+class CloudMap;
 class Atmosphere;
 class Composite;
 
@@ -46,6 +46,7 @@ private:
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
+	void Compute(ID3D11DeviceContext*, D3D11State*);
 
     void UpadteWidgets();
 
@@ -62,13 +63,13 @@ private:
     std::unique_ptr<DirectionalLight>     m_DirectionalLight;
     std::unique_ptr<VolumetricCloud>      m_VolumetricCloud;
     std::unique_ptr<DepthRecorder>        m_DepthRecorder;
-    std::unique_ptr<WeatherGenerator>     m_WeatherGenerator;
+    std::unique_ptr<CloudMap>             m_CloudMapLUT;
     std::unique_ptr<Atmosphere>           m_AtmosphereLUT;
     std::unique_ptr<Composite>            m_Composite;
+
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
-    std::unique_ptr<RenderTexture>        m_shadowMapTexture;
-    std::unique_ptr<RenderTexture>        m_weatherMapTexture;
+    std::unique_ptr<RenderTexture>        m_shadowRT;
 
     ID3D11RenderTargetView*               m_nullRTV;
     ID3D11ShaderResourceView*             m_nullSRV;
