@@ -8,14 +8,15 @@
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
 // define
-#define SAMPLER_SLOT           0
+#define SAMPLER_SLOT1          0
+#define SAMPLER_SLOT2          1
 #define UAV_SLOT               0
-#define TEX_SLOT_CLOUD_LUT     1
-#define TEX_SLOT_WORLEY_NOISE  2
-#define TEX_SLOT_BLUE_NOISE    3
-#define TEX_SLOT_SKY_LUT       4
-#define CONSTANS_SLOT1         3
-#define CONSTANS_SLOT2         4
+#define TEX_SLOT_DEPTH         1
+#define TEX_SLOT_CLOUD_LUT     2
+#define TEX_SLOT_WORLEY_NOISE  3
+#define TEX_SLOT_BLUE_NOISE    4
+#define TEX_SLOT_SKY_LUT       5
+#define CONSTANS_SLOT1         2
 
 using namespace SharedConstants;
 using namespace ShaderHelper;
@@ -25,6 +26,7 @@ using namespace DebugHelper;
 VolumetricCloud::VolumetricCloud() {
 	m_resultRT = std::make_unique<RenderTexture>();
 	m_linerWrapSampler = nullptr;
+	m_pointClampSampler = nullptr;
 	m_cloudMapLUTSRV = nullptr;
 	m_worleyNoiseSRV = nullptr;
 	m_blueNoiseSRV = nullptr;
@@ -33,6 +35,7 @@ VolumetricCloud::VolumetricCloud() {
 
 VolumetricCloud::~VolumetricCloud() {
 	m_linerWrapSampler = nullptr;
+	m_pointClampSampler = nullptr;
 	m_cloudMapLUTSRV = nullptr;
 	m_worleyNoiseSRV = nullptr;
 	m_blueNoiseSRV = nullptr;
@@ -56,8 +59,9 @@ bool VolumetricCloud::Init(const InitParams& params) {
         return false;
     }
 
-	m_linerWrapSampler = params.sampler;
-	m_cloudMapLUTSRV = params.CloudMapLUTSRV;
+	m_linerWrapSampler = params.wrapSampler;
+	m_pointClampSampler = params.pointSampler;
+	m_cloudMapLUTSRV = params.cloudMapLUTSRV;
 	m_worleyNoiseSRV = params.worleyNoiseSRV;
 	m_blueNoiseSRV = params.blueNoiseSRV;
 
@@ -72,7 +76,9 @@ void VolumetricCloud::Execute(ID3D11DeviceContext* context, const ExecuteParams&
 	ID3D11UnorderedAccessView* pUAV = m_resultRT->GetUAV();
 	context->CSSetUnorderedAccessViews(UAV_SLOT, 1, &pUAV, nullptr);
 
-	context->CSSetSamplers(SAMPLER_SLOT, 1, &m_linerWrapSampler);
+	context->CSSetSamplers(SAMPLER_SLOT1, 1, &m_linerWrapSampler);
+	context->CSSetSamplers(SAMPLER_SLOT2, 1, &m_pointClampSampler);
+	context->CSSetShaderResources(TEX_SLOT_DEPTH, 1, &params.depthSRV);
 	context->CSSetShaderResources(TEX_SLOT_CLOUD_LUT, 1, &m_cloudMapLUTSRV);
 	context->CSSetShaderResources(TEX_SLOT_WORLEY_NOISE, 1, &m_worleyNoiseSRV);
 	context->CSSetShaderResources(TEX_SLOT_BLUE_NOISE, 1, &m_blueNoiseSRV);

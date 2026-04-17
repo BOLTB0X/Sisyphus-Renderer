@@ -11,42 +11,21 @@
 #ifndef _VOLUMETRICCLOUD_HLSLI_
 #define _VOLUMETRICCLOUD_HLSLI_
 
-// ==========================================
-// 상수 및 배열 정의
-// =========================================
-static const float3 windDirection = normalize(float3(0.5f, 0.0f, 0.1f));
-static const float coverage_multiplier = 0.4f;
-static const float crispiness = 0.4f;
-static const float curliness = 0.1f;
-static const float absorption = 0.0035f;
-static const float densityFactor = 0.02f;
+#define CLOUD_MARCH_STEPS                   64
+#define CLOUD_SELF_SHADOW_STEPS             8
+#define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
+#define CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE 4.0f
+#define CLOUDS_SHADOW_MARGE_STEP_MULTIPLY   1.3f
+#define CLOUDMAP_UV_OFFSET                  0.00005f
+#define WORLEY_UV_OFFSET                    0.0016f
+#define HEIGHT_BASED_FOG_B                  0.02f
+#define HEIGHT_BASED_FOG_C                  0.05f
 
-// 구름 타입별 그라데이션 (x: start_fade_in, y: end_fade_in, z: start_fade_out, w: end_fade_out)
-static const float4 STRATUS_GRADIENT = float4(0.02f, 0.05f, 0.09f, 0.11f);
-static const float4 STRATOCUMULUS_GRADIENT = float4(0.02f, 0.2f, 0.48f, 0.625f);
-static const float4 CUMULUS_GRADIENT = float4(0.01f, 0.0625f, 0.78f, 1.0f);
-
-// 4x4 디더링용 Bayer Filter (HLSL 배열 문법)
-static const float bayerFilter[16] =
-{
-    0.0f / 16.0f, 8.0f / 16.0f, 2.0f / 16.0f, 10.0f / 16.0f,
-   12.0f / 16.0f, 4.0f / 16.0f, 14.0f / 16.0f, 6.0f / 16.0f,
-    3.0f / 16.0f, 11.0f / 16.0f, 1.0f / 16.0f, 9.0f / 16.0f,
-   15.0f / 16.0f, 7.0f / 16.0f, 13.0f / 16.0f, 5.0f / 16.0f
-};
-
-// 빛 마칭용 랜덤 방향 벡터 (Cone Sampling)
-static const float3 noiseKernel[6] =
-{
-    float3(0.3805f, 0.9245f, -0.0211f), float3(-0.5062f, -0.0359f, -0.8616f),
-    float3(-0.3250f, -0.9455f, 0.0142f), float3(0.0902f, -0.2737f, 0.9575f),
-    float3(0.2812f, 0.4244f, -0.8606f), float3(-0.4172f, 0.3553f, 0.8365f)
-};
-float henyeygreenstein(float sundotrd, float g)
+float henyey_greenstein(float sundotrd, float g)
 {
     float gg = g * g;
-    return (1.0f - gg) / pow(1.0f + gg - 2.0f * g * sundotrd, 1.5f);
-} // henyeygreenstein
+    return (1. - gg) / pow(1. + gg - 2. * g * sundotrd, 1.5);
+} // henyey_greenstein
 
 float linear_step(const float s, const float e, float v)
 {
@@ -79,23 +58,6 @@ float get_height_fraction(float3 p, float3 center, float innerR, float outerR)
     return saturate((length(p - center) - innerR) / (outerR - innerR));
 } // get_height_fraction
 
-bool ray_sphere_intersection_dual(float3 ro, float3 rd, float3 center, float radius, out float tNear, out float tFar)
-{
-    float3 oc = ro - center;
-    float b = dot(oc, rd);
-    float c = dot(oc, oc) - radius * radius;
-    float h = b * b - c;
-    
-    if (h < 0.0f)
-        return false;
-    
-    h = sqrt(h);
-    tNear = -b - h;
-    tFar = -b + h;
-    return true;
-} // ray_sphere_intersection_dual
-
-// 더 직관적이고 안전한 교차 판정 함수
 float2 get_ray_sphere_intersect(float3 ro, float3 rd, float3 sphereCenter, float radius)
 {
     float3 L = ro - sphereCenter;
@@ -116,5 +78,13 @@ float powder(float d)
 {
     return (1. - exp(-2. * d));
 } // powder
+
+float convert_to_linearDist(float d)
+{
+    float n = 0.1; // Near Plane
+    float f = 1000.0; // Far Plane
+    
+    return (n * f) / (f - d * (f - n));
+} // convert_to_linearDist
 
 #endif // _VOLUMETRICCLOUD_HLSLI_

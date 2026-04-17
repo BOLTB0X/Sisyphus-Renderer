@@ -158,10 +158,10 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 	VolumetricCloud::InitParams cloudInitParams;
 	cloudInitParams.device = device;
 	cloudInitParams.hwnd = hwnd;
-	cloudInitParams.CloudMapLUTSRV = m_CloudMapLUT->GetSRV();
+	cloudInitParams.cloudMapLUTSRV = m_CloudMapLUT->GetSRV();
 	cloudInitParams.worleyNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_WORLEY_NOISE)->GetSRV();
 	cloudInitParams.blueNoiseSRV = m_TextureMgr->GetTexture(device, context, PathConstants::BLUE_NOISE)->GetSRV();
-	cloudInitParams.sampler = linerWrapSampler;
+	cloudInitParams.wrapSampler = linerWrapSampler;
 
     if (!m_VolumetricCloud->Init(cloudInitParams)) {
         return false;
@@ -321,10 +321,10 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 
-	Compute(context, states);
 
     DrawGround(context, states);
     DrawStone(context, states);
+	Compute(context, states);
     DrawSkyBox(context, states);
 
     if (m_ImGuiMgr) {
@@ -415,6 +415,7 @@ void Renderer::Compute(ID3D11DeviceContext* context, D3D11State* states) {
     VolumetricCloud::ExecuteParams cloudExecParams;
     cloudExecParams.time = m_renderingTime;
     cloudExecParams.SkyLUTSRV = m_AtmosphereLUT->GetLUT();
+	cloudExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     m_VolumetricCloud->Execute(context, cloudExecParams);
 } // Compute
 
@@ -425,10 +426,10 @@ void Renderer::UpadteWidgets() {
             [this]() { m_Camera->OnGui(); }
 		));
 
-  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-  //          "Light Control",
-  //          [this]() { m_DirectionalLight->OnGui(); }
-  //      ));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Light Control",
+            [this]() { m_DirectionalLight->OnGui(); }
+        ));
 
   //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
   //          "Ground Control",

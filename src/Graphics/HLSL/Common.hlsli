@@ -2,8 +2,9 @@
 #ifndef _COMMON_HLSLI_
 #define _COMMON_HLSLI_
 
-#define KM 1000.0f
-#define PI 3.14159265f
+#define KM       1000.0f
+#define PI       3.14159265f
+#define MAX_DIST 1e10
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -34,6 +35,10 @@ cbuffer DirectionalLightBuffer : register(b1)
     matrix cLightView;
     matrix cLightProj;
 }; // DirectionalLightBuffer
+
+#define LIGHT_DIRECTION normalize(cLightDirection)
+#define LIGHT_COLOR     cLightAmbient
+#define TIME            cTime
 
 static float depth_to_meter(float z, matrix proj)
 {

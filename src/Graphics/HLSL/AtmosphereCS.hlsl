@@ -70,24 +70,23 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
     float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius - 100.0f);
     float groundDist = (planet_intersect.x > 0) ? planet_intersect.x : max_dist;
-    float3 scene_color = dot(rd, cLightDirection) > 0.9998 ? 3.0 : 0.0;
+    float3 scene_color = dot(rd, LIGHT_DIRECTION) > 0.9998 ? 3.0 : 0.0;
 
     if (planet_intersect.y > 0.0f)
     {
         max_dist = max(planet_intersect.x, 0.0);
         scene_color = calculate_ground_scattering(ro, rd, planet_intersect,
-            aGroundColor, 3.0 * aAtmoRadius, ORIGIN, cLightDirection, float3(aIntensity, aIntensity, aIntensity),
+            aGroundColor, 3.0 * aAtmoRadius, ORIGIN, LIGHT_DIRECTION, float3(aIntensity, aIntensity, aIntensity),
             aPlanetCenter, aPlanetRadius, aAtmoRadius,
             aRayleighBeta, aMieBeta, aAbsorptionBeta, float3(aAmbientBeta, aAmbientBeta, aAmbientBeta),
             aG, aRayleighHeight, aMieHeight, aAbsorptionHeight, aAbsorptionFalloff,
             aGroundPrimarySteps, agroundLightSteps);
-
     }
 
     float3 col = calculate_atmosphere_scattering(
         ro, rd, max_dist,
         scene_color,
-        -cLightDirection,
+        -LIGHT_DIRECTION,
         float3(aIntensity, aIntensity, aIntensity),
         aPlanetCenter,
         aPlanetRadius,

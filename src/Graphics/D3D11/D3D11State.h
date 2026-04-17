@@ -21,6 +21,7 @@ public:
     ID3D11SamplerState*      GetLinearClampSamplerState() const;
     ID3D11SamplerState*      GetShadowSamplerState() const;
     ID3D11BlendState*        GetBlendState() const;
+    ID3D11SamplerState*      GetPointClampSamplerState() const;
 
 private:
     bool InitCullBack(ID3D11Device*);
@@ -47,5 +48,6 @@ private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearWrapSamplerState;
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_linearClampSamplerState;
     Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_shadowSamplerState;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>      m_pointClampSamplerState;
     Microsoft::WRL::ComPtr<ID3D11BlendState>        m_blendState;
 }; // D3D11State

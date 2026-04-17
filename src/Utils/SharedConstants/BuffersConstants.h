@@ -31,7 +31,7 @@ namespace SharedConstants {
         // Light
         static constexpr DirectX::XMFLOAT3 LIGHT_DIR = { 0.5f, -1.0f, 0.5f };
         static constexpr DirectX::XMFLOAT4 LIGHT_DIFFUSE = { 1.0f, 1.0f, 1.0f, 1.0f };
-        static constexpr DirectX::XMFLOAT4 LIGHT_AMBIENT = { 0.15f, 0.15f, 0.15f, 1.0f };
+        static constexpr DirectX::XMFLOAT4 LIGHT_AMBIENT = { 1.0f, 0.9f, 0.85f, 1.0f };
 
         // VolumeTextures
         static constexpr DirectX::XMFLOAT3 TEXTURE_SIZE = { 128.0f, 128.0f, 128.0f };
@@ -57,16 +57,26 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 2.0f;
 
         // Cloud
-        static constexpr float             CLOUD_BOTTOM = 1500.0f;
-        static constexpr float             CLOUD_TOP = 2500.0f;
+        static constexpr float             CLOUD_BOTTOM = 1350.0f;
+        static constexpr float             CLOUD_TOP = 2350.0f;
+        static constexpr float             CLOUDS_LAYER_BOTTOM = -150.0f;
+        static constexpr float             CLOUDS_LAYER_TOP = -70.0f;
+
 		static constexpr float             CLOUD_COVERAGE = 0.52f;
+        static constexpr float             CLOUDS_LAYER_COVERAGE = 0.41f;
+        static constexpr float             CLOUD_BASE_SCALE = 1.51f;
+        static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
+
         static constexpr float             CLOUD_DENSITY = 0.03f;
         static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
+        static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
         static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
+
         static constexpr float             CLOUD_FORWARD_SCATTERING_G = 0.8f;
         static constexpr float             CLOUD_BACKWARD_SCATTERING_G = -0.2f;
         static constexpr float             CLOUD_SCATTERING_LERP = 0.5f;
         static constexpr float             CLOUD_MIN_TRANSMITTANCE = 0.1f;
+
         static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_TOP = { 149.0f * (1.5f / 255.0f), 167.0f * (1.5f / 255.0f), 200.0f * (1.5f / 255.0f) };
         static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_BOTTOM = { 39.0f * (1.5f / 255.0f), 67.0f * (1.5f / 255.0f), 87.0f * (1.5f / 255.0f) };
 
