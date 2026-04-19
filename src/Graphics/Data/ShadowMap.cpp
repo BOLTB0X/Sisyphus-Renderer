@@ -1,29 +1,51 @@
 #include "Pch.h"
-#include "DepthRecorder.h"
+#include "ShadowMap.h"
+#include "RenderTexture.h"
 #include "Helpers/ShaderHelper.h"
+#include "Helpers/DebugHelper.h"
 #include "SharedConstants/PathConstants.h"
+#include "SharedConstants/ShadowConstants.h"
 
 using namespace DirectX;
 using namespace SharedConstants;
 using namespace ConstantBuffer;
+using namespace DebugHelper;
+using namespace BuffersConstants;
 
-DepthRecorder::DepthRecorder() {
+ShadowMap::ShadowMap() {
+    m_shadowRT = std::make_unique<RenderTexture>();
+    m_shadowViewport = {};
     m_prevMatrixBufferData.world = XMMatrixIdentity();
     m_prevMatrixBufferData.view = XMMatrixIdentity();
     m_prevMatrixBufferData.projection = XMMatrixIdentity();
-} // DepthRecorder
+} // ShadowMap
 
-DepthRecorder::~DepthRecorder() {
-} // ~DepthRecorder
+ShadowMap::~ShadowMap() {
+} // ~ShadowMap
 
-bool DepthRecorder::Init(const InitParams& params) {
-    if (!params.device || !params.hwnd) return false;
+bool ShadowMap::Init(const InitParams& params) {
+    if (!params.device || !params.hwnd) {
+        return false;
+    }
+
+    if (!m_shadowRT->Init(params.device,
+        ShadowConstants::SHADOWMAP_WIDTH, ShadowConstants::SHADOWMAP_HEIGHT,
+        RenderTexture::RenderTextureType::Depth)) {
+        return false;
+    }
+
+    m_shadowViewport.Width = static_cast<float>(m_shadowRT->GetWidth());
+    m_shadowViewport.Height = static_cast<float>(m_shadowRT->GetHeight());
+    m_shadowViewport.MinDepth = 0.0f;
+    m_shadowViewport.MaxDepth = 1.0f;
 
     return InitShader(params.device, params.hwnd);
 } // Init
 
-bool DepthRecorder::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    if (!context) return false;
+bool ShadowMap::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+    if (!context) {
+        return false;
+    }
 
     if (!UpdateMatrixBuffer(context, params.worldMatrix, params.viewMatrix, params.projectionMatrix)) {
         return false;
@@ -37,7 +59,16 @@ bool DepthRecorder::Render(ID3D11DeviceContext* context, const RenderParams& par
     return true;
 } // Render
 
-bool DepthRecorder::InitShader(ID3D11Device* device, HWND hwnd) {
+void ShadowMap::ClearShadowDepth(ID3D11DeviceContext* context) {
+    m_shadowRT->ClearDepth(context);
+} // ClearShadowDepth
+
+RenderTexture*            ShadowMap::GetShadowRT() const { return m_shadowRT.get(); }
+const D3D11_VIEWPORT&     ShadowMap::GetViewport() const { return m_shadowViewport; }
+ID3D11DepthStencilView*   ShadowMap::GetDSV() { return m_shadowRT->GetDSV(); } // GetDSV
+ID3D11ShaderResourceView* ShadowMap::GetSRV() { return m_shadowRT->GetSRV(); } // GetSRV
+
+bool ShadowMap::InitShader(ID3D11Device* device, HWND hwnd) {
     using namespace ShaderHelper;
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
@@ -56,7 +87,7 @@ bool DepthRecorder::InitShader(ID3D11Device* device, HWND hwnd) {
     return true;
 } // InitShader
 
-bool DepthRecorder::UpdateMatrixBuffer(ID3D11DeviceContext* context,
+bool ShadowMap::UpdateMatrixBuffer(ID3D11DeviceContext* context,
     const XMMATRIX& world, const XMMATRIX& view, const XMMATRIX& projection) {
 
     MatrixBuffer data;

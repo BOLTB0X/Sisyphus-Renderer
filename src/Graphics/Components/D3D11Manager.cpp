@@ -11,7 +11,6 @@ D3D11Manager::D3D11Manager() {
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
     m_depthBuffer = std::make_unique<RenderTexture>();
-    m_uav = std::make_unique<RenderTexture>();
     m_viewport = {0}; 
 } // D3D11Manager
 
@@ -20,7 +19,6 @@ D3D11Manager::D3D11Manager(const D3D11Manager& other) {
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
     m_depthBuffer = std::make_unique<RenderTexture>();
-    m_uav = std::make_unique<RenderTexture>();
     m_viewport = { 0 };
 } // D3D11Manager
 
@@ -69,12 +67,6 @@ bool D3D11Manager::InitViews(int width, int height) {
         DebugHelper::DebugPrint("RenderTexture를 이용한 뎁스 버퍼 초기화 실패");
         return false;
     }
-
-    if (!m_uav->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::UAV)) {
-        DebugHelper::DebugPrint("RenderTexture를 이용한 UAV 초기화 실패");
-        return false;
-    }
-
 
     if (!InitRenderTargetView())
         return false;

@@ -43,6 +43,7 @@ bool Stone::Init(const InitParams& params) {
         return false;
     }
 
+	m_sampler = params.linerSampler;
     return true;
 } // Init
 
@@ -185,10 +186,6 @@ void Stone::Rotate(const XMFLOAT3& delta) {
 void Stone::Rotate(float x, float y, float z) {
     m_transform.Rotate(x, y, z);
 } // Rotate
-
-void Stone::SetSampler(ID3D11SamplerState* sampler) {
-	m_sampler = sampler;
-} // SetSampler
 
 XMMATRIX Stone::GetWorldMatrix() {
     return m_transform.GetWorldMatrix();

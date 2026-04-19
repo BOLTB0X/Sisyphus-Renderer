@@ -8,10 +8,10 @@
 #ifndef _ATMOSPHERE_HLSLI_
 #define _ATMOSPHERE_HLSLI_
 
+#include "Common.hlsli"
+
 #define DEFAULT_LIGHT_DIR float3(0.0f, -1.0f, 0.0f)
 #define ORIGIN            float3(0.0f, 0.0f, 0.0f)
-#define MIN_DIST          float(1e-4f)
-#define MAX_DIST          float(1e7f)
 
 float3 ray_apply_curvature(float3 rayPos, float3 rayStart, float earthRadius)
 {

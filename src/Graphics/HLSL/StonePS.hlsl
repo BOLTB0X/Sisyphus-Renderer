@@ -19,11 +19,11 @@ SamplerState sampler0      : register(s0);
 float4 main(PS_INPUT input) : SV_TARGET
 {
     float4 textureColor = albedoTexture.Sample(sampler0, input.texCoord);
-    float3 lightDir = normalize(-cLightDirection);
+    float3 lightDir = normalize(-LIGHT_DIRECTION);
     float3 normal = normalize(input.normal);
     float lightIntensity = saturate(dot(normal, lightDir));
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f);
-    float4 color = (textureColor * cLightDiffuse * lightIntensity) + (textureColor * ambient);
+    float4 color = (textureColor * LIGHT_COLOR * lightIntensity) + (textureColor * ambient);
     float4 aoData = aoTexture.Sample(sampler0, input.texCoord);
     color.rgb *= aoData.r;
 

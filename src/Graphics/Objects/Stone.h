@@ -17,14 +17,15 @@ public:
         HWND                            hwnd;
         std::shared_ptr<TextureManager> textMgr;
         std::string                     path;
+        ID3D11SamplerState*             linerSampler;
 
-        InitParams() : device(nullptr), context(nullptr), hwnd(nullptr), textMgr(nullptr), path("") {
+        InitParams() : device(nullptr), context(nullptr), hwnd(nullptr), 
+            textMgr(nullptr), path(""), linerSampler(nullptr) {
 		}
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMMATRIX world;
-
+        DirectX::XMMATRIX   world;
         RenderParams() : world(DirectX::XMMatrixIdentity()) {
 		}
     }; // RenderParams
@@ -44,7 +45,6 @@ public:
 	void SetRotation(float, float, float);
 	void SetScale(const DirectX::XMFLOAT3&);
 	void SetScale(float, float, float);
-    void SetSampler(ID3D11SamplerState*);
 
 	void Translate(const DirectX::XMFLOAT3&);
 	void Translate(float, float, float);
@@ -53,7 +53,6 @@ public:
 
     DirectX::XMMATRIX GetWorldMatrix();
     unsigned int 	  GetRenderCount() const;
-
 
 private:
     struct WorldBuffer {

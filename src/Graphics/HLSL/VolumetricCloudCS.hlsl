@@ -1,5 +1,5 @@
 // VolumetricCloudCS.hlsl
-// // https://www.shadertoy.com/view/MdGfzh
+// https://www.shadertoy.com/view/MdGfzh
 // https://github.com/chihirobelmo/volumetric-cloud-for-directx11/blob/main/VolumetricCloud/shaders/RayMarch.hlsl
 // https://github.com/fede-vaccaro/TerrainEngine-OpenGL/blob/master/shaders/volumetric_clouds.comp
 // https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html
@@ -107,7 +107,7 @@ float GetCloudMapBase(float3 p, float norY)
     return remap(cloud.r - n, cloud.g, 1.0f);
 } // GetCloudMapBase
 
-float GetCloudMapDetail(float3 p)
+float GetWorleyNoise(float3 p)
 {
     float2 detailWindOffset = WIND_DIRECTION * TIME * WIND_SPEED * 200.0f;
     //float3 p3d = abs(p) * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
@@ -115,6 +115,12 @@ float GetCloudMapDetail(float3 p)
                  * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
     return WorleyNoise.SampleLevel(LinearWrapSampler, p3d, 0).r;
 } // GetCloudMapDetail
+
+float GetBlueNoise(uint2 pixelPos)
+{
+    float2 jitterUV = (float2(pixelPos) + float2(frac(TIME) * 123.4f, frac(TIME) * 567.8f)) / 128.0f;
+    return BlueNoise.SampleLevel(LinearWrapSampler, jitterUV, 0).r;
+} // GetBlueNoise
 
 float3 GetSkyColor(float3 rd)
 {
@@ -127,7 +133,18 @@ float3 GetSkyColor(float3 rd)
     return SkyLUT.SampleLevel(LinearWrapSampler, uv, 0).rgb;
 } // GetSkyColor
 
-float GetCloudDensity(float3 pos, float norY)
+float3 ComputeAmbientColor(float3 pos, float VolumeTop, float VolumeBottom, float extinctionCoeff)
+{
+    float Hp = VolumeTop - pos.y; // Height to the top of the volume
+    float a = -extinctionCoeff * Hp;
+    float3 IsotropicScatteringTop = CLOUDS_AMBIENT_COLOR_TOP * max(0.0, exp(a) - a * exponential_Integral(a));
+    float Hb = pos.y - VolumeBottom; // Height to the bottom of the volume
+    a = -extinctionCoeff * Hb;
+    float3 IsotropicScatteringBottom = CLOUDS_AMBIENT_COLOR_BOTTOM * max(0.0, exp(a) - a * exponential_Integral(a));
+    return IsotropicScatteringTop + IsotropicScatteringBottom;
+} // ComputeAmbientColor
+
+float ComputeCloudDensity(float3 pos, float norY)
 {
     float3 ps = pos;
     float m = GetCloudMapBase(ps, norY);
@@ -138,16 +155,16 @@ float GetCloudDensity(float3 pos, float norY)
     // 3D Worley 노이즈로 가장자리 깎기
     if (dstrength > 0.0f)
     {
-        m -= GetCloudMapDetail(ps) * dstrength * CLOUDS_DETAIL_STRENGTH;
+        m -= GetWorleyNoise(ps) * dstrength * CLOUDS_DETAIL_STRENGTH;
     }
 
     // Coverage 및 Softness 보정
     m = smoothstep(0.0f, CLOUDS_BASE_EDGE_SOFTNESS, m + (CLOUDS_COVERAGE - 1.0f));
-    m *= linear_step0(CLOUDS_BOTTOM_SOFTNESS, norY);
+    m *= linear_step_org(CLOUDS_BOTTOM_SOFTNESS, norY);
 
     // 밀도 및 거리 감쇄
     return clamp(m * CLOUDS_DENSITY * (1.0f + max((pos.x + 7000.0f) * 0.005f, 0.0f)), 0.0f, 1.0f);
-} // GetCloudDensity
+} // ComputeCloudDensity
 
 float VolumetricShadow(float3 from, float sundotrd, float3 sphereCenter)
 {
@@ -168,29 +185,30 @@ float VolumetricShadow(float3 from, float sundotrd, float3 sphereCenter)
             return shadow;
         }
 
-        float muE = GetCloudDensity(pos, norY);
+        float muE = ComputeCloudDensity(pos, norY);
         shadow *= exp(-muE * dd); //  Beer-Lambert Law
         dd *= CLOUDS_SHADOW_MARGE_STEP_SIZE;
         d += dd;
     }
 
     return shadow;
-} // GetVolumetricShadow
+} // VolumetricShadow
 
 float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPos)
 {
     if (rd.y < 0.0f)
-        return float4(0, 0, 0, 1);
+        return float4(0, 0, 0, 10);
 
     float3 sphereCenter = float3(ro.x, -EARTH_RADIUS, ro.z);
     
     // 교차점 계산
-    float2 inner = get_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_INNER_RADIUS);
-    float2 outer = get_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_OUTER_RADIUS);
+    float2 inner = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_INNER_RADIUS);
+    float2 outer = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_OUTER_RADIUS);
     
-    // 외곽과 안 만나면 종료
     if (outer.y < 0.0f)
+    {
         return float4(0, 0, 0, 1);
+    }
     
     float start = max(inner.y, outer.x); // 구름층 진입
     float end = outer.y; // 구름층 탈출
@@ -201,12 +219,11 @@ float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2
     float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
 
     // 지터링
-    float2 uv = (float2) pixelPos / 128.0f;
-    float noise = BlueNoise.SampleLevel(LinearWrapSampler, uv, 0).r;
+    float noise = GetBlueNoise(pixelPos);
     d -= dD * noise;
 
     float scattering = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
-                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP);
+                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
 
     float transmittance = 1.0;
     float3 scatteredLight = float3(0.0, 0.0, 0.0);
@@ -216,13 +233,20 @@ float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2
     {
         float3 p = ro + rd * d;
         float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
-        float alpha = GetCloudDensity(p, norY);
+        float alpha = ComputeCloudDensity(p, norY);
 
         if (alpha > 0.0f)
         {
             // 조명 적분
             float shadow = VolumetricShadow(p, sundotrd, sphereCenter);
             //return float4(shadow.xxx, 1.0f);
+
+            float Hp = SPHERE_OUTER_RADIUS - norY; // 천장까지의 거리
+            float Hb = norY - SPHERE_INNER_RADIUS; // 바닥까지의 거리
+    
+            // 소산 계수 = 현재 밀도(alpha) * 전체 볼륨 밀도 승수
+            float extinction = alpha * CLOUDS_DENSITY;
+            //float3 ambientLight = ComputeAmbientColor(p, Hp, Hb, extinction);
             float3 ambientLight = lerp(CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, norY);
             
             float3 S = (ambientLight + LIGHT_COLOR.rgb * (scattering * shadow)) * alpha;
@@ -243,10 +267,10 @@ float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2
         d += dD;
     }
 
-    return float4(scatteredLight, 1.0f - transmittance);
+    return float4(scatteredLight, transmittance);
 } // RenderVolumetricClouds
 
-float GetFogMap(float3 pos, float norY)
+float ComputeFogDensity(float3 pos, float norY)
 {
     float3 ps = pos;
 
@@ -257,13 +281,13 @@ float GetFogMap(float3 pos, float norY)
     
     if (dstrength > 0.0f)
     {
-        m -= GetCloudMapDetail(ps) * dstrength * CLOUDS_DETAIL_STRENGTH;
+        m -= GetWorleyNoise(ps) * dstrength * CLOUDS_DETAIL_STRENGTH;
     }
 
     m = smoothstep(0.0f, CLOUDS_BASE_EDGE_SOFTNESS, m + (CLOUDS_LAYER_COVERAGE - 1.0f));
 
     return clamp(m * CLOUDS_DENSITY, 0.0f, 1.0f);
-} // GetFogMap
+} // ComputeFogDensity
 
 float VolumetricShadowFog(float3 from, float sundotrd)
 {
@@ -282,7 +306,7 @@ float VolumetricShadowFog(float3 from, float sundotrd)
             return shadow;
         }
 
-        float muE = GetFogMap(pos, norY);
+        float muE = ComputeFogDensity(pos, norY);
         shadow *= exp(-muE * dd);
 
         dd *= CLOUDS_SHADOW_MARGE_STEP_MULTIPLY;
@@ -317,12 +341,11 @@ float4 RenderVolumetricFog(float3 ro, float3 rd, inout float sceneDist, uint2 pi
     float d = start;
     float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
 
-    float2 jitterUV = (float2(pixelPos) + float2(frac(TIME) * 123.4f, frac(TIME) * 567.8f)) / 128.0f;
-    float noise = BlueNoise.SampleLevel(LinearWrapSampler, jitterUV, 0).r;
+    float noise = GetBlueNoise(pixelPos);
     d -= dD * noise;
 
     float scattering = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
-                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP);
+                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
 
     float transmittance = 1.0;
     float3 scatteredLight = float3(0.0, 0.0, 0.0);
@@ -332,7 +355,7 @@ float4 RenderVolumetricFog(float3 ro, float3 rd, inout float sceneDist, uint2 pi
         float3 p = pro + d * rd;
 
         float norY = clamp((p.y - CLOUDS_LAYER_BOTTOM) / (CLOUDS_LAYER_TOP - CLOUDS_LAYER_BOTTOM), 0.0f, 1.0f);
-        float alpha = GetFogMap(p, norY);
+        float alpha = ComputeFogDensity(p, norY);
 
         if (alpha > 0.0f)
         {
@@ -369,15 +392,15 @@ void main( uint3 DTid : SV_DispatchThreadID )
     }
 
     float2 uv = (float2(DTid.xy) + 0.5f) / float2(width, height);
-    float3 ro = cCameraPosition; // 카메라 위치
-    float3 rd = ray_direction_restore(uv, cProjInv, cViewInv); // 카메라 방향
-    float hwDepth = SceneDepth.Load(int3(DTid.xy, 0)).r;
+    float3 ro = CAMERA_POSITION; // 카메라 위치
+    float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV); // 카메라 방향
+    float sceneDepth = SceneDepth.Load(int3(DTid.xy, 0)).r;
     float dist = MAX_DIST;
 
     // 터레인 or 오브젝트가 있는 픽셀인지 확인
-    if (hwDepth > 0.0f)
+    if (sceneDepth > 0.0f)
     {
-        float3 worldPos = get_world_from_depth(uv, hwDepth, cViewInv, cProjInv);
+        float3 worldPos = get_world_from_depth(uv, sceneDepth, VIEW_INV, PROJ_INV);
         dist = length(worldPos - ro);
     }
 

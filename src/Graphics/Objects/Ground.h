@@ -20,10 +20,13 @@ public:
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMFLOAT3 cameraPosition;
-        float             time;
+        DirectX::XMFLOAT3         cameraPosition;
+        float                     time;
+		ID3D11ShaderResourceView* shadowSRV;
+		ID3D11SamplerState*       shadowSampler;
 
-        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f) {
+        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f),
+            shadowSRV(nullptr), shadowSampler(nullptr) {
         }
     }; // RenderParams
 
@@ -37,8 +40,6 @@ public:
 
     void              OnGui();
     DirectX::XMMATRIX GetWorldMatrix();
-    void              SetShadowMap(ID3D11ShaderResourceView*);
-    void              SetShadowSampler(ID3D11SamplerState*);
 
 private:
     struct GroundBuffer {
@@ -85,7 +86,4 @@ private:
     ConstantBuffer::ShadowBuffer               m_ShadowData;
     ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;
-
-    ID3D11ShaderResourceView*                  m_shadowSRV;
-    ID3D11SamplerState*                        m_shadowSampler;
 }; // Ground

@@ -17,7 +17,7 @@
 #include "Data/RenderTexture.h"
 #include "Data/Atmosphere.h"
 #include "Data/VolumetricCloud.h"
-#include "Data/DepthRecorder.h"
+#include "Data/ShadowMap.h"
 #include "Data/CloudMap.h"
 // Resources
 #include "Resources/ConstantBufferType.h"
@@ -53,9 +53,8 @@ Renderer::Renderer() {
     m_Ground = std::make_unique<Ground>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
 	m_VolumetricCloud = std::make_unique<VolumetricCloud>();
-    m_DepthRecorder = std::make_unique<DepthRecorder>();
+    m_ShadowMap = std::make_unique<ShadowMap>();
 	m_CloudMapLUT = std::make_unique<CloudMap>();
-    m_shadowRT = std::make_unique<RenderTexture>();
 	m_AtmosphereLUT = std::make_unique<Atmosphere>();
 	m_Composite = std::make_unique<Composite>();
     m_TextureMgr = std::make_shared<TextureManager>();
@@ -111,6 +110,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     stoneInitParams.hwnd = hwnd;
     stoneInitParams.textMgr = m_TextureMgr;
     stoneInitParams.path = STONE;
+	stoneInitParams.linerSampler = linerWrapSampler;
 
     if (!m_Stone->Init(stoneInitParams)) {
         return false;
@@ -167,15 +167,10 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    if (!m_shadowRT->Init(device, 
-        ShadowConstants::SHADOWMAP_WIDTH, ShadowConstants::SHADOWMAP_HEIGHT, RenderTexture::RenderTextureType::Depth)) {
-        return false;
-    }
-
-    DepthRecorder::InitParams depthParams;
-    depthParams.device = device;
-    depthParams.hwnd = hwnd;
-    if (!m_DepthRecorder->Init(depthParams)) {
+    ShadowMap::InitParams shadowParams;
+    shadowParams.device = device;
+    shadowParams.hwnd = hwnd;
+    if (!m_ShadowMap->Init(shadowParams)) {
         return false;
     }
     
@@ -222,11 +217,8 @@ void Renderer::Shutdown() {
     if (m_Composite) {
         m_Composite.reset();
 	}
-    if (m_DepthRecorder) {
-        m_DepthRecorder.reset();
-    }
-    if (m_shadowRT) {
-        m_shadowRT.reset();
+    if (m_ShadowMap) {
+        m_ShadowMap.reset();
     }
     // [렌더러 핵심 컴포넌트]
     if (m_DirectionalLight) {
@@ -279,7 +271,7 @@ bool Renderer::Render() {
     m_Camera->Update();
     m_DirectionalLight->Update();
 
-    DepthPass(context, states);
+    ShadowPass(context, states);
 
     MainPass(context, states);
     return true;
@@ -321,7 +313,6 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 
-
     DrawGround(context, states);
     DrawStone(context, states);
 	Compute(context, states);
@@ -334,29 +325,25 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
 } // MainPass
 
-void Renderer::DepthPass(ID3D11DeviceContext* context, D3D11State* states) {
-    context->OMSetRenderTargets(1, &m_nullRTV, m_shadowRT->GetDSV());
-    m_shadowRT->ClearDepth(context);
+void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->OMSetRenderTargets(1, &m_nullRTV, m_ShadowMap->GetDSV());
+	m_ShadowMap->ClearShadowDepth(context);
 
-    D3D11_VIEWPORT shadowViewport = {};
-    shadowViewport.Width = static_cast<float>(m_shadowRT->GetWidth());
-    shadowViewport.Height = static_cast<float>(m_shadowRT->GetHeight());
-    shadowViewport.MinDepth = 0.0f;
-    shadowViewport.MaxDepth = 1.0f;
-    context->RSSetViewports(1, &shadowViewport);
+    const auto& viewport = m_ShadowMap->GetViewport();
+    context->RSSetViewports(1, &viewport);
 
-    DepthRecorder::RenderParams depthParams;
-    depthParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-    depthParams.projectionMatrix = m_DirectionalLight->GetProjection();
+    ShadowMap::RenderParams renderParams;
+    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
 
     if (m_Stone) {
-        depthParams.worldMatrix = m_Stone->GetWorldMatrix();
-        m_DepthRecorder->Render(context, depthParams);
+        renderParams.worldMatrix = m_Stone->GetWorldMatrix();
+        m_ShadowMap->Render(context, renderParams);
         m_Stone->DrawIndexed(context);
     }
 
     context->PSSetShaderResources(10, 1, &m_nullSRV);
-} // DepthPass
+} // ShadowPass
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
@@ -365,10 +352,9 @@ void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
 
     if (!m_Stone) return;
 
-    m_Stone->SetSampler(states->GetLinearWrapSamplerState());
-
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
+
     m_Stone->Render(context, stoneParams);
 } // DrawStone
 
@@ -398,9 +384,8 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     Ground::RenderParams groundParams;
     groundParams.cameraPosition = m_Camera->GetPosition();
     groundParams.time = m_renderingTime;
-
-    m_Ground->SetShadowMap(m_shadowRT->GetSRV());
-    m_Ground->SetShadowSampler(m_D3D11Mgr->GetStates()->GetShadowSamplerState());
+    groundParams.shadowSRV = m_ShadowMap->GetSRV();
+    groundParams.shadowSampler = states->GetShadowSamplerState();
     m_Ground->Render(context, groundParams);
 } // DrawGround
 

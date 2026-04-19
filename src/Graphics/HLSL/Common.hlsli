@@ -4,7 +4,8 @@
 
 #define KM       1000.0f
 #define PI       3.14159265f
-#define MAX_DIST 1e10
+#define MIN_DIST float(1e-4f)
+#define MAX_DIST float(1e7f)
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -36,9 +37,22 @@ cbuffer DirectionalLightBuffer : register(b1)
     matrix cLightProj;
 }; // DirectionalLightBuffer
 
+#define CAMERA_POSITION   cCameraPosition
+#define CAMERA_FOV        cCameraFov
+#define SCREEN_RESOLUTION cScreenResolution
+#define TIME              cTime
+
+#define VIEW         cView
+#define PROJ         cProjection
+#define VIEW_INV     cViewInv
+#define PROJ_INV     cProjInv
+
 #define LIGHT_DIRECTION normalize(cLightDirection)
-#define LIGHT_COLOR     cLightAmbient
-#define TIME            cTime
+#define LIGHT_COLOR     cLightDiffuse
+#define LIGHT_AMBIENT   cLightAmbient
+#define LIGHT_LOOKAT    cLightLookAt
+#define LIGHT_VIEW      cLightView
+#define LIGHT_PROJ      cLightProj
 
 static float depth_to_meter(float z, matrix proj)
 {

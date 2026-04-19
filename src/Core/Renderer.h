@@ -18,7 +18,7 @@ class SkyBox;
 class DirectionalLight;
 class Ground;
 class VolumetricCloud;
-class DepthRecorder;
+class ShadowMap;
 class RenderTexture;
 class CloudMap;
 class Atmosphere;
@@ -42,7 +42,7 @@ public:
 private:
     bool Render();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
-    void DepthPass(ID3D11DeviceContext*, D3D11State*);
+    void ShadowPass(ID3D11DeviceContext*, D3D11State*);
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
@@ -51,8 +51,8 @@ private:
     void UpadteWidgets();
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_frameBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
 
     static RendererState                  m_RendererState;
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
@@ -62,14 +62,13 @@ private:
     std::unique_ptr<Ground>               m_Ground;
     std::unique_ptr<DirectionalLight>     m_DirectionalLight;
     std::unique_ptr<VolumetricCloud>      m_VolumetricCloud;
-    std::unique_ptr<DepthRecorder>        m_DepthRecorder;
+    std::unique_ptr<ShadowMap>            m_ShadowMap;
     std::unique_ptr<CloudMap>             m_CloudMapLUT;
     std::unique_ptr<Atmosphere>           m_AtmosphereLUT;
     std::unique_ptr<Composite>            m_Composite;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
-    std::unique_ptr<RenderTexture>        m_shadowRT;
 
     ID3D11RenderTargetView*               m_nullRTV;
     ID3D11ShaderResourceView*             m_nullSRV;
