@@ -20,6 +20,9 @@ Camera::Camera()
     m_minFov = CameraConstants::MIN_FOV;
     m_viewMatrix = XMMatrixIdentity();
     m_projectionMatrix = XMMatrixIdentity();
+	m_forward = MathHelper::FRONT;
+	m_right = DirectX::XMVector3Cross(m_forward, MathHelper::UP);   
+	m_upVector = DirectX::XMVector3Cross(m_right, m_forward);
 } //Camera
 
 Camera::~Camera() {
@@ -52,13 +55,13 @@ void Camera::Update() {
     );
 
     // 카메라가 바라보는 방향 계산
-    XMVECTOR lookAt = DirectX::XMVector3TransformCoord(MathHelper::FRONT, rotationMatrix);
-    XMVECTOR up = DirectX::XMVector3TransformCoord(MathHelper::UP, rotationMatrix);
+    m_forward = XMVector3TransformCoord(MathHelper::FRONT, rotationMatrix);
+    m_upVector = XMVector3TransformCoord(MathHelper::UP, rotationMatrix);
+    m_right = XMVector3Cross(m_upVector, m_forward);
     XMVECTOR pos = DirectX::XMLoadFloat3(&m_position);
 
-    // 뷰 행렬 생성
-    lookAt = pos + lookAt;
-    m_viewMatrix = XMMatrixLookAtLH(pos, lookAt, up);
+    XMVECTOR lookAt = pos + m_forward;
+    m_viewMatrix = XMMatrixLookAtLH(pos, lookAt, m_upVector);
     UpdateProjection();
     // 절두체 업데이트
     BuildFrustum();
@@ -69,6 +72,46 @@ void Camera::BuildFrustum() {
         m_frustum->BuildFrustum(m_viewMatrix, m_projectionMatrix);
     }
 } // BuildFrustum
+
+void Camera::OnGui() {
+    ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
+    ImGui::Begin("CAMERA CONTROL", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+
+    if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
+        Reset();
+    }
+    ImGui::PopStyleColor(3);
+    ImGui::Separator();
+
+    DirectX::XMFLOAT3 pos = GetPosition();
+    if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+        SetPosition(pos);
+    }
+
+    DirectX::XMFLOAT3 rot = GetRotation();
+    if (ImGui::DragFloat3("Rotation", &rot.x, 0.5f, -360.0f, 360.0f)) {
+        SetRotation(rot);
+    }
+
+    ImGui::Separator();
+
+    float fov = GetFov();
+    if (ImGui::SliderFloat("FOV", &fov, 10.0f, 120.0f, "%.1f deg")) {
+        SetFov(fov);
+    }
+
+    float nearP = GetNear();
+    float farP = GetFar();
+    ImGui::Text("Near: %.2f / Far: %.2f", nearP, farP);
+
+    Update();
+
+    ImGui::End();
+} // onGui
 
 void Camera::AddRotation(float pitch, float yaw) {
     AddPitch(pitch);

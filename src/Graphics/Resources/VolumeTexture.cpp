@@ -19,12 +19,13 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
     texDesc.Width = m_width;
     texDesc.Height = m_height;
     texDesc.Depth = m_depth;
-    texDesc.MipLevels = 1;
+    texDesc.MipLevels = 0;
     texDesc.Format = format;
+    texDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+    // 밉맵 생성을 위해서는 반드시 RENDER_TARGET 바인드 플래그가 필요 (DirectX 11 제약 사항)
+    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
     texDesc.Usage = D3D11_USAGE_DEFAULT;
-    // SRV(읽기)와 UAV(쓰기) 권한을 모두 부여
-    // 구름 밀도는 컴퓨트 셰이더에서 기록되고, 레이마칭 셰이더에서 읽히므로 둘 다 필요
-    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS; 
+
 
     HRESULT hr = device->CreateTexture3D(&texDesc, nullptr, m_texture.GetAddressOf());
     if (FAILED(hr)) {
@@ -32,12 +33,12 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
         return false;
     }
 
-    // SRV 생성 (레이마칭 셰이더에서 밀도를 읽을 때 사용)
+    // SRV 생성
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = format;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
     srvDesc.Texture3D.MostDetailedMip = 0;
-    srvDesc.Texture3D.MipLevels = 1;
+    srvDesc.Texture3D.MipLevels = -1;
 
     hr = device->CreateShaderResourceView(m_texture.Get(), &srvDesc, m_srv.GetAddressOf());
     if (FAILED(hr)) return false;
@@ -60,3 +61,6 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
 ID3D11ShaderResourceView*  VolumeTexture::GetSRV() const { return m_srv.Get(); }
 ID3D11UnorderedAccessView* VolumeTexture::GetUAV() const { return m_uav.Get(); }
 ID3D11Texture3D*           VolumeTexture::GetTexture() const { return m_texture.Get(); }
+UINT                       VolumeTexture::GetWidth() const { return m_width; }
+UINT                       VolumeTexture::GetHeight() const { return m_height; }
+UINT VolumeTexture::GetDepth() const { return m_depth; }

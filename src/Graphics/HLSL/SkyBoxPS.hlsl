@@ -1,83 +1,13 @@
 // SkyBoxPS.hlsl
-// GroundColor 부분 참고 https://www.shadertoy.com/view/wlBXWK
+// https://www.shadertoy.com/view/wlBXWK
+#include "Common.hlsli"
 #include "Atmosphere.hlsli"
-#include "Ground.hlsli"
 #include "Remap.hlsli"
-
-SamplerState LinearWrapSampler : register(s0);
-
-Texture2D SceneDepthTexture : register(t1);
-Texture3D VolmeNoiseTexture : register(t2);
-Texture2D WeatherMapTexture : register(t3);
-
-cbuffer CommonBuffer : register(b0)
-{
-    // [Row 1]
-    matrix cWorld;
-    // [Row 2]
-    matrix cView;
-    // [Row 3]
-    matrix cProj;
-    // [Row 4]
-    float3 cCameraPosition;
-    float  cPadding1;
-    // [Row 5]
-    matrix cViewInv;
-    // [Row 6]
-    matrix cProjInv;
-    // [Row 7]
-    float3 cLightDirection;
-    float  cPadding2;
-    // [Row 8]
-    float4 cLightDiffuse;
-    // [Row 9]
-    float2 cResolution;
-}; // CommonBuffer
-
-cbuffer AtmosphereBuffer : register(b1)
-{
-    // [Row 1] 단순 그라데이션
-    float4 aZenithColor;
-    // [Row 2] 단순 그라데이션
-    float4 aHorizonColor;
-    // [Row 3] 행성 물리 데이터
-    float3 aPlanetCenter;
-    float  aPlanetRadius;
-    // [Row 4] 대기권 물리 데이터
-    float  aAtmoRadius;
-    float3 aPadding;
-    // [Row 5] 산란 계수 (Rayleigh)
-    float3 aRayleighBeta;
-    float  aMieBeta;
-    // [Row 6] 흡수 및 주변광
-    float3 aAbsorptionBeta;
-    float  aAmbientBeta;
-    // [Row 7] 고도 상수 (Density Falloff)
-    float  aRayleighHeight;
-    float  aMieHeight;
-    float  aAbsorptionHeight;
-    float  aAbsorptionFalloff;
-    // [Row 8] Mie 위상 함수 및 샘플링 설정
-    float  aG;
-    int    aPrimarySteps;
-    int    aLightSteps;
-    float  aIntensity;
-    // [Row 9] 지표면 색상
-    float3 aGroundColor;
-    float  aPadding2;
-    // [Row 10] 지표면 레이마칭 설정
-    int    aGroundPrimarySteps;
-    int    agroundLightSteps;
-    float  aPadding3;
-}; // AtmosphereBuffer
-
-cbuffer CloudBuffer : register(b2)
-{
-    // [Row 1]
-    float  cCloudMinHeight; 
-    float  cCloudMaxHeight;
-    float2 cPadding3;
-}; // CloudBuffer
+#include "Debugs.hlsli"
+#define  NM_TO_M 1852
+#define  FT_TO_M 0.3048
+#define  LIGHT_MARCH_SIZE 400.0f
+#define  MAX_LENGTH 422440.0f
 
 struct PS_INPUT
 {
@@ -85,110 +15,65 @@ struct PS_INPUT
     float3 localPos : TEXCOORD0;
 }; // PS_INPUT
 
-float3 CalculateGroundColor(float3 ro, float3 rd, float2 planet_intersect)
+cbuffer CloudBoxBuffer : register(b4)
 {
-    float3 final_ground_color = aGroundColor;
-    
-    // 히트 지점 계산
-    float t_hit = max(planet_intersect.x, 0.0);
-    float3 hit_pos = ro + rd * t_hit;
-    float3 surface_normal = normalize(hit_pos - aPlanetCenter);
-    
-        
-    // 그림자 및 라이팅 계산
-    float3 L = -cLightDirection;
-    float3 V = -rd;
-    float dotNL = max(MIN_DIST, dot(surface_normal, L));
-    float dotNV = max(MIN_DIST, dot(surface_normal, V));
-    float shadow = dotNL / (dotNL + dotNV);
-    
-    final_ground_color *= shadow;
-    
-    float3 bent_normal = normalize(lerp(surface_normal, L, 0.6));
+    float4 cBoxCenter;
+    float4 cBoxSize;
+    float cEarthRadius; // 6371000.0f
+    float cCloudMinHeight;
+    float cCloudMaxHeight;
+    float cPadding;
+}; // CloudBoxBuffer
 
-    // 지표면에서 하늘 방향으로의 간접광 산란
-    float3 sky_ambient = calculate_scattering(
-            hit_pos, bent_normal, 3.0 * aAtmoRadius,
-            ORIGIN, L, float3(aIntensity, aIntensity, aIntensity),
-            aPlanetCenter, aPlanetRadius, aAtmoRadius,
-            aRayleighBeta, aMieBeta, aAbsorptionBeta, float3(aAmbientBeta, aAmbientBeta, aAmbientBeta),
-            aG, aRayleighHeight, aMieHeight, aAbsorptionHeight, aAbsorptionFalloff,
-            aGroundPrimarySteps, agroundLightSteps
-    );
+SamplerState LinearWrapSampler : register(s0);
+Texture2D    SceneDepthTexture : register(t1);
+Texture2D    SkyVolumeLUT : register(t2);
 
-    final_ground_color += clamp(sky_ambient * aGroundColor, 0.0, 1.0);
-    
-    return final_ground_color;
-} // CalculateGroundColor
-
-float3 GetWorldPosFromDepth(float2 uv, float depth)
+float BeerLambert(float density, float stepSize)
 {
-    float4 clipPos;
-    clipPos.x = uv.x * 2.0f - 1.0f;
-    clipPos.y = (1.0f - uv.y) * 2.0f - 1.0f;
-    clipPos.z = depth;
-    clipPos.w = 1.0f;
+    return exp(-density * stepSize);
+} // BeerLambert
 
-    float4 worldPos = mul(clipPos, cProjInv);
-    worldPos /= worldPos.w;
-    worldPos = mul(worldPos, cViewInv);
+float Energy(float density, float stepSize, float HG)
+{
+    return exp(-density * stepSize); // * (1.0 - exp( - 2.0 * density * stepSize )) * HG;
+} // Energy
 
-    return worldPos.xyz;
-} // GetWorldPosFromDepth
+float Powder(float density, float stepSize)
+{
+    return 1.0 - exp(-2.0 * density * stepSize);
+} // Powder
 
+float HenyeyGreenstein(float cos_angle, float eccentricity)
+{
+    return ((1.0 - eccentricity * eccentricity) / pow((1.0 + eccentricity * eccentricity - 2.0 * eccentricity * cos_angle), 3.0 / 2.0)) / 4.0 * 3.1415;
+} // HenyeyGreenstein
+
+float3 RandomDirection(float3 seed)
+{
+    float phi = 2.0 * 3.14159 * frac(sin(dot(seed.xy, float2(12.9898, 78.233))) * 43758.5453);
+    float costheta = 2.0 * frac(cos(dot(seed.xy, float2(23.14069, 90.233))) * 12345.6789) - 1.0;
+    float sintheta = sqrt(1.0 - costheta * costheta);
+    return float3(sintheta * cos(phi), sintheta * sin(phi), costheta);
+} // RandomDirection
 
 float4 main(PS_INPUT input) : SV_TARGET
 {  
-    //return float4(1.0f, 0.0f, 0.0f, 1.0f);
     float3 rd = normalize(input.localPos); // 시선 방향
-    float3 ro = cCameraPosition / 1000.0f; // 카메라 위치
-    float2 uv = input.position.xy / float2(cResolution.x, cResolution.y);
-    float depth = SceneDepthTexture.Load(int3(input.position.xy, 0)).r;
+    float3 ro = cCameraPosition / KM; // 카메라 위치
+    float2 uv = input.position.xy / float2(cScreenResolution.x, cScreenResolution.y);
+    float3 uvw = float3(uv, 1.0f);
+    
+    float2 skyUV = get_spherical_uv(rd);
+    float3 skyColor = SkyVolumeLUT.Sample(LinearWrapSampler, skyUV).rgb;
 
-    float max_dist = MAX_DIST;
+    float2 screenUV = input.position.xy / cScreenResolution;
+    float sceneDepth = SceneDepthTexture.Load(int3(input.position.xy, 0)).r;
+    
+    if (sceneDepth < 1.0f)
+    {
 
-    if (depth < 1.0f)
-    {
-        float3 worldPos = GetWorldPosFromDepth(uv, depth);
-        max_dist = length(worldPos - cCameraPosition) / 1000.0f;
     }
-    
-    float2 planet_intersect = ray_sphere_intersect(ro - aPlanetCenter, rd, aPlanetRadius - 0.1f);
-    float groundDist = (planet_intersect.x > 0) ? planet_intersect.x : MAX_DIST;
-    float3 scene_color = dot(rd, cLightDirection) > 0.9998 ? 3.0 : 0.0;
-    
-    if (planet_intersect.y > 0.0)
-    {
-        max_dist = max(planet_intersect.x, 0.0);
-        scene_color = CalculateGroundColor(ro, rd, planet_intersect);
-    }
-    
-    if (depth >= 1.0f && planet_intersect.y <= 0.0)
-    {
-        scene_color = sun_color(rd, -cLightDirection, aIntensity);
-    }
-
-    float3 col = calculate_scattering(
-        ro, rd, max_dist,
-        scene_color,
-        -cLightDirection,
-        float3(aIntensity, aIntensity, aIntensity),
-        aPlanetCenter,
-        aPlanetRadius,
-        aAtmoRadius,
-        aRayleighBeta,
-        aMieBeta,
-        aAbsorptionBeta,
-        float3(aAmbientBeta, aAmbientBeta, aAmbientBeta),
-        aG,
-        aRayleighHeight,
-        aMieHeight,
-        aAbsorptionHeight,
-        aAbsorptionFalloff,
-        aPrimarySteps,
-        aLightSteps
-    );
-    
-    col = 1.0 - exp(-1.0 * col);
-    return float4(col, 1.0f);
+    skyColor = 1.0 - exp(-1.0 * skyColor);
+    return float4(skyColor, 1.0f);   
 } // main

@@ -1,11 +1,14 @@
 #include "Pch.h"
 #include "Objects/Stone.h"
+// Components
+#include "Components/TextureManager.h"
+// Resources
 #include "Resources/PBRMesh.h"
 #include "Resources/Texture.h"
-#include "Resources/TextureManager.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
 #include "Helpers/ShaderHelper.h"
+#include "Helpers/DebugHelper.h"
 // define
 #define ABEDO_TEXTURE_SLOT     0
 #define NORMAL_TEXTURE_SLOT    1
@@ -40,17 +43,13 @@ bool Stone::Init(const InitParams& params) {
         return false;
     }
 
+	m_sampler = params.linerSampler;
     return true;
 } // Init
 
 void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     RenderParams shaderParams;
     shaderParams.world      = GetWorldMatrix();
-    shaderParams.view       = params.view;
-    shaderParams.projection = params.projection;
-    shaderParams.camPos     = params.camPos;
-    shaderParams.diffuse    = params.diffuse;
-    shaderParams.lightDir   = params.lightDir;
 
     if (!RenderShader(context, params)) {
         return;
@@ -85,6 +84,68 @@ void Stone::DrawIndexed(ID3D11DeviceContext* context) {
         context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
     }
 } // DrawIndexed
+
+void Stone::OnGui() {
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+    // 모델 정보를 담은 메인 헤더
+    if (ImGui::CollapsingHeader("MODEL INSPECTOR", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PopStyleColor(3);
+
+        ImGui::Indent();
+        ImGui::Spacing();
+
+        ImGui::TextDisabled("Resource Info");
+        ImGui::Text("Total Meshes: "); ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%d", GetMeshCount());
+
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "PBR MATERIALS STATUS");
+        ImGui::Spacing();
+
+        std::vector<AssimpModel::MaterialInfo> materials = GetMaterialInfos();
+
+        for (size_t i = 0; i < materials.size(); ++i) {
+            const auto& mat = materials[i];
+
+            // 각 머테리얼별 트리 노드
+            if (ImGui::TreeNode((void*)(intptr_t)i, "Material [%d]: %s", (int)i, mat.name.c_str())) {
+
+                ImGui::BeginGroup();
+
+                auto ShowStatus = [](const char* type, bool isLoaded) {
+                    ImGui::Text("%-10s:", type);
+                    ImGui::SameLine();
+                    if (isLoaded) {
+                        ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), " [ LOADED ]");
+                    }
+                    else {
+                        ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), " [ MISSING ]");
+                    }
+                    };
+
+                ShowStatus("Albedo", mat.hasAlbedo);
+                ShowStatus("Normal", mat.hasNormal);
+                ShowStatus("Metallic", mat.hasMetallic);
+                ShowStatus("Roughness", mat.hasRoughness);
+                ShowStatus("AO", mat.hasAO);
+
+                ImGui::EndGroup();
+                ImGui::Spacing();
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::Unindent();
+    }
+    else {
+        ImGui::PopStyleColor(3);
+    }
+} // OnGui
 
 void Stone::SetPosition(const XMFLOAT3& pos) {
     m_transform.SetPosition(pos);
@@ -126,10 +187,6 @@ void Stone::Rotate(float x, float y, float z) {
     m_transform.Rotate(x, y, z);
 } // Rotate
 
-void Stone::SetSampler(ID3D11SamplerState* sampler) {
-	m_sampler = sampler;
-} // SetSampler
-
 XMMATRIX Stone::GetWorldMatrix() {
     return m_transform.GetWorldMatrix();
 } // GetWorldMatrix
@@ -159,65 +216,20 @@ bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitConstantBuffer<MatCameraBuffer>(device, m_cameraBuffer.GetAddressOf())
-        || !InitConstantBuffer<LightBuffer>(device, m_lightBuffer.GetAddressOf())) {
-        return false;
+    if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
+		return false;
     }
 
     return true;
 } // InitShader
 
-bool Stone::UpdateCameraBuffer(ID3D11DeviceContext* context,
-    const XMMATRIX& world, const XMMATRIX& view, const XMMATRIX& projection, const XMFLOAT3& camPos) {
-    using namespace ShaderHelper;
-    using namespace ConstantBuffer;
-
-    MatCameraBuffer buffer;
-    buffer.world = XMMatrixTranspose(world);
-    buffer.view = XMMatrixTranspose(view);
-    buffer.projection = XMMatrixTranspose(projection);
-	buffer.cameraPosition = camPos;
-
-
-    if (memcmp(&m_prevCameraData, &buffer, sizeof(MatCameraBuffer)) == 0) {
-        return true;
-    }
-    if (!UpdateConstantBuffer(context, m_cameraBuffer.Get(), buffer)) {
-        return false;
-    }
-
-    m_prevCameraData = buffer;
-    return true;
-} // UpdateMatrixBuffer
-
-bool Stone::UpdateLightBuffer(ID3D11DeviceContext* context,
-    const XMFLOAT4& diffuse, const XMFLOAT3& lightDir) {
-    using namespace ShaderHelper;
-    using namespace ConstantBuffer;
-
-    LightBuffer buffer;
-    buffer.diffuseColor = diffuse;
-    buffer.lightDirection = lightDir;
-
-    if (memcmp(&m_prevLightData, &buffer, sizeof(LightBuffer)) == 0) {
-        return true;
-    }
-    if (!UpdateConstantBuffer(context, m_lightBuffer.Get(), buffer)) {
-        return false;
-    }
-
-    m_prevLightData = buffer;
-    return true;
-} // UpdateLightBuffer
-
 bool Stone::RenderShader(ID3D11DeviceContext* context, const RenderParams& params) {
-    if (!UpdateCameraBuffer(context, params.world, params.view, params.projection, params.camPos))
+	m_worldData.world = XMMatrixTranspose(params.world);
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
+        DebugHelper::DebugPrint("Failed to update world buffer");
         return false;
-    if (!UpdateLightBuffer(context, params.diffuse, params.lightDir))
-        return false;
-
-    context->VSSetConstantBuffers(0, 1, m_cameraBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(1, 1, m_lightBuffer.GetAddressOf());
+	}
+    context->VSSetConstantBuffers(2, 1, m_worldBuffer.GetAddressOf());
     context->IASetInputLayout(m_layout.Get());
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);

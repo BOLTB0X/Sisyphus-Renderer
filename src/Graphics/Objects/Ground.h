@@ -3,8 +3,8 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <memory>
+#include "Components/Transform.h"
 #include "Resources/ConstantBufferType.h"
-#include "Resources/Transform.h"
 #include "Utils/SharedConstants/BuffersConstants.h"
 
 class DefaultMesh;
@@ -14,17 +14,20 @@ public:
     struct InitParams {
         ID3D11Device* device;
         HWND          hwnd;
+
+		InitParams() : device(nullptr), hwnd(nullptr) {
+        }
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX projection;
-        DirectX::XMFLOAT3 cameraPosition;
-        DirectX::XMFLOAT3 lightDir;
-        DirectX::XMFLOAT4 lightDiffuse;
-        float             time;
-        DirectX::XMMATRIX lightView;
-        DirectX::XMMATRIX lightProjection;
+        DirectX::XMFLOAT3         cameraPosition;
+        float                     time;
+		ID3D11ShaderResourceView* shadowSRV;
+		ID3D11SamplerState*       shadowSampler;
+
+        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f),
+            shadowSRV(nullptr), shadowSampler(nullptr) {
+        }
     }; // RenderParams
 
 public:
@@ -37,8 +40,6 @@ public:
 
     void              OnGui();
     DirectX::XMMATRIX GetWorldMatrix();
-    void              SetShadowMap(ID3D11ShaderResourceView*);
-    void              SetShadowSampler(ID3D11SamplerState*);
 
 private:
     struct GroundBuffer {
@@ -56,30 +57,33 @@ private:
     }; // GroundBuffer
 
 private:
+    struct WorldBuffer {
+        DirectX::XMMATRIX world;
+
+        WorldBuffer() {
+            world = DirectX::XMMatrixIdentity();
+        }
+    }; // WorldBuffer;
+
+private:
     bool InitShader(ID3D11Device*, HWND);
-    bool UpdateCommonBuffer(ID3D11DeviceContext*,
-        const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&,
-        const DirectX::XMFLOAT3&, const DirectX::XMFLOAT3&, const DirectX::XMFLOAT4&);
+
     bool UpdateGroundBuffer(ID3D11DeviceContext*);
-    bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&, const DirectX::XMMATRIX&);
+    bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&);
 
 private:
     std::unique_ptr<DefaultMesh>               m_mesh;
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_commonBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_groundBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_shadowBuffer;
 
+    WorldBuffer                                m_worldData;
     GroundBuffer                               m_GoundData;
     GroundBuffer                               m_prevGoundData;
-    ConstantBuffer::CommonBuffer               m_CommonData;
-    ConstantBuffer::CommonBuffer               m_prevCommonData;
     ConstantBuffer::ShadowBuffer               m_ShadowData;
     ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;
-
-    ID3D11ShaderResourceView*                  m_shadowSRV;
-    ID3D11SamplerState*                        m_shadowSampler;
 }; // Ground

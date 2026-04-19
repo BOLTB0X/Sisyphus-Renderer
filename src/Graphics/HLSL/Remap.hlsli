@@ -3,6 +3,11 @@
 #ifndef _REMAP_HLSLI_
 #define _REMAP_HLSLI_
 
+float remap(float v, float s, float e)
+{
+    return (v - s) / (e - s);
+} // remap
+
 float remap_target(float value, float originMin, float originMax, float targetMin, float targetMax)
 {
     return targetMin + (value - originMin) * (targetMax - targetMin) / (originMax - originMin);

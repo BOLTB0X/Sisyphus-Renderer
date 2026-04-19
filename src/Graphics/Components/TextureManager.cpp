@@ -1,8 +1,10 @@
 #include "Pch.h"
 #include "TextureManager.h"
-#include "Texture.h"
-#include "VolumeTexture.h"
-#include "NoiseGenerator.h"
+// Resources
+#include "Resources/Texture.h"
+#include "Resources/VolumeTexture.h"
+// Data
+#include "Data/NoiseGenerator.h"
 // Utils
 #include "Helpers/DebugHelper.h"
 #include "SharedConstants/PathConstants.h"
@@ -22,14 +24,17 @@ TextureManager::~TextureManager() {
 } // ~TextureManager
 
 bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HWND hwnd) {
-    if (!m_NoiseGenerator->Init(device, hwnd, PathConstants::NOISEGEN_CS)) {
+	NoiseGenerator::InitParams initParams;
+    initParams.device = device;
+    initParams.hwnd = hwnd;
+    initParams.path = PathConstants::WORLEY_NOISE_CS;
+    initParams.groupSize = 8;
+    if (!m_NoiseGenerator->Init(initParams)) {
         return false;
     }
 
-    CreateVolumeTexture(device, PathConstants::KEY_CLOUD_VOL, 128, 128, 128, DXGI_FORMAT_R16G16B16A16_FLOAT);
-
-    NoiseGenerator::NoiseBuffer noiseParams = NoiseGenerator::NoiseBuffer();
-    CreateCloudNoise(context, PathConstants::KEY_CLOUD_VOL, noiseParams);
+    CreateVolumeTexture(device, PathConstants::KEY_WORLEY_NOISE, 32, 32, 32, DXGI_FORMAT_R16G16B16A16_FLOAT);
+    CreateCloudNoise(context, PathConstants::KEY_WORLEY_NOISE);
     return true;
 } // Init
 
@@ -56,11 +61,17 @@ void TextureManager::CreateVolumeTexture(
     }
 } // CreateVolumeTexture
 
-void TextureManager::CreateCloudNoise(ID3D11DeviceContext* context, const std::string& name, const NoiseGenerator::NoiseBuffer& noiseParams) {
+void TextureManager::CreateCloudNoise(ID3D11DeviceContext* context, const std::string& name) {
     auto volumeTex = GetVolumeTexture(name);
+
     if (volumeTex && m_NoiseGenerator) {
-        m_NoiseGenerator->Generate(context, volumeTex.get(), noiseParams);
+		NoiseGenerator::GenerateParams params;
+		params.target = volumeTex.get();
+		params.resolution = DirectX::XMFLOAT3(128.0f, 128.0f, 128.0f);
+        m_NoiseGenerator->Generate(context, params);
+        context->GenerateMips(volumeTex->GetSRV());
     }
+
 } // CreateNoise
 
 std::shared_ptr<Texture> TextureManager::GetTexture(

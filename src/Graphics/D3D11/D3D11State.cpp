@@ -27,6 +27,10 @@ bool D3D11State::Init(ID3D11Device* device) {
         return false;
     if (!InitShadowSampler(device)) return false;
     if (!InitBlendState(device)) return false;
+
+    if (!InitSampler(device, D3D11_FILTER_MIN_MAG_MIP_POINT,
+        D3D11_TEXTURE_ADDRESS_CLAMP, m_pointClampSamplerState.GetAddressOf()))
+        return false;
     return true;
 } // Init
 
@@ -39,6 +43,7 @@ ID3D11DepthStencilState* D3D11State::GetDepthReadOnly() const { return m_depthRe
 ID3D11SamplerState*      D3D11State::GetLinearWrapSamplerState() const { return m_linearWrapSamplerState.Get(); }
 ID3D11SamplerState*      D3D11State::GetLinearClampSamplerState() const { return m_linearClampSamplerState.Get(); }
 ID3D11SamplerState*      D3D11State::GetShadowSamplerState() const { return m_shadowSamplerState.Get(); }
+ID3D11SamplerState*      D3D11State::GetPointClampSamplerState() const { return m_pointClampSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
 
 bool D3D11State::InitCullBack(ID3D11Device* device) {

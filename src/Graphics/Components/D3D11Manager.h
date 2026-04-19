@@ -38,7 +38,6 @@ private:
     std::unique_ptr<D3D11CoreResources> m_core;
     std::unique_ptr<D3D11State>         m_state;
     std::unique_ptr<RenderTexture>      m_depthBuffer;
-    std::unique_ptr<RenderTexture>      m_uav;
     // RenderTarget
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
     D3D11_VIEWPORT                                 m_viewport;

@@ -13,6 +13,7 @@ public:
     bool Init(float, float, float, float);
     void Update();
     void BuildFrustum();
+	void OnGui(); // ImGui 용
 
 public:
     // 조작 함수
@@ -56,14 +57,15 @@ private:
     void UpdateProjection(); 
 
 private:
-    DirectX::XMFLOAT3 m_position;
-    DirectX::XMFLOAT3 m_rotation; 
-    DirectX::XMFLOAT3 m_up;
-
+    DirectX::XMFLOAT3        m_position;
+    DirectX::XMFLOAT3        m_rotation; 
+    DirectX::XMFLOAT3        m_up;
     std::unique_ptr<Frustum> m_frustum;
-
-    DirectX::XMMATRIX m_viewMatrix;
-    DirectX::XMMATRIX m_projectionMatrix;
+    DirectX::XMMATRIX        m_viewMatrix;
+    DirectX::XMMATRIX        m_projectionMatrix;
+    DirectX::XMVECTOR        m_forward;
+    DirectX::XMVECTOR        m_right;
+    DirectX::XMVECTOR        m_upVector;
 
     float m_fov, m_near, m_far, m_aspect;
     float m_maxPitch, m_minPitch;

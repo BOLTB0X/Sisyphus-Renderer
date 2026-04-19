@@ -12,6 +12,9 @@ public:
     ID3D11ShaderResourceView*  GetSRV() const;
     ID3D11UnorderedAccessView* GetUAV() const;
     ID3D11Texture3D*           GetTexture() const;
+	UINT                       GetWidth() const;
+	UINT                       GetHeight() const;
+	UINT                       GetDepth() const;
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Texture3D>             m_texture;

@@ -9,8 +9,7 @@
 #include "Cpu.h"
 // Utils
 #include "ImGui/ImGuiManager.h"
-#include "ImGui/PerformanceWidget.h"
-#include "ImGui/CameraWidget.h"
+#include "ImGui/FunctionWidget.h"
 // imgui
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -139,13 +138,32 @@ bool System::Frame() {
     return m_Renderer->Frame(m_Timer->GetFrameTime());
 } // Frame
 
+void System::OnGui() {
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::Begin("PERFORMANCE", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
+
+    ImGui::Text("FPS: %d", m_Fps->GetFps());
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1, 1, 0, 1), "(%.2f ms)", m_Timer->GetTotalTime());
+
+    static float cpu_history[60] = {};
+    for (int i = 0; i < 59; i++) {
+        cpu_history[i] = cpu_history[i + 1];
+    }
+    cpu_history[59] = (float)m_Cpu->GetCpuPercentage();
+
+    ImGui::PlotLines("CPU", cpu_history, IM_ARRAYSIZE(cpu_history), 0, nullptr, 0.0f, 100.0f, ImVec2(0, 50));
+    ImGui::Text("CPU Usage: %d%%", m_Cpu->GetCpuPercentage());
+
+    ImGui::End();
+} // OnGui
+
 void System::InitWidgets() {
-    auto perfWidget = std::make_unique<PerformanceWidget>(
-        m_Fps->GetFps(),
-        m_Cpu->GetCpuPercentage(),
-        m_Timer->GetTotalTime()
-    );
-    m_ImGuiManager->AddWidget(std::move(perfWidget));
+    m_ImGuiManager->AddWidget(std::make_unique<FunctionWidget>(
+        "PERFORMANCE",
+        [this]() { OnGui(); }
+    ));
+
 } // InitWidgets
 
 void System::FramePerformance() {
