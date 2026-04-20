@@ -12,7 +12,7 @@
 #ifndef _VOLUMETRICCLOUD_HLSLI_
 #define _VOLUMETRICCLOUD_HLSLI_
 
-#define CLOUD_MARCH_STEPS                   64
+#define CLOUD_MARCH_STEPS                   32
 #define CLOUD_SELF_SHADOW_STEPS             8
 #define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
 #define CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE 4.0f

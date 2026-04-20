@@ -24,7 +24,7 @@
 #include "Resources/VolumeTexture.h"
 #include "Resources/Texture.h"
 // Post
-#include "Post/Composite.h"
+#include "Post/CloudComposite.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "ImGui/ImGuiManager.h"
@@ -56,8 +56,9 @@ Renderer::Renderer() {
     m_ShadowMap = std::make_unique<ShadowMap>();
 	m_CloudMapLUT = std::make_unique<CloudMap>();
 	m_AtmosphereLUT = std::make_unique<Atmosphere>();
-	m_Composite = std::make_unique<Composite>();
+	m_Composite = std::make_unique<CloudComposite>();
     m_TextureMgr = std::make_shared<TextureManager>();
+    m_sceneRT = std::make_unique<RenderTexture>();
     m_nullRTV = nullptr;
     m_nullSRV = nullptr;
     m_blendFactor[0] = 0.0f;
@@ -173,12 +174,18 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     if (!m_ShadowMap->Init(shadowParams)) {
         return false;
     }
+
+    if (!m_sceneRT->Init(m_D3D11Mgr->GetDevice(),
+        RendererState::ScreenWidth, RendererState::ScreenHeight,
+        RenderTexture::RenderTextureType::Normal, DXGI_FORMAT_R16G16B16A16_FLOAT)) {
+        return false;
+    }
     
-    Composite::InitParams compositeParams;
+    CloudComposite::InitParams compositeParams;
     compositeParams.device = device;
     compositeParams.hwnd = hwnd;
-    compositeParams.vPath = PathConstants::COMPOSITE_VS;
-    compositeParams.pPath = PathConstants::COMPOSITE_PS;
+    compositeParams.vPath = PathConstants::CLOUD_COMPOSITE_VS;
+    compositeParams.pPath = PathConstants::CLOUD_COMPOSITE_PS;
     if (!m_Composite->Init(compositeParams)) {
         return false;
     }
@@ -279,7 +286,13 @@ bool Renderer::Render() {
 
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_D3D11Mgr->RestoreViewport();
-    m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
+
+    ID3D11RenderTargetView* sceneRTV = m_sceneRT->GetRTV();
+    float clearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
+    context->OMSetRenderTargets(1, &sceneRTV, m_D3D11Mgr->GetDepthRT()->GetDSV());
+    context->ClearRenderTargetView(sceneRTV, clearColor);
+    m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
+    //m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
 
     FrameBuffer fData;
     fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
@@ -315,8 +328,20 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
 
     DrawGround(context, states);
     DrawStone(context, states);
-	Compute(context, states);
     DrawSkyBox(context, states);
+	Compute(context, states);
+
+    ID3D11RenderTargetView* backBufferRTV = m_D3D11Mgr->GetRTV();
+    // 최종 합성 단계에서는 뎁스 기록이 필요 없으므로 nullptr 전달
+    context->ClearRenderTargetView(backBufferRTV, clearColor);
+    context->OMSetRenderTargets(1, &backBufferRTV, nullptr);
+
+    // 방금 그린 m_sceneRT(배경)와 볼류매트릭 구름을 Composite 셰이더로 합성
+    CloudComposite::RenderParams renderParam;
+    renderParam.sceneSRV = m_sceneRT->GetSRV();
+    renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+    renderParam.linerSampler = states->GetLinearWrapSamplerState();
+    m_Composite->Render(context, renderParam);
 
     if (m_ImGuiMgr) {
         m_ImGuiMgr->Frame();

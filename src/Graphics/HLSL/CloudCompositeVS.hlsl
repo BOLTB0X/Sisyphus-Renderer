@@ -1,4 +1,4 @@
-// CompositeVS.hlsl
+// CloudCompositeVS.hlsl
 struct PS_INPUT
 {
     float4 pos : SV_POSITION;

@@ -22,7 +22,7 @@ class ShadowMap;
 class RenderTexture;
 class CloudMap;
 class Atmosphere;
-class Composite;
+class CloudComposite;
 
 class Renderer {
 public:
@@ -65,10 +65,11 @@ private:
     std::unique_ptr<ShadowMap>            m_ShadowMap;
     std::unique_ptr<CloudMap>             m_CloudMapLUT;
     std::unique_ptr<Atmosphere>           m_AtmosphereLUT;
-    std::unique_ptr<Composite>            m_Composite;
+    std::unique_ptr<CloudComposite>            m_Composite;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
+    std::unique_ptr<RenderTexture>        m_sceneRT;
 
     ID3D11RenderTargetView*               m_nullRTV;
     ID3D11ShaderResourceView*             m_nullSRV;

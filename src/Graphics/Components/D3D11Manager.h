@@ -26,6 +26,7 @@ public:
     ID3D11DeviceContext*      GetDeviceContext() const;
     D3D11State*               GetStates() const;
     ID3D11ShaderResourceView* GetDepthSRV() const;
+    RenderTexture*            GetDepthRT() const;
     ID3D11RenderTargetView*   GetRTV() const;
 
 private:
@@ -37,7 +38,7 @@ private:
     std::unique_ptr<DisplayInfo>        m_displayInfo;
     std::unique_ptr<D3D11CoreResources> m_core;
     std::unique_ptr<D3D11State>         m_state;
-    std::unique_ptr<RenderTexture>      m_depthBuffer;
+    std::unique_ptr<RenderTexture>      m_depthRT;
     // RenderTarget
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
     D3D11_VIEWPORT                                 m_viewport;
