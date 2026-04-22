@@ -1,5 +1,6 @@
-// VolumetricCloud.hlsli
+// Volumetric.hlsli
 // https://www.shadertoy.com/view/MdGfzh
+// https://www.shadertoy.com/view/4dSBDt
 // https://github.com/chihirobelmo/volumetric-cloud-for-directx11/blob/main/VolumetricCloud/shaders/RayMarch.hlsl
 // https://github.com/fede-vaccaro/TerrainEngine-OpenGL/blob/master/shaders/volumetric_clouds.comp
 // https://github.com/microsoft/DirectX-Graphics-Samples/tree/master
@@ -9,19 +10,18 @@
 // https://forums.unrealengine.com/t/distorting-textures-with-flow-maps/68111
 // https://www.guerrilla-games.com/media/News/Files/The-Real-time-Volumetric-Cloudscapes-of-Horizon-Zero-Dawn.pdf
 // https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf
-#ifndef _VOLUMETRICCLOUD_HLSLI_
-#define _VOLUMETRICCLOUD_HLSLI_
+#ifndef _VOLUMETRIC_HLSLI_
+#define _VOLUMETRIC_HLSLI_
 
-#define CLOUD_MARCH_STEPS                   32
+#define CLOUD_MARCH_STEPS                   64
 #define CLOUD_SELF_SHADOW_STEPS             8
-#define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
 #define CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE 4.0f
+#define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
 #define CLOUDS_SHADOW_MARGE_STEP_MULTIPLY   1.3f
 #define CLOUDMAP_UV_OFFSET                  0.00005f
 #define WORLEY_UV_OFFSET                    0.0016f
 #define HEIGHT_BASED_FOG_B                  0.02f
 #define HEIGHT_BASED_FOG_C                  0.05f
-#define HENYEY_GREENSTEIN_SCALE             1.0f
 
 float henyey_greenstein(float sundotrd, float g)
 {
@@ -48,7 +48,7 @@ float exponential_Integral(float z)
 {
     return 0.5772156649015328606065 + log(1e-4 + abs(z)) + z * (1.0 + z * (0.25 + z * ((1.0 / 18.0) + z * ((1.0 / 96.0) + z *
 (1.0 / 600.0))))); // For x!=0
-} // exponential_Integral
+} // exponential_Integral : Not used
 
 float2 compute_ray_sphere_intersect(float3 ro, float3 rd, float3 sphereCenter, float radius)
 {
@@ -66,4 +66,43 @@ float2 compute_ray_sphere_intersect(float3 ro, float3 rd, float3 sphereCenter, f
     return float2((-b - sqrt_d) / 2.0f, (-b + sqrt_d) / 2.0f);
 } // compute_ray_sphere_intersect
 
-#endif // _VOLUMETRICCLOUD_HLSLI_
+float numerical_mie_fit(float costh)
+{
+    static const float bestParams[10] =
+    {
+        9.805233e-06, -6.500000e+01, -5.500000e+01, 8.194068e-01,
+        1.388198e-01, -8.370334e+01, 7.810083e+00, 2.054747e-03,
+        2.600563e-02, -4.552125e-12
+    };
+    
+    float p1 = costh + bestParams[3];
+    float4 expValues = exp(float4(
+        bestParams[1] * costh + bestParams[2],
+        bestParams[5] * p1 * p1,
+        bestParams[6] * costh,
+        bestParams[9] * costh
+    ));
+    float4 expValWeight = float4(
+        bestParams[0], bestParams[4],
+        bestParams[7], bestParams[8]
+    );
+    return dot(expValues, expValWeight);
+} // numerical_mie_fit : Not used
+
+float compute_height_brightness(float norY)
+{
+    return 0.5f + pow(saturate(norY), 0.5f) * 0.5f;
+} // compute_height_brightness
+
+float3 compute_ambient_color(float3 pos, float VolumeTop, float VolumeBottom, float extinctionCoeff, float3 abientColorTop, float3 abientColorBottom)
+{
+    float Hp = VolumeTop - pos.y; // Height to the top of the volume
+    float a = -extinctionCoeff * Hp;
+    float3 IsotropicScatteringTop = abientColorTop * max(0.0, exp(a) - a * exponential_Integral(a));
+    float Hb = pos.y - VolumeBottom; // Height to the bottom of the volume
+    a = -extinctionCoeff * Hb;
+    float3 IsotropicScatteringBottom = abientColorBottom * max(0.0, exp(a) - a * exponential_Integral(a));
+    return IsotropicScatteringTop + IsotropicScatteringBottom;
+} // compute_ambient_color : Not used
+
+#endif // _VOLUMETRIC_HLSLI_

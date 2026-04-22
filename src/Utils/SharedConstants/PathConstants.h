@@ -25,8 +25,10 @@ namespace SharedConstants {
         const std::wstring GROUND_PS = L"HLSL/GroundPS.hlsl";
 
         const std::wstring DEPTH_VS = L"HLSL/DepthVS.hlsl";
-        const std::wstring CLOUD_COMPOSITE_VS = L"HLSL/CloudCompositeVS.hlsl";
+        const std::wstring POST_VS = L"HLSL/PostVS.hlsl";
         const std::wstring CLOUD_COMPOSITE_PS = L"HLSL/CloudCompositePS.hlsl";
+        const std::wstring BLOOM_PS = L"HLSL/BloomPS.hlsl";
+        const std::wstring TAA_PS = L"HLSL/TemporalAntiAliasingPS.hlsl";
 
         const std::string STONE = "assets/Stone/Stone.fbx";
         const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";

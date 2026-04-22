@@ -80,7 +80,12 @@ private:
         // Row 8
 		DirectX::XMFLOAT2 windDirection;       // (0.5f, 0.5f)
 		float             windSpeed;           // 1.0f
-		float 		      padding3;
+		float 		      windScale;
+        // Row 9
+        float             hgScale;
+        float             PowderFactor;
+        float             LightingScale;
+        float             HorizenFadeScale;
 
         VolumetricCloudBuffer() {
             using namespace SharedConstants::BuffersConstants;
@@ -112,9 +117,14 @@ private:
             ambientBottom = CLOUD_AMBIENT_COLOR_BOTTOM;
 			padding2 = 0.0f;
 
-			windDirection = { 0.5f, 0.5f };
-			windSpeed = 1.5f;
-			padding3 = 0.0f;
+			windDirection = WIND_DIRECTION;
+			windSpeed = WIND_SPEED;
+            windScale = WIND_SCALE;
+
+            hgScale = HENYEY_GREENSTEIN_SCALE;
+            PowderFactor = POWDER_FACTOR;
+            LightingScale = LIGHTING_SCALE;
+            HorizenFadeScale = HORIZON_FADE_SCALE;
         }
     }; // VolumetricCloudBuffer
 

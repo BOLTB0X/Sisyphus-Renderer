@@ -94,6 +94,108 @@ void VolumetricCloud::Execute(ID3D11DeviceContext* context, const ExecuteParams&
 } // Execute
 
 void VolumetricCloud::OnGui() {
+    // Reset 버튼
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
+        m_cloudBufferData = VolumetricCloudBuffer();
+    }
+    ImGui::PopStyleColor(3);
+    ImGui::Separator();
+
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.3f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.2f, 0.4f, 0.3f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.2f, 1.0f));
+    if (ImGui::CollapsingHeader("CLOUD SETTINGS", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PopStyleColor(3);
+        ImGui::Indent();
+        ImGui::Spacing();
+
+        // [ Planet ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Planet ]");
+        ImGui::DragFloat("Planet Radius", &m_cloudBufferData.planetRadius,
+            1000.0f, 1000.0f, 1e7f, "%.0f");
+        ImGui::Separator();
+
+        // [ Cloud Layer ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Cloud Layer ]");
+        ImGui::DragFloat("Cloud Bottom", &m_cloudBufferData.cloudBottom,
+            10.0f, 0.0f, 10000.0f, "%.0f");
+        ImGui::DragFloat("Cloud Top", &m_cloudBufferData.cloudTop,
+            10.0f, 0.0f, 10000.0f, "%.0f");
+        ImGui::DragFloat("Layer Bottom", &m_cloudBufferData.cloudsLayerBottom,
+            1.0f, -1000.0f, 0.0f, "%.0f");
+        ImGui::DragFloat("Layer Top", &m_cloudBufferData.cloudsLayerTop,
+            1.0f, -1000.0f, 0.0f, "%.0f");
+        ImGui::Separator();
+
+        // [ Shape ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Shape ]");
+        ImGui::SliderFloat("Coverage", &m_cloudBufferData.cloudCoverage,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("Layer Coverage", &m_cloudBufferData.cloudsLayerCoverage,
+            0.0f, 1.0f);
+        ImGui::DragFloat("Base Scale", &m_cloudBufferData.cloudBaseScale,
+            0.01f, 0.01f, 10.0f, "%.2f");
+        ImGui::DragFloat("Detail Scale", &m_cloudBufferData.cloudDetailScale,
+            0.1f, 0.1f, 100.0f, "%.1f");
+        ImGui::Separator();
+
+        // [ Density ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Density ]");
+        ImGui::DragFloat("Density", &m_cloudBufferData.cloudDensity,
+            0.001f, 0.0f, 1.0f, "%.4f");
+        ImGui::SliderFloat("Edge Softness", &m_cloudBufferData.baseEdgeSoftness,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("Bottom Softness", &m_cloudBufferData.bottomSoftness,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("Detail Strength", &m_cloudBufferData.detailStrength,
+            0.0f, 1.0f);
+        ImGui::Separator();
+
+        // [ Lighting ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Lighting ]");
+        ImGui::SliderFloat("Forward Scatter G", &m_cloudBufferData.forwardScatteringG,
+            -0.99f, 0.99f);
+        ImGui::SliderFloat("Backward Scatter G", &m_cloudBufferData.backwardScatteringG,
+            -0.99f, 0.99f);
+        ImGui::SliderFloat("Scattering Lerp", &m_cloudBufferData.scatteringLerp,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("Min Transmittance", &m_cloudBufferData.minTransmittance,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("HG Scale", &m_cloudBufferData.hgScale,
+            0.0f, 5.0f);
+        ImGui::SliderFloat("Powder Factor", &m_cloudBufferData.PowderFactor,
+            0.0f, 1.0f);
+        ImGui::SliderFloat("Lighting Scale", &m_cloudBufferData.LightingScale,
+            0.0f, 5.0f);
+        ImGui::SliderFloat("Horizon Fade", &m_cloudBufferData.HorizenFadeScale,
+            0.0f, 1.0f);
+        ImGui::Separator();
+
+        // [ Ambient ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Ambient ]");
+        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.ambientTop.x);
+        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.ambientBottom.x);
+        ImGui::Separator();
+
+        // [ Wind ]
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Wind ]");
+        ImGui::DragFloat2("Wind Direction", &m_cloudBufferData.windDirection.x,
+            0.01f, -1.0f, 1.0f, "%.2f");
+        ImGui::DragFloat("Wind Speed", &m_cloudBufferData.windSpeed,
+            0.01f, 0.0f, 10.0f, "%.2f");
+        ImGui::DragFloat("Wind Scale", &m_cloudBufferData.windScale,
+            0.01f, 0.0f, 10.0f, "%.2f");
+
+        ImGui::Unindent();
+    }
+    else {
+        ImGui::PopStyleColor(3);
+    }
+    ImGui::Separator();
+
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[ Debug Textures ]");
 
 	ImGui::Spacing();

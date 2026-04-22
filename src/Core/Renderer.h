@@ -23,6 +23,8 @@ class RenderTexture;
 class CloudMap;
 class Atmosphere;
 class CloudComposite;
+class TAA;
+class Bloom;
 
 class Renderer {
 public:
@@ -43,10 +45,12 @@ private:
     bool Render();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
+    void PostProcessing(ID3D11DeviceContext*, D3D11State*);
+
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
-	void Compute(ID3D11DeviceContext*, D3D11State*);
+	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
     void UpadteWidgets();
 
@@ -65,7 +69,9 @@ private:
     std::unique_ptr<ShadowMap>            m_ShadowMap;
     std::unique_ptr<CloudMap>             m_CloudMapLUT;
     std::unique_ptr<Atmosphere>           m_AtmosphereLUT;
-    std::unique_ptr<CloudComposite>            m_Composite;
+    std::unique_ptr<CloudComposite>       m_Composite;
+    std::unique_ptr<Bloom>                m_Bloom;
+    std::unique_ptr<TAA>                  m_TAA;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;

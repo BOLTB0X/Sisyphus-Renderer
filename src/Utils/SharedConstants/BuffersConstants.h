@@ -45,7 +45,7 @@ namespace SharedConstants {
 
         // WeatherMap
         static constexpr DirectX::XMFLOAT2 WEATHER_MAP_RESOLUTION = { 1024.0f, 1024.0f };
-\
+
         // Ground
         static constexpr DirectX::XMFLOAT3 DARK_SAND = { 0.6f, 0.45f, 0.3f };
         static constexpr DirectX::XMFLOAT3 LIGHT_SAND = { 0.85f, 0.7f, 0.5f };
@@ -59,8 +59,6 @@ namespace SharedConstants {
         // Cloud
         static constexpr float             CLOUD_BOTTOM = 2350.0f;
         static constexpr float             CLOUD_TOP = 3350.0f;
-        //static constexpr float             CLOUD_BOTTOM = 1350.0f;
-        //static constexpr float             CLOUD_TOP = 2350.0f;
         static constexpr float             CLOUDS_LAYER_BOTTOM = -150.0f;
         static constexpr float             CLOUDS_LAYER_TOP = -70.0f;
 
@@ -69,7 +67,6 @@ namespace SharedConstants {
         static constexpr float             CLOUD_BASE_SCALE = 1.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
-        //static constexpr float             CLOUD_DENSITY = 0.003f;
         static constexpr float             CLOUD_DENSITY = 0.03f;
         static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
         static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
@@ -80,10 +77,17 @@ namespace SharedConstants {
         static constexpr float             CLOUD_SCATTERING_LERP = 0.5f;
         static constexpr float             CLOUD_MIN_TRANSMITTANCE = 0.1f;
 
-        //static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_TOP = { 0.878f, 0.984f, 1.176f };
-        //static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_BOTTOM = { 0.229f, 0.394f, 0.512f };
         static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_TOP = { 149.0f * (1.5f / 255.0f), 167.0f * (1.5f / 255.0f), 200.0f * (1.5f / 255.0f) };
         static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_BOTTOM = { 39.0f * (1.5f / 255.0f), 67.0f * (1.5f / 255.0f), 87.0f * (1.5f / 255.0f) };
+        
+        static constexpr DirectX::XMFLOAT2 WIND_DIRECTION = { 0.5f, 0.5f };
+        static constexpr float  WIND_SPEED = 1.5f;
+        static constexpr float  WIND_SCALE = 200.0f;
+
+        static constexpr float HENYEY_GREENSTEIN_SCALE = 5.0f;
+        static constexpr float POWDER_FACTOR = 0.8f;
+        static constexpr float LIGHTING_SCALE = 0.3f;
+        static constexpr float HORIZON_FADE_SCALE = 0.08f;
 
     } // BuffersConstants
 }

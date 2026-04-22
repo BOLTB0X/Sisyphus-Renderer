@@ -25,6 +25,8 @@
 #include "Resources/Texture.h"
 // Post
 #include "Post/CloudComposite.h"
+#include "Post/TAA.h"
+#include "Post/Bloom.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "ImGui/ImGuiManager.h"
@@ -57,6 +59,8 @@ Renderer::Renderer() {
 	m_CloudMapLUT = std::make_unique<CloudMap>();
 	m_AtmosphereLUT = std::make_unique<Atmosphere>();
 	m_Composite = std::make_unique<CloudComposite>();
+    m_Bloom = std::make_unique<Bloom>();
+    m_TAA = std::make_unique<TAA>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRT = std::make_unique<RenderTexture>();
     m_nullRTV = nullptr;
@@ -184,9 +188,34 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     CloudComposite::InitParams compositeParams;
     compositeParams.device = device;
     compositeParams.hwnd = hwnd;
-    compositeParams.vPath = PathConstants::CLOUD_COMPOSITE_VS;
+    compositeParams.vPath = PathConstants::POST_VS;
     compositeParams.pPath = PathConstants::CLOUD_COMPOSITE_PS;
+    compositeParams.ScreenWidth = RendererState::ScreenWidth;
+    compositeParams.ScreenHeight = RendererState::ScreenHeight;
     if (!m_Composite->Init(compositeParams)) {
+        return false;
+    }
+
+    Bloom::InitParams bloomParams;
+    bloomParams.device = device;
+    bloomParams.hwnd = hwnd;
+    bloomParams.vPath = PathConstants::POST_VS;
+    bloomParams.pPath = PathConstants::BLOOM_PS;
+    bloomParams.ScreenWidth = RendererState::ScreenWidth;
+    bloomParams.ScreenHeight = RendererState::ScreenHeight;
+    if (!m_Bloom->Init(bloomParams)) {
+        return false;
+    }
+
+    TAA::InitParams taaParams;
+    taaParams.device = device;
+    taaParams.hwnd = hwnd;
+    taaParams.vPath = PathConstants::POST_VS;
+    taaParams.pPath = PathConstants::TAA_PS;
+    taaParams.ScreenWidth = RendererState::ScreenWidth;
+    taaParams.ScreenHeight = RendererState::ScreenHeight;
+
+    if (!m_TAA->Init(taaParams)) {
         return false;
     }
 
@@ -279,20 +308,43 @@ bool Renderer::Render() {
     m_DirectionalLight->Update();
 
     ShadowPass(context, states);
-
     MainPass(context, states);
+    PostProcessing(context, states);
+
+    m_ImGuiMgr->Frame();
+    m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
     return true;
 } // Render
 
+void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->OMSetRenderTargets(1, &m_nullRTV, m_ShadowMap->GetDSV());
+    m_ShadowMap->ClearShadowDepth(context);
+
+    const auto& viewport = m_ShadowMap->GetViewport();
+    context->RSSetViewports(1, &viewport);
+
+    ShadowMap::RenderParams renderParams;
+    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+
+    if (m_Stone) {
+        renderParams.worldMatrix = m_Stone->GetWorldMatrix();
+        m_ShadowMap->Render(context, renderParams);
+        m_Stone->DrawIndexed(context);
+    }
+
+    context->PSSetShaderResources(10, 1, &m_nullSRV);
+} // ShadowPass
+
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
+    static bool isFirst = true;
     m_D3D11Mgr->RestoreViewport();
 
-    ID3D11RenderTargetView* sceneRTV = m_sceneRT->GetRTV();
     float clearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
+    ID3D11RenderTargetView* sceneRTV = m_sceneRT->GetRTV();
     context->OMSetRenderTargets(1, &sceneRTV, m_D3D11Mgr->GetDepthRT()->GetDSV());
     context->ClearRenderTargetView(sceneRTV, clearColor);
     m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
-    //m_D3D11Mgr->BeginScene(0.15f, 0.15f, 0.15f, 1.0f);
 
     FrameBuffer fData;
     fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
@@ -329,46 +381,62 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     DrawGround(context, states);
     DrawStone(context, states);
     DrawSkyBox(context, states);
-	Compute(context, states);
-
-    ID3D11RenderTargetView* backBufferRTV = m_D3D11Mgr->GetRTV();
-    // 최종 합성 단계에서는 뎁스 기록이 필요 없으므로 nullptr 전달
-    context->ClearRenderTargetView(backBufferRTV, clearColor);
-    context->OMSetRenderTargets(1, &backBufferRTV, nullptr);
-
-    // 방금 그린 m_sceneRT(배경)와 볼류매트릭 구름을 Composite 셰이더로 합성
-    CloudComposite::RenderParams renderParam;
-    renderParam.sceneSRV = m_sceneRT->GetSRV();
-    renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
-    renderParam.linerSampler = states->GetLinearWrapSamplerState();
-    m_Composite->Render(context, renderParam);
-
-    if (m_ImGuiMgr) {
-        m_ImGuiMgr->Frame();
-    }
-
-    m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
+	ComputeShaderData(context, states);
 } // MainPass
 
-void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
-    context->OMSetRenderTargets(1, &m_nullRTV, m_ShadowMap->GetDSV());
-	m_ShadowMap->ClearShadowDepth(context);
+void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) {
+    static bool isFirst = true;
 
-    const auto& viewport = m_ShadowMap->GetViewport();
-    context->RSSetViewports(1, &viewport);
+    // composite
+    {
+        context->PSSetShaderResources(0, 1, &m_nullSRV);
+        context->PSSetShaderResources(1, 1, &m_nullSRV);
+        ID3D11RenderTargetView* compositeRTV = m_Composite->GetRTV();
+        context->OMSetRenderTargets(1, &compositeRTV, nullptr);
+        m_Composite->ClearRT(context);
 
-    ShadowMap::RenderParams renderParams;
-    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
-
-    if (m_Stone) {
-        renderParams.worldMatrix = m_Stone->GetWorldMatrix();
-        m_ShadowMap->Render(context, renderParams);
-        m_Stone->DrawIndexed(context);
+        CloudComposite::RenderParams renderParam;
+        renderParam.sceneSRV = m_sceneRT->GetSRV();
+        renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+        renderParam.linerSampler = states->GetLinearWrapSamplerState();
+        m_Composite->Render(context, renderParam);
     }
 
-    context->PSSetShaderResources(10, 1, &m_nullSRV);
-} // ShadowPass
+    // Bloom
+    {
+        context->PSSetShaderResources(0, 1, &m_nullSRV);
+
+        ID3D11RenderTargetView* bloomRTV = m_Bloom->GetRTV();
+        context->OMSetRenderTargets(1, &bloomRTV, nullptr);
+        m_Bloom->ClearRT(context);
+
+        Bloom::RenderParams bloomParam;
+        bloomParam.inputSRV = m_Composite->GetSRV();
+        bloomParam.linerSampler = states->GetLinearWrapSamplerState();
+        m_Bloom->Render(context, bloomParam);
+    }
+
+    //// TAA
+    {
+        context->PSSetShaderResources(0, 1, &m_nullSRV);
+        context->PSSetShaderResources(1, 1, &m_nullSRV);
+
+        ID3D11RenderTargetView* backRTV = m_D3D11Mgr->GetRTV();
+        context->OMSetRenderTargets(1, &backRTV, nullptr);
+
+        TAA::RenderParams taaParam;
+        taaParam.currentSRV = m_Bloom->GetSRV();
+        taaParam.linerSampler = states->GetLinearWrapSamplerState();
+        taaParam.blendFactor = isFirst ? 0.0f : 0.85f;
+        taaParam.texelSize = XMFLOAT2(
+            1.0f / RendererState::ScreenWidth,
+            1.0f / RendererState::ScreenHeight);
+        m_TAA->Render(context, taaParam);
+
+        isFirst = false;
+        m_TAA->CopyResource(context, m_Bloom->GetTexture());
+    }
+} // PostProcessing
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
@@ -414,7 +482,7 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
-void Renderer::Compute(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* states) {
     Atmosphere::ExecuteParams atmoExecParams;
     atmoExecParams.LightDirection = m_DirectionalLight->GetDirection();
     atmoExecParams.CameraPosition = m_Camera->GetPosition();
@@ -427,7 +495,7 @@ void Renderer::Compute(ID3D11DeviceContext* context, D3D11State* states) {
     cloudExecParams.SkyLUTSRV = m_AtmosphereLUT->GetLUT();
 	cloudExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     m_VolumetricCloud->Execute(context, cloudExecParams);
-} // Compute
+} // ComputeShaderData
 
 void Renderer::UpadteWidgets() {
     if (m_ImGuiMgr) {

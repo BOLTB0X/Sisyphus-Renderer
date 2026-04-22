@@ -1,5 +1,6 @@
 #include "Pch.h"
 #include "CloudComposite.h"
+#include "Data/RenderTexture.h"
 #include "Helpers/ShaderHelper.h"
 #include "SharedConstants/PathConstants.h"
 // define
@@ -13,6 +14,7 @@ using namespace ShaderHelper;
 using namespace ConstantBuffer;
 
 CloudComposite::CloudComposite() {
+	m_compositeRT = std::make_unique<RenderTexture>();
 	m_prevResolutionData.padding.x = -1.0f;
 } // CloudComposite
 
@@ -21,6 +23,11 @@ CloudComposite::~CloudComposite() {
 
 bool CloudComposite::Init(const InitParams& params) {
 	if (!params.device || !params.hwnd) {
+		return false;
+	}
+
+	if (!m_compositeRT->Init(params.device, params.ScreenWidth, params.ScreenHeight,
+		RenderTexture::RenderTextureType::Normal, DXGI_FORMAT_R16G16B16A16_FLOAT)) {
 		return false;
 	}
 
@@ -62,9 +69,23 @@ void CloudComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
 	context->Draw(3, 0); // 삼각형 1개로 전체 화면을 덮는 풀스크린 삼각형
 } // Render
 
-bool CloudComposite::UpdateResolutionBuffer(ID3D11DeviceContext* context) {
-	using namespace ShaderHelper;
+void CloudComposite::ClearRT(ID3D11DeviceContext* context) {
+	m_compositeRT->Clear(context);
+} // ClearRT
 
+ID3D11Texture2D* CloudComposite::GetTexture() const {
+	return m_compositeRT->GetTexture();
+} // CloudComposite
+
+ID3D11RenderTargetView* CloudComposite::GetRTV() const {
+	return m_compositeRT->GetRTV();
+} // GetRTV
+
+ID3D11ShaderResourceView* CloudComposite::GetSRV() const {
+	return m_compositeRT->GetSRV();
+} // GetSRV
+
+bool CloudComposite::UpdateResolutionBuffer(ID3D11DeviceContext* context) {
 	if (memcmp(&m_prevResolutionData, &m_resolutionData, sizeof(ResolutionBuffer)) == 0) {
 		return true;
 	}

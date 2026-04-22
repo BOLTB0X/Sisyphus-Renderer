@@ -3,8 +3,11 @@
 #include <wrl/client.h>
 #include <string>
 #include <directxmath.h>
+#include <memory>
 #include "Utils/SharedConstants/PathConstants.h"
 #include "Resources/ConstantBufferType.h"
+
+class RenderTexture;
 
 class CloudComposite {
 public:
@@ -31,12 +34,18 @@ public:
 	CloudComposite();
 	~CloudComposite();
 	bool Init(const InitParams&);
-	void Render(ID3D11DeviceContext* context, const RenderParams&);
+	void Render(ID3D11DeviceContext*, const RenderParams&);
+
+	void                      ClearRT(ID3D11DeviceContext*);
+	ID3D11Texture2D*          GetTexture() const;
+	ID3D11RenderTargetView*   GetRTV() const;
+	ID3D11ShaderResourceView* GetSRV() const;
 
 private:
 	bool UpdateResolutionBuffer(ID3D11DeviceContext*);
 
 private:
+	std::unique_ptr<RenderTexture>             m_compositeRT;
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>       m_resolutionBuffer;
