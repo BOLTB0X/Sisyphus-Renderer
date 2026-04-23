@@ -55,15 +55,43 @@ void DirectionalLight::Rotate(float deltaTime) {
     XMStoreFloat3(&m_direction, dir);
 } // Rotate
 
+//void DirectionalLight::OnGui() {
+//    if (ImGui::CollapsingHeader("LIGHT SETTINGS", ImGuiTreeNodeFlags_DefaultOpen)) {
+//        ImGui::Indent();
+//        if (ImGui::DragFloat3("Direction", &m_direction.x, 0.01f, -1.0f, 1.0f)) {
+//            XMVECTOR dir = XMLoadFloat3(&m_direction);
+//            if (XMVector3Length(dir).m128_f32[0] > 0.0f) {
+//                XMStoreFloat3(&m_direction, XMVector3Normalize(dir));
+//            }
+//            Update(); // 행렬 갱신!
+//        }
+//
+//        ImGui::ColorEdit4("Diffuse Color", &m_diffuse.x);
+//
+//        ImGui::Spacing();
+//        ImGui::Separator();
+//
+//        if (ImGui::DragFloat3("Look At", &m_lookAt.x, 0.1f)) {
+//            Update();
+//        }
+//
+//        ImGui::Unindent();
+//    }
+//} // OnGui
+
 void DirectionalLight::OnGui() {
     if (ImGui::CollapsingHeader("LIGHT SETTINGS", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
-        if (ImGui::DragFloat3("Direction", &m_direction.x, 0.01f, -1.0f, 1.0f)) {
+
+        if (ImGui::SliderFloat3("Direction", &m_direction.x, -1.0f, 1.0f)) {
             XMVECTOR dir = XMLoadFloat3(&m_direction);
-            if (XMVector3Length(dir).m128_f32[0] > 0.0f) {
+
+            // 0 벡터가 아닐 경우에만 정규화 진행
+            float length = XMVector3Length(dir).m128_f32[0];
+            if (length > 0.0f) {
                 XMStoreFloat3(&m_direction, XMVector3Normalize(dir));
             }
-            Update(); // 행렬 갱신!
+            Update(); // 행렬 갱신
         }
 
         ImGui::ColorEdit4("Diffuse Color", &m_diffuse.x);

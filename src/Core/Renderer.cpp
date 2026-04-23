@@ -499,10 +499,10 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
 
 void Renderer::UpadteWidgets() {
     if (m_ImGuiMgr) {
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Stone Control",
-            [this]() { m_Camera->OnGui(); }
-		));
+  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+  //          "Stone Control",
+  //          [this]() { m_Camera->OnGui(); }
+		//));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",

@@ -13,8 +13,8 @@
 #ifndef _VOLUMETRIC_HLSLI_
 #define _VOLUMETRIC_HLSLI_
 
-#define CLOUD_MARCH_STEPS                   64
-#define CLOUD_SELF_SHADOW_STEPS             8
+#define CLOUD_MARCH_STEPS                   32
+#define CLOUD_SELF_SHADOW_STEPS             12
 #define CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE 4.0f
 #define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
 #define CLOUDS_SHADOW_MARGE_STEP_MULTIPLY   1.3f
@@ -23,10 +23,18 @@
 #define HEIGHT_BASED_FOG_B                  0.02f
 #define HEIGHT_BASED_FOG_C                  0.05f
 
+static const float3 noise_kernel[3] =
+{
+    float3(0.38051305f, 0.92453449f, -0.02111345f),
+    float3(-0.50625799f, -0.03590792f, -0.86163418f),
+    float3(-0.32509218f, -0.94557439f, 0.01428793f),
+}; // noise_kernel
+
 float henyey_greenstein(float sundotrd, float g)
 {
     float gg = g * g;
-    return (1. - gg) / pow(1. + gg - 2. * g * sundotrd, 1.5);
+    float denom = max(1.0f + gg - 2.0f * g * sundotrd, 0.0001f); // 0 방지
+    return (1.0f - gg) / pow(denom, 1.5f);
 } // henyey_greenstein
 
 float linear_step(const float s, const float e, float v)
@@ -48,7 +56,7 @@ float exponential_Integral(float z)
 {
     return 0.5772156649015328606065 + log(1e-4 + abs(z)) + z * (1.0 + z * (0.25 + z * ((1.0 / 18.0) + z * ((1.0 / 96.0) + z *
 (1.0 / 600.0))))); // For x!=0
-} // exponential_Integral : Not used
+} // exponential_Integral
 
 float2 compute_ray_sphere_intersect(float3 ro, float3 rd, float3 sphereCenter, float radius)
 {
@@ -66,43 +74,50 @@ float2 compute_ray_sphere_intersect(float3 ro, float3 rd, float3 sphereCenter, f
     return float2((-b - sqrt_d) / 2.0f, (-b + sqrt_d) / 2.0f);
 } // compute_ray_sphere_intersect
 
-float numerical_mie_fit(float costh)
-{
-    static const float bestParams[10] =
-    {
-        9.805233e-06, -6.500000e+01, -5.500000e+01, 8.194068e-01,
-        1.388198e-01, -8.370334e+01, 7.810083e+00, 2.054747e-03,
-        2.600563e-02, -4.552125e-12
-    };
-    
-    float p1 = costh + bestParams[3];
-    float4 expValues = exp(float4(
-        bestParams[1] * costh + bestParams[2],
-        bestParams[5] * p1 * p1,
-        bestParams[6] * costh,
-        bestParams[9] * costh
-    ));
-    float4 expValWeight = float4(
-        bestParams[0], bestParams[4],
-        bestParams[7], bestParams[8]
-    );
-    return dot(expValues, expValWeight);
-} // numerical_mie_fit : Not used
-
 float compute_height_brightness(float norY)
 {
     return 0.5f + pow(saturate(norY), 0.5f) * 0.5f;
 } // compute_height_brightness
 
-float3 compute_ambient_color(float3 pos, float VolumeTop, float VolumeBottom, float extinctionCoeff, float3 abientColorTop, float3 abientColorBottom)
+float3 compute_ambient_color(float3 pos, float VolumeTop, float VolumeBottom,
+    float extinctionCoeff, float3 ambientColorTop, float3 ambientColorBottom)
 {
-    float Hp = VolumeTop - pos.y; // Height to the top of the volume
-    float a = -extinctionCoeff * Hp;
-    float3 IsotropicScatteringTop = abientColorTop * max(0.0, exp(a) - a * exponential_Integral(a));
-    float Hb = pos.y - VolumeBottom; // Height to the bottom of the volume
-    a = -extinctionCoeff * Hb;
-    float3 IsotropicScatteringBottom = abientColorBottom * max(0.0, exp(a) - a * exponential_Integral(a));
-    return IsotropicScatteringTop + IsotropicScatteringBottom;
-} // compute_ambient_color : Not used
+    // pos.y를 볼륨 범위 안으로 클램핑
+    float clampedY = clamp(pos.y, VolumeBottom, VolumeTop);
+    
+    float Hp = max(VolumeTop - clampedY, 0.0f);
+    float Hb = max(clampedY - VolumeBottom, 0.0f);
+    
+    float ext = max(extinctionCoeff, 0.0001f);
+    float aTop = -ext * Hp;
+    float aBot = -ext * Hb;
+    
+    aTop = min(aTop, 0.0f);
+    aBot = min(aBot, 0.0f);
+    
+    float3 scatterTop = ambientColorTop
+        * max(0.0f, exp(aTop) - aTop * exponential_Integral(aTop));
+    float3 scatterBot = ambientColorBottom
+        * max(0.0f, exp(aBot) - aBot * exponential_Integral(aBot));
+    
+    return scatterTop + scatterBot;
+} // compute_ambient_color
+
+float compute_multiple_scattering(float alpha, float dd)
+{
+    float ms = 0.0f;
+    float msAttenuation = 1.0f;
+    float msDensityScale = 1.0f;
+
+    [unroll]
+    for (int oct = 0; oct < 4; oct++)
+    {
+        ms += msAttenuation * exp(-alpha * msDensityScale * dd);
+        msAttenuation *= 0.5f;
+        msDensityScale *= 0.5f;
+    }
+    return ms;
+} // ComputeMultipleScattering
+
 
 #endif // _VOLUMETRIC_HLSLI_

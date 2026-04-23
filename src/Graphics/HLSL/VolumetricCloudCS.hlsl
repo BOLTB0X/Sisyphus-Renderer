@@ -116,29 +116,35 @@ float GetCloudMapBase(float3 p, float norY)
     return remap(cloud.r - n, cloud.g, 1.0f);
 } // GetCloudMapBase
 
-float SampleOctaveNoise(float3 pos)
+float GetWorleyNoiseMip(float3 pos, float dist)
 {
     static const float AMPLITUDE_FACTOR = 0.707f;
     static const float FREQUENCY_FACTOR = 2.5789f;
     
+    // 거리 기반 밉맵 레벨 계산
+    float mipLevel = clamp(log2(dist / 10000.0f), 0.0f, 4.0f);
+    
     float amplitude = 1.0f;
     float value = 0.0f;
-    float totalAmplitude = 0.0f;    
+    float totalAmplitude = 0.0f;
     float2 detailWindOffset = WIND_DIRECTION * TIME * WIND_SPEED * WIND_SCALE;
     float3 baseUVW = abs(pos) * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
-    float3 windOffset3D = float3(detailWindOffset.x, 0, detailWindOffset.y) * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
+    float3 windOffset3D = float3(detailWindOffset.x, 0, detailWindOffset.y)
+                          * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
     
-    // 옥타브
     [unroll]
     for (int i = 0; i < 4; i++)
     {
-        value += amplitude * WorleyNoise.SampleLevel(LinearWrapSampler, baseUVW + windOffset3D, 0).r;
+        // mipLevel을 옥타브마다 올려서
+        // 고주파 디테일을 점진적으로 제거
+        float octaveMip = mipLevel + float(i) * 0.5f;
+        value += amplitude * WorleyNoise.SampleLevel(LinearWrapSampler, baseUVW + windOffset3D, octaveMip).r;
         totalAmplitude += amplitude;
         amplitude *= AMPLITUDE_FACTOR;
         baseUVW *= FREQUENCY_FACTOR;
     }
     
-    return value / totalAmplitude; // 0~1 정규화
+    return value / totalAmplitude;
 } // SampleOctaveNoise
 
 float GetWorleyNoise(float3 p)
@@ -169,7 +175,7 @@ float3 GetSkyColor(float3 rd)
     return skyColor;
 } // GetSkyColor
 
-float ComputeCloudDensity(float3 pos, float norY)
+float ComputeCloudDensity(float3 pos, float norY, float dist = 0.0f, bool isShadow = false)
 {
     float3 ps = pos;
     float m = GetCloudMapBase(ps, norY);
@@ -177,10 +183,10 @@ float ComputeCloudDensity(float3 pos, float norY)
     
     float dstrength = smoothstep(1.0f, 0.5f, m);
     
-    if (dstrength > 0.0f)
+    if (!isShadow && dstrength > 0.1f)
     {
-        float detail = SampleOctaveNoise(pos);
-        m -= detail * dstrength * CLOUDS_DETAIL_STRENGTH;
+        float detail = GetWorleyNoiseMip(pos, dist);
+        m = remap_clamp(m, detail * dstrength * CLOUDS_DETAIL_STRENGTH, 1.0f, 0.0f, 1.0f);
     }
 
     // Coverage 및 Softness 보정
@@ -191,78 +197,66 @@ float ComputeCloudDensity(float3 pos, float norY)
     return clamp(m * CLOUDS_DENSITY * (1.0f + max((pos.x - 7000.0f) * 0.005f, 0.0f)), 0.0f, 1.0f);
 } // ComputeCloudDensity
 
-float ComputeCloudDensityWithSDF(float3 pos, float norY, out float sdfDist)
+float3 ComputeAmbientLight(float3 p, float dir, float3 rayDir, float alpha, float sunElevation, float norY)
 {
-    float density = ComputeCloudDensity(pos, norY);
+    float ambientScale = lerp(1.0f, 0.2f, sunElevation);
+    //float3 ambientLight = lerp(CLOUDS_AMBIENT_COLOR_TOP, CLOUDS_AMBIENT_COLOR_BOTTOM, norY) * ambientScale;
+    float extCoeff = max(alpha * 0.1f, 0.001f);
+    float3 ambientLight = compute_ambient_color(p, CLOUDS_TOP, CLOUDS_BOTTOM, extCoeff,
+                            CLOUDS_AMBIENT_COLOR_TOP, CLOUDS_AMBIENT_COLOR_BOTTOM);
+    float3 dynamicAmbient = ambientLight + (LIGHT_COLOR.rgb * 0.2f * saturate(-LIGHT_DIRECTION.y));
+            
+    float distFade = 1.0f - exp(-dir * 0.000005f);
+    float3 skyColor = GetSkyColor(rayDir);
+    dynamicAmbient = lerp(dynamicAmbient, skyColor, distFade * 0.4f);
     
-    if (density <= 0.0f)
-    {
-        // 구름층 경계까지 거리 추정 -> 빈 공간 빠르게 스킵
-        float distToBottom = abs(length(pos) - SPHERE_INNER_RADIUS);
-        float distToTop = abs(length(pos) - SPHERE_OUTER_RADIUS);
-        sdfDist = min(distToBottom, distToTop) * 0.5f;
-        sdfDist = max(sdfDist, 50.0f); // 최소값 보장
-    }
-    else
-    {
-        sdfDist = 0.0f;
-    }
-    return density;
-} // ComputeCloudDensityWithSDF
-
-float ComputeMultipleScattering(float3 p, float norY, float dd)
-{
-    float ms = 0.0f;
-    float msAttenuation = 1.0f;
-    float msDensityScale = 1.0f;
-
-    [unroll]
-    for (int oct = 0; oct < 4; oct++)
-    {
-        float density = ComputeCloudDensity(p, norY) * msDensityScale;
-        ms += msAttenuation * exp(-density * dd);
-        msAttenuation *= 0.5f;
-        msDensityScale *= 0.5f;
-    }
-    return ms;
-} // ComputeMultipleScattering
+    return dynamicAmbient;
+} // ComputeAmbientLight
 
 float VolumetricShadow(float3 from, float sundotrd, float3 sphereCenter)
 {
-    float dd = CLOUDS_SHADOW_MARGE_STEP_SIZE; // 각 스텝의 크기
-    float3 rd = LIGHT_DIRECTION; // 빛을 향하는 방향
-    float d = dd * 0.5f; // 첫 지점 오프셋
-    float shadow = 1.0f;
+    float dd = CLOUDS_SHADOW_MARGE_STEP_SIZE;
+    float3 sunDir = LIGHT_DIRECTION;
+    float d = dd * 0.5f;
+    float shadow = 0.0f;
 
-    // 빛 방향으로 짧게 레이마칭
-    for (int s = 0; s < CLOUD_SELF_SHADOW_STEPS; s++)
+    [unroll]
+    for (int k = 0; k < 3; k++)
     {
-        float3 pos = from + rd * d;
-        float norY = clamp((length(pos - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        // 태양 방향 + 노이즈 커널로 약간 분산
+        float3 rd = normalize(sunDir + noise_kernel[k] * 0.1f);
+        float kernelShadow = 1.0f;
+        float kernelDd = dd;
+        float kernelD = kernelDd * 0.5f;
 
-        // 구름층 천장을 벗어나면 즉시 반환
-        if (norY > 1.0f)
+        for (int s = 0; s < CLOUD_SELF_SHADOW_STEPS; s++)
         {
-            return shadow;
-        }
+            float3 pos = from + rd * kernelD;
+            float norY = clamp(
+                (length(pos - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM))
+                / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
 
-        float muE = ComputeCloudDensity(pos, norY);
-        shadow *= exp(-muE * dd); //  Beer-Lambert Law
-        dd *= CLOUDS_SHADOW_MARGE_STEP_MULTIPLY;
-        d += dd;
+            if (norY > 1.0f)
+                break;
+
+            float muE = ComputeCloudDensity(pos, norY, true);
+            kernelShadow *= exp(-muE * kernelDd);
+            kernelDd *= CLOUDS_SHADOW_MARGE_STEP_MULTIPLY;
+            kernelD += kernelDd;
+        }
+        shadow += kernelShadow;
     }
 
-    return shadow;
+    return shadow / 3.0f; // 평균값 반환
 } // VolumetricShadow
 
 float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPos)
 {
     if (rd.y < 0.0f)
-        return float4(0, 0, 0, 10);
+        return float4(0, 0, 0, 1);
 
-    ro.xz *= 10.0f;
     float3 sphereCenter = float3(ro.x, -EARTH_RADIUS, ro.z);
-    
+
     // 교차점 계산
     float2 inner = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_INNER_RADIUS);
     float2 outer = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_OUTER_RADIUS);
@@ -271,32 +265,30 @@ float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2
     {
         return float4(0, 0, 0, 1);
     }
-    
     float start = max(inner.y, outer.x); // 구름층 진입
     float end = outer.y; // 구름층 탈출
-    end = min(end, sceneDist); // 렌더링된 다른 물체 앞까지만 마칭
     
-    start = min(start, EARTH_RADIUS);
-    end = min(end, EARTH_RADIUS);
+    end = min(end, sceneDist); // 렌더링된 다른 물체 앞까지만 마칭
 
-    // start가 end보다 커지면 구름 없음으로 처리
     if (start >= end)
+    {
         return float4(0, 0, 0, 1);
+    }
+    
+    end = min(end, sceneDist);
 
     float sunElevation = saturate(-LIGHT_DIRECTION.y);
-    float sunDimFactor = lerp(0.3f, 1.0f, sunElevation);
-    float sundotrd = dot(rd, -LIGHT_DIRECTION);
     float d = start;
-    //float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
-    float dD = min((end - start) / (float) CLOUD_MARCH_STEPS, 500.0f);
+    float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
 
     // 지터링
     float noise = GetBlueNoise(pixelPos);
     d -= dD * noise;
 
-    float scattering = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
-                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
-
+    float sundotrd = dot(rd, -LIGHT_DIRECTION);
+    float hgScattering = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
+                               henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
+    
     float transmittance = 1.0;
     float3 scatteredLight = float3(0.0, 0.0, 0.0);
     sceneDist = EARTH_RADIUS;
@@ -305,30 +297,26 @@ float4 RenderVolumetricClouds(float3 ro, float3 rd, inout float sceneDist, uint2
     {
         float3 p = ro + rd * d;
         float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
-        float alpha = ComputeCloudDensity(p, norY);
+        float alpha = ComputeCloudDensity(p, norY, d);
 
         if (alpha > 0.0f)
         {
             // 조명 적분
             float shadow = VolumetricShadow(p, sundotrd, sphereCenter);
             
-            float ms = ComputeMultipleScattering(p, norY, dD);
+            float ms = compute_multiple_scattering(alpha, dD);
             float heightBright = compute_height_brightness(norY);
             
-            float ambientScale = lerp(1.0f, 0.2f, sunElevation);
-            float3 ambientLight = lerp(CLOUDS_AMBIENT_COLOR_TOP, CLOUDS_AMBIENT_COLOR_BOTTOM, norY) * ambientScale;
-            
-            float distFade = 1.0f - exp(-d * 0.00005f);
-            float3 skyColor = GetSkyColor(rd);
-            ambientLight = lerp(ambientLight, skyColor, distFade * 0.4f);
-            
+            float3 dynamicAmbient = ComputeAmbientLight(p, d, rd, alpha, sunElevation, norY);
             float powder = 1.0f - exp(-alpha * 2.0f);
             float powderFactor = lerp(1.0f, powder, POWDER_FACTOR);
             
             float3 lighting = shadow + ms * LIGHTING_SCALE;
-            float3 S = (ambientLight + LIGHT_COLOR.rgb *
-                (scattering * lighting * powderFactor * heightBright)) *
+            float sunDimFactor = lerp(0.3f, 1.0f, sunElevation);
+            float3 S = (dynamicAmbient + LIGHT_COLOR.rgb *
+                (hgScattering * lighting * powderFactor * heightBright)) *
                 alpha * sunDimFactor;
+
             float dTrans = exp(-alpha * dD);
             float3 Sint = (S - S * dTrans) * (1.0f / max(alpha, 0.001f));
 
@@ -474,11 +462,11 @@ void main( uint3 DTid : SV_DispatchThreadID )
     }
 
     float2 uv = (float2(DTid.xy) + 0.5f) / float2(width, height);
-    float3 ro = CAMERA_POSITION; // 카메라 위치
+    float3 ro = CAMERA_POSITION;
     float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV); // 카메라 방향
     float sceneDepth = SceneDepth.Load(int3(DTid.xy, 0)).r;
     float dist = MAX_DIST;
-
+    
     // 터레인 or 오브젝트가 있는 픽셀인지 확인
     if (sceneDepth > 0.0f)
     {
@@ -493,8 +481,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
     if (rd.y > 0.0f)
     {
         col = RenderVolumetricClouds(ro, rd, dist, DTid.xy);
-        float fogAmount = 1. - (.1 + exp(-dist * 0.0001));
-        col.rgb = lerp(col.rgb, GetSkyColor(rd) * (1. - col.a), fogAmount);
+        float fogAmount = 1.0f - (0.1f + exp(-dist * 0.0001));
+        col.rgb = lerp(col.rgb, GetSkyColor(rd) * (1.0f - col.a), fogAmount);
     }
     else
     {
