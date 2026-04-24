@@ -20,10 +20,12 @@ public:
 
     void Clear(ID3D11DeviceContext*, float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
     void ClearDepth(ID3D11DeviceContext*, float depth = 1.0f, UINT8 stencil = 0);
+    void GenerateMips(ID3D11DeviceContext*);
 
     // Getters
     ID3D11Texture2D*           GetTexture() const;
     ID3D11ShaderResourceView*  GetSRV() const;
+    ID3D11ShaderResourceView*  GetMippedSRV() const;
     ID3D11RenderTargetView*    GetRTV() const;
     ID3D11DepthStencilView*    GetDSV() const;
     ID3D11UnorderedAccessView* GetUAV() const;
@@ -32,9 +34,11 @@ public:
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_texture;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D>           m_mipTexture;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>    m_rtv;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView>    m_dsv;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_srv;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_mippedSRV;
     Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> m_uav;
 
     int m_width;
