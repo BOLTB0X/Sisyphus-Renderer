@@ -24,6 +24,7 @@ bool CloudMap::Init(const InitParams& params) {
         RenderTexture::RenderTextureType::UAV, DXGI_FORMAT_R16G16B16A16_FLOAT)) {
         return false;
     }
+
     if (!InitComputingShader(params.device, params.hwnd, CLOUD_MAP_CS, m_computeShader.GetAddressOf())) {
         return false;
     }
@@ -43,8 +44,11 @@ void CloudMap::Generate(ID3D11DeviceContext* context) {
 
     ID3D11UnorderedAccessView* nullUAV = nullptr;
     context->CSSetUnorderedAccessViews(MAP_SLOT, 1, &nullUAV, nullptr);
+
+    m_resultRT->GenerateMips(context);
 } // Generate
 
 ID3D11ShaderResourceView* CloudMap::GetSRV() {
-    return m_resultRT->GetSRV();
+    return m_resultRT->GetMippedSRV();
+    //return m_resultRT->GetSRV();
 } // GetSRV

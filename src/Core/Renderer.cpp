@@ -504,6 +504,9 @@ void Renderer::UpadteWidgets() {
   //          [this]() { m_Camera->OnGui(); }
 		//));
 
+        m_ImGuiMgr->AddWidget(std::make_unique< FunctionWidget>(
+            "Camera Control", [this]() { m_Camera->OnGui(); }));
+
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",
             [this]() { m_DirectionalLight->OnGui(); }

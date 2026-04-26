@@ -84,9 +84,9 @@ namespace SharedConstants {
         static constexpr float  WIND_SPEED = 1.5f;
         static constexpr float  WIND_SCALE = 200.0f;
 
-        static constexpr float HENYEY_GREENSTEIN_SCALE = 1.0f;
-        static constexpr float POWDER_FACTOR = 0.8f;
-        static constexpr float LIGHTING_SCALE = 0.3f;
+        static constexpr float HENYEY_GREENSTEIN_SCALE = 5.0f;
+        static constexpr float POWDER_FACTOR = 0.15f;
+        static constexpr float LIGHTING_SCALE = 0.5f;
         static constexpr float HORIZON_FADE_SCALE = 0.08f;
 
     } // BuffersConstants
