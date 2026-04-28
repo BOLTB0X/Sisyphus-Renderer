@@ -56,6 +56,11 @@ float noise(float3 x, float tile)
                         hash_33(fmod(p + float3(1, 1, 1), tile)), f.x), f.y), f.z);
 } // noise
 
+float noise_texture(Texture2D tex, SamplerState samp, float2 t)
+{
+    return tex.SampleLevel(samp, t, 0).r;
+} // noise_texture
+
 float voronoi(float3 x, float tile)
 {
     float3 p = floor(x);

@@ -23,13 +23,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 scene = SceneTex.Sample(LinearSampler, input.uv);
     
     float3 col = cloud.rgb + scene.rgb * cloud.a;
-    //col = aces_film(col * 0.8f);
     
-    // 감마 + 대비
-    //col = lerp(col, pow(max(col, 0.0001), 1.0 / 2.2), 0.85);
-    // 차가운 색감
-    //col = lerp(col, col.bbb, 0.2);
-
     // 비네팅
     float2 uv = input.uv;
     float vignette = pow(16.0 * uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y), 0.1);

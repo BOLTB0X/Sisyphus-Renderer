@@ -16,19 +16,20 @@
 #define CLOUD_MARCH_STEPS                   32
 #define CLOUD_SELF_SHADOW_STEPS             4
 #define CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE 4.0f
-#define CLOUDS_SHADOW_MARGE_STEP_SIZE       20.0f
+#define CLOUDS_SHADOW_MARGE_STEP_SIZE       10.0f
 #define CLOUDS_SHADOW_MARGE_STEP_MULTIPLY   1.3f
-#define CLOUDMAP_UV_OFFSET                  0.00005f
-#define WORLEY_UV_OFFSET                    0.0016f
 #define HEIGHT_BASED_FOG_B                  0.02f
 #define HEIGHT_BASED_FOG_C                  0.05f
 
-static const float3 noise_kernel[3] =
+float jittering(float3 p)
 {
-    float3(0.38051305f, 0.92453449f, -0.02111345f),
-    float3(-0.50625799f, -0.03590792f, -0.86163418f),
-    float3(-0.32509218f, -0.94557439f, 0.01428793f),
-}; // noise_kernel
+    return frac(sin(dot(p, float3(12.256f, 2.646f, 6.356f))));
+} // jittering
+
+float density_distance_attenuation(float x)
+{
+    return 1.0f + max((x - 70000.0f) * 0.005f, 0.0f);
+} // density_distance_attenuation
 
 float henyey_greenstein(float sundotrd, float g)
 {
@@ -117,7 +118,7 @@ float compute_multiple_scattering(float alpha, float dd)
         msDensityScale *= 0.5f;
     }
     return ms;
-} // ComputeMultipleScattering
+} // compute_multiple_scattering
 
 
 #endif // _VOLUMETRIC_HLSLI_

@@ -7,7 +7,7 @@
 
 class RenderTexture;
 
-class Atmosphere {
+class AtmosphereMap {
 public:
     struct InitParams {
         ID3D11Device*             device;
@@ -29,8 +29,8 @@ public:
 	}; // ExecuteParams
 
 public:
-    Atmosphere();
-    ~Atmosphere();
+    AtmosphereMap();
+    ~AtmosphereMap();
 
     bool Init(const InitParams&);
     void Execute(ID3D11DeviceContext*, const ExecuteParams&);
@@ -126,4 +126,4 @@ private:
     ConstantBuffer::ResolutionBuffer            m_prevResolutionData;
     DirectX::XMFLOAT3                           m_preLightDirection;
     DirectX::XMFLOAT3                           m_preCameraPosition;
-}; // Atmosphere
+}; // AtmosphereMap

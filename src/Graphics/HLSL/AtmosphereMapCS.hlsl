@@ -1,4 +1,4 @@
-// AtmosphereCS.hlsl
+// AtmosphereMapCS.hlsl
 // https://www.shadertoy.com/view/wlBXWK
 #include "Common.hlsli"
 #include "Atmosphere.hlsli"

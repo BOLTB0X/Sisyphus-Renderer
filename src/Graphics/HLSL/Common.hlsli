@@ -25,13 +25,13 @@ cbuffer FrameBuffer : register(b0)
 cbuffer DirectionalLightBuffer : register(b1)
 {
     float3 cLightDirection;
-    float  lPadding1;
+    float  dPadding1;
     
     float4 cLightAmbient;
     float4 cLightDiffuse;
     
     float3 cLightLookAt;
-    float  lPadding2;
+    float  dPadding2;
     
     matrix cLightView;
     matrix cLightProj;

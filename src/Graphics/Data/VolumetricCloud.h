@@ -78,10 +78,22 @@ private:
         DirectX::XMFLOAT3 ambientTop;
         float             padding2;
         // Row 8
+        DirectX::XMFLOAT3 sunsetAmbientBottom;
+        float             padding3;
+        // Row 9
+        DirectX::XMFLOAT3 sunsetAmbientTop;
+        float             padding4;
+        // Row 10
+        DirectX::XMFLOAT3 nightAmbientBottom;
+        float             padding5;
+        // Row 11
+        DirectX::XMFLOAT3 nightAmbientTop;
+        float             padding6;
+        // Row 12
 		DirectX::XMFLOAT2 windDirection;       // (0.5f, 0.5f)
 		float             windSpeed;           // 1.0f
 		float 		      windScale;
-        // Row 9
+        // Row 13
         float             hgScale;
         float             PowderFactor;
         float             LightingScale;
@@ -112,10 +124,20 @@ private:
             scatteringLerp = CLOUD_SCATTERING_LERP;
             minTransmittance = CLOUD_MIN_TRANSMITTANCE;
 
-            ambientTop = CLOUD_AMBIENT_COLOR_TOP;
+            ambientBottom = CLOUD_DAY_AMBIENT_COLOR_BOTTOM;
 			padding1 = 0.0f;
-            ambientBottom = CLOUD_AMBIENT_COLOR_BOTTOM;
+            ambientTop = CLOUD_DAY_AMBIENT_COLOR_TOP;
 			padding2 = 0.0f;
+
+            sunsetAmbientBottom = CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM;
+            padding3 = 0.0f;
+            sunsetAmbientTop = CLOUD_SUNSET_AMBIENT_COLOR_TOP;
+            padding4 = 0.0f;
+
+            nightAmbientBottom = CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM;
+            padding5 = 0.0f;
+            nightAmbientTop = CLOUD_NIGHT_AMBIENT_COLOR_TOP;
+            padding6 = 0.0f;
 
 			windDirection = WIND_DIRECTION;
 			windSpeed = WIND_SPEED;

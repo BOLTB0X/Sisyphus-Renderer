@@ -98,15 +98,18 @@ void VolumetricCloud::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+
     if (ImGui::Button("Reset to Default", ImVec2(-1, 0))) {
         m_cloudBufferData = VolumetricCloudBuffer();
     }
+
     ImGui::PopStyleColor(3);
     ImGui::Separator();
 
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.3f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.2f, 0.4f, 0.3f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.2f, 1.0f));
+
     if (ImGui::CollapsingHeader("CLOUD SETTINGS", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PopStyleColor(3);
         ImGui::Indent();
@@ -175,9 +178,19 @@ void VolumetricCloud::OnGui() {
         ImGui::Separator();
 
         // [ Ambient ]
-        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Ambient ]");
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Day Ambient ]");
         ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.ambientTop.x);
         ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.ambientBottom.x);
+        ImGui::Separator();
+
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ SunSet Ambient ]");
+        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.sunsetAmbientTop.x);
+        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.sunsetAmbientBottom.x);
+        ImGui::Separator();
+
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Night Ambient ]");
+        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.nightAmbientTop.x);
+        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.nightAmbientBottom.x);
         ImGui::Separator();
 
         // [ Wind ]

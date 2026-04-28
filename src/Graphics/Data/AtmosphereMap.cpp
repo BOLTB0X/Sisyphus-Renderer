@@ -1,5 +1,5 @@
 #include "Pch.h"
-#include "Atmosphere.h"
+#include "AtmosphereMap.h"
 #include "RenderTexture.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
@@ -24,20 +24,20 @@ using namespace PathConstants;
 using namespace ConstantBuffer;
 using namespace ShaderHelper;
 
-Atmosphere::Atmosphere() {
+AtmosphereMap::AtmosphereMap() {
 	m_LUT = std::make_unique<RenderTexture>();
     m_prevAtmosphereData.padding1.x = -1.0f;
     m_linerWrapSampler = nullptr;
 	m_prevResolutionData.padding.x = -1.0f;
 	m_preLightDirection = { -1.0f, -1.0f, 999999.0f };
 	m_preCameraPosition = { -999999.0f, -999999.0f, -999999.0f };
-} // Atmosphere
+} // AtmosphereMap
 
-Atmosphere::~Atmosphere() {
+AtmosphereMap::~AtmosphereMap() {
     m_linerWrapSampler = nullptr;
-} // ~Atmosphere
+} // ~AtmosphereMap
 
-bool Atmosphere::Init(const InitParams& params) {
+bool AtmosphereMap::Init(const InitParams& params) {
     if (!params.device || !params.context) {
         return false;
     }
@@ -64,7 +64,7 @@ bool Atmosphere::Init(const InitParams& params) {
     return true;
 } // Init
 
-void Atmosphere::Execute(ID3D11DeviceContext* context, const ExecuteParams& param) {
+void AtmosphereMap::Execute(ID3D11DeviceContext* context, const ExecuteParams& param) {
     if (UpdateAtmosphereBuffer(context)) {
         context->CSSetConstantBuffers(CONSTANS_SLOT1, 1, m_atmosphereBuffer.GetAddressOf());
     }
@@ -83,11 +83,11 @@ void Atmosphere::Execute(ID3D11DeviceContext* context, const ExecuteParams& para
 	}
 } // Execute
 
-ID3D11ShaderResourceView* Atmosphere::GetLUT() {
+ID3D11ShaderResourceView* AtmosphereMap::GetLUT() {
 	return m_LUT->GetSRV();
 } // GetLUT
 
-void Atmosphere::OnGui() {
+void AtmosphereMap::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -160,7 +160,7 @@ void Atmosphere::OnGui() {
 
 } // OnGui
 
-void Atmosphere::Compute(ID3D11DeviceContext* context) {
+void AtmosphereMap::Compute(ID3D11DeviceContext* context) {
     ID3D11UnorderedAccessView* pUAV = m_LUT->GetUAV();
 
     context->CSSetShader(m_computeShader.Get(), nullptr, 0);
@@ -174,7 +174,7 @@ void Atmosphere::Compute(ID3D11DeviceContext* context) {
     context->CSSetUnorderedAccessViews(UAV_SLOT_LUT, 1, &nullUAV, nullptr);
 } // Compute
 
-bool Atmosphere::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
+bool AtmosphereMap::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     using namespace ShaderHelper;
 
     if (memcmp(&m_prevAtmosphereData, &m_atmosphereData, sizeof(AtmosphereBuffer)) == 0) {
@@ -188,7 +188,7 @@ bool Atmosphere::UpdateAtmosphereBuffer(ID3D11DeviceContext* context) {
     return true;
 } // UpdateAtmosphereBuffer
 
-bool Atmosphere::UpdateResolutionBuffer(ID3D11DeviceContext* context) {
+bool AtmosphereMap::UpdateResolutionBuffer(ID3D11DeviceContext* context) {
     using namespace ShaderHelper;
     
     if (memcmp(&m_prevResolutionData, &m_resolutionData, sizeof(ResolutionBuffer)) == 0) {
