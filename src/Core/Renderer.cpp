@@ -15,7 +15,7 @@
 #include "D3D11/D3D11CoreResources.h"
 // Data
 #include "Data/RenderTexture.h"
-#include "Data/Atmosphere.h"
+#include "Data/AtmosphereMap.h"
 #include "Data/VolumetricCloud.h"
 #include "Data/ShadowMap.h"
 #include "Data/CloudMap.h"
@@ -26,9 +26,10 @@
 // Post
 #include "Post/CloudComposite.h"
 #include "Post/TAA.h"
-#include "Post/Bloom.h"
+#include "Post/PostEffects.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
+#include "Helpers/MathHelper.h"
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/FunctionWidget.h"
 #include "SharedConstants/PathConstants.h"
@@ -38,6 +39,8 @@
 // define
 #define FRAME_CB_SLOT 0
 #define DIRL_CB_SLOT  1
+#define POST_PS_SLOT1 0
+#define POST_PS_SLOT2 1
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -57,9 +60,9 @@ Renderer::Renderer() {
 	m_VolumetricCloud = std::make_unique<VolumetricCloud>();
     m_ShadowMap = std::make_unique<ShadowMap>();
 	m_CloudMapLUT = std::make_unique<CloudMap>();
-	m_AtmosphereLUT = std::make_unique<Atmosphere>();
+	m_AtmosphereLUT = std::make_unique<AtmosphereMap>();
 	m_Composite = std::make_unique<CloudComposite>();
-    m_Bloom = std::make_unique<Bloom>();
+    m_Post = std::make_unique<PostEffects>();
     m_TAA = std::make_unique<TAA>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRT = std::make_unique<RenderTexture>();
@@ -131,7 +134,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         m_CloudMapLUT->Generate(context);
     }
 
-	Atmosphere::InitParams atmoParams;
+	AtmosphereMap::InitParams atmoParams;
 	atmoParams.device = device;
 	atmoParams.context = context;
 	atmoParams.hwnd = hwnd;
@@ -196,14 +199,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    Bloom::InitParams bloomParams;
-    bloomParams.device = device;
-    bloomParams.hwnd = hwnd;
-    bloomParams.vPath = PathConstants::POST_VS;
-    bloomParams.pPath = PathConstants::BLOOM_PS;
-    bloomParams.ScreenWidth = RendererState::ScreenWidth;
-    bloomParams.ScreenHeight = RendererState::ScreenHeight;
-    if (!m_Bloom->Init(bloomParams)) {
+    PostEffects::InitParams postParams;
+    postParams.device = device;
+    postParams.hwnd = hwnd;
+    postParams.noiseSRV = m_TextureMgr->GetTexture(device, context, PathConstants::NOISE_2D)->GetSRV();
+    postParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    postParams.ScreenWidth = RendererState::ScreenWidth;
+    postParams.ScreenHeight = RendererState::ScreenHeight;
+    if (!m_Post->Init(postParams)) {
         return false;
     }
 
@@ -337,7 +340,6 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
 } // ShadowPass
 
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
-    static bool isFirst = true;
     m_D3D11Mgr->RestoreViewport();
 
     float clearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
@@ -346,13 +348,28 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->ClearRenderTargetView(sceneRTV, clearColor);
     m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
 
+    UpdateCommonShaderBuffer(context);
+ 
+    DrawGround(context, states);
+    DrawStone(context, states);
+    DrawSkyBox(context, states);
+	ComputeShaderData(context, states);
+} // MainPass
+
+void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) {
+    ApplyComposite(context, states);
+    ApplyEffects(context, states);
+    ApplyTAA(context, states);
+} // PostProcessing
+
+void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
     FrameBuffer fData;
     fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
     fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
     fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetViewMatrix()));
     fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
     fData.cameraPosition = m_Camera->GetPosition();
-	fData.cameraFov = m_Camera->GetFov();
+    fData.cameraFov = m_Camera->GetFov();
     fData.screenResolution = XMFLOAT2((float)RendererState::ScreenWidth, (float)RendererState::ScreenHeight);
     fData.time = m_renderingTime;
 
@@ -360,6 +377,8 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     lData.direction = m_DirectionalLight->GetDirection();
     lData.ambient = m_DirectionalLight->GetAmbient();
     lData.diffuse = m_DirectionalLight->GetDiffuse();
+    lData.sunset = m_DirectionalLight->GetSunset();
+    lData.night = m_DirectionalLight->GetLight();
     lData.lightViewMatrix = XMMatrixTranspose(m_DirectionalLight->GetViewMatrix());
     lData.lightProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetProjection());
 
@@ -377,66 +396,22 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
     context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+} // UpdateCommonShaderBuffer
 
-    DrawGround(context, states);
-    DrawStone(context, states);
-    DrawSkyBox(context, states);
-	ComputeShaderData(context, states);
-} // MainPass
+void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
+    if (!m_Ground) return;
 
-void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) {
-    static bool isFirst = true;
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
-    // composite
-    {
-        context->PSSetShaderResources(0, 1, &m_nullSRV);
-        context->PSSetShaderResources(1, 1, &m_nullSRV);
-        ID3D11RenderTargetView* compositeRTV = m_Composite->GetRTV();
-        context->OMSetRenderTargets(1, &compositeRTV, nullptr);
-        m_Composite->ClearRT(context);
-
-        CloudComposite::RenderParams renderParam;
-        renderParam.sceneSRV = m_sceneRT->GetSRV();
-        renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
-        renderParam.linerSampler = states->GetLinearWrapSamplerState();
-        m_Composite->Render(context, renderParam);
-    }
-
-    // Bloom
-    {
-        context->PSSetShaderResources(0, 1, &m_nullSRV);
-
-        ID3D11RenderTargetView* bloomRTV = m_Bloom->GetRTV();
-        context->OMSetRenderTargets(1, &bloomRTV, nullptr);
-        m_Bloom->ClearRT(context);
-
-        Bloom::RenderParams bloomParam;
-        bloomParam.inputSRV = m_Composite->GetSRV();
-        bloomParam.linerSampler = states->GetLinearWrapSamplerState();
-        m_Bloom->Render(context, bloomParam);
-    }
-
-    //// TAA
-    {
-        context->PSSetShaderResources(0, 1, &m_nullSRV);
-        context->PSSetShaderResources(1, 1, &m_nullSRV);
-
-        ID3D11RenderTargetView* backRTV = m_D3D11Mgr->GetRTV();
-        context->OMSetRenderTargets(1, &backRTV, nullptr);
-
-        TAA::RenderParams taaParam;
-        taaParam.currentSRV = m_Bloom->GetSRV();
-        taaParam.linerSampler = states->GetLinearWrapSamplerState();
-        taaParam.blendFactor = isFirst ? 0.0f : 0.85f;
-        taaParam.texelSize = XMFLOAT2(
-            1.0f / RendererState::ScreenWidth,
-            1.0f / RendererState::ScreenHeight);
-        m_TAA->Render(context, taaParam);
-
-        isFirst = false;
-        m_TAA->CopyResource(context, m_Bloom->GetTexture());
-    }
-} // PostProcessing
+    Ground::RenderParams groundParams;
+    groundParams.cameraPosition = m_Camera->GetPosition();
+    groundParams.time = m_renderingTime;
+    groundParams.shadowSRV = m_ShadowMap->GetSRV();
+    groundParams.shadowSampler = states->GetShadowSamplerState();
+    m_Ground->Render(context, groundParams);
+} // DrawGround
 
 void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
@@ -467,23 +442,8 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 } // DrawSkyBox
 
-void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Ground) return;
-
-    context->RSSetState(states->GetCullBackState());
-    context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
-
-    Ground::RenderParams groundParams;
-    groundParams.cameraPosition = m_Camera->GetPosition();
-    groundParams.time = m_renderingTime;
-    groundParams.shadowSRV = m_ShadowMap->GetSRV();
-    groundParams.shadowSampler = states->GetShadowSamplerState();
-    m_Ground->Render(context, groundParams);
-} // DrawGround
-
 void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* states) {
-    Atmosphere::ExecuteParams atmoExecParams;
+    AtmosphereMap::ExecuteParams atmoExecParams;
     atmoExecParams.LightDirection = m_DirectionalLight->GetDirection();
     atmoExecParams.CameraPosition = m_Camera->GetPosition();
     atmoExecParams.time = m_renderingTime;
@@ -497,35 +457,90 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
     m_VolumetricCloud->Execute(context, cloudExecParams);
 } // ComputeShaderData
 
+void Renderer::ApplyComposite(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+    ID3D11RenderTargetView* compositeRTV = m_Composite->GetRTV();
+    context->OMSetRenderTargets(1, &compositeRTV, nullptr);
+    m_Composite->ClearRT(context);
+
+    CloudComposite::RenderParams renderParam;
+    renderParam.sceneSRV = m_sceneRT->GetSRV();
+    renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+    renderParam.linerSampler = states->GetLinearWrapSamplerState();
+    m_Composite->Render(context, renderParam);
+} // ApplyComposite
+
+void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* bloomRTV = m_Post->GetRTV();
+    context->OMSetRenderTargets(1, &bloomRTV, nullptr);
+    m_Post->ClearRT(context);
+
+    PostEffects::RenderParams effectParam;
+    effectParam.inputSRV = m_Composite->GetSRV();
+    effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+    effectParam.linerSampler = states->GetLinearWrapSamplerState();
+    effectParam.lightUV = m_DirectionalLight->GetUV(m_Camera->GetViewMatrix(), m_Camera->GetProjectionMatrix());
+    m_Post->Render(context, effectParam);
+} // ApplyEffects
+
+void Renderer::ApplyTAA(ID3D11DeviceContext* context, D3D11State* states) {
+    static bool isFirst = true;
+
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* backRTV = m_D3D11Mgr->GetRTV();
+    context->OMSetRenderTargets(1, &backRTV, nullptr);
+
+    TAA::RenderParams taaParam;
+    taaParam.preViewProj = m_Camera->GetViewMatrix() * m_Camera->GetProjectionMatrix();
+    taaParam.currentSRV = m_Post->GetSRV();
+    taaParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    taaParam.linerSampler = states->GetLinearWrapSamplerState();
+    taaParam.blendFactor = isFirst ? 0.0f : 0.85f;
+    taaParam.texelSize = XMFLOAT2(
+        1.0f / RendererState::ScreenWidth,
+        1.0f / RendererState::ScreenHeight);
+    m_TAA->Render(context, taaParam);
+
+    isFirst = false;
+    m_TAA->CopyResource(context, m_Post->GetTexture());
+} // ApplyTAA
+
 void Renderer::UpadteWidgets() {
     if (m_ImGuiMgr) {
-  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-  //          "Stone Control",
-  //          [this]() { m_Camera->OnGui(); }
-		//));
-
-        m_ImGuiMgr->AddWidget(std::make_unique< FunctionWidget>(
-            "Camera Control", [this]() { m_Camera->OnGui(); }));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Camera Control",
+            [this]() { m_Camera->OnGui(); }
+        ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Light Control",
             [this]() { m_DirectionalLight->OnGui(); }
         ));
 
-  //      m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-  //          "Ground Control",
-  //          [this]() { m_Ground->OnGui(); }
-  //      ));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Ground Control",
+            [this]() { m_Ground->OnGui(); }
+        ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Atmosphere Control",
             [this]() { m_AtmosphereLUT->OnGui(); }
         ));
 
-
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Volumetric Cloud Control",
             [this]() { m_VolumetricCloud->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Post",
+            [this]() { m_Post->OnGui(); }
         ));
     }
 } // UpadteWidgets

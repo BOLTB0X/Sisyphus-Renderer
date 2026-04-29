@@ -15,7 +15,7 @@ namespace SharedConstants {
         const std::wstring CLOUD_MAP_CS = L"HLSL/CloudMapCS.hlsl";
         const std::wstring WORLEY_NOISE_CS = L"HLSL/WorleyNoiseCS.hlsl";
 
-        const std::wstring ATMOSPHERE_CS = L"HLSL/AtmosphereCS.hlsl";
+        const std::wstring ATMOSPHERE_CS = L"HLSL/AtmosphereMapCS.hlsl";
         const std::wstring VOLUMETRIC_CLOUD_CS = L"HLSL/VolumetricCloudCS.hlsl";
 
         const std::wstring SKYBOX_VS = L"HLSL/SkyboxVS.hlsl";
@@ -28,10 +28,14 @@ namespace SharedConstants {
         const std::wstring POST_VS = L"HLSL/PostVS.hlsl";
         const std::wstring CLOUD_COMPOSITE_PS = L"HLSL/CloudCompositePS.hlsl";
         const std::wstring BLOOM_PS = L"HLSL/BloomPS.hlsl";
+        const std::wstring GOD_RAY_PS = L"HLSL/GodRayPS.hlsl";
+        const std::wstring LENS_FLARE_PS = L"HLSL/LensflarePS.hlsl";
+        const std::wstring COMPOSITE_PS = L"HLSL/CompositePS.hlsl";
         const std::wstring TAA_PS = L"HLSL/TemporalAntiAliasingPS.hlsl";
 
         const std::string STONE = "assets/Stone/Stone.fbx";
         const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";
+        const std::string NOISE_2D = "assets/Noise/noise.png";
         const std::string KEY_CLOUD_VOL = "CloudNoise";
         const std::string KEY_WORLEY_NOISE = "WorleyNoise";
     } // PathConstants

@@ -30,7 +30,7 @@ VolumetricCloud::VolumetricCloud() {
 	m_cloudMapLUTSRV = nullptr;
 	m_worleyNoiseSRV = nullptr;
 	m_blueNoiseSRV = nullptr;
-	m_prevCloudBufferData.padding1 = -1.0f;
+	m_prevCloudBufferData.padding1.x = -1.0f;
 } // VolumetricCloud
 
 VolumetricCloud::~VolumetricCloud() {
@@ -127,17 +127,11 @@ void VolumetricCloud::OnGui() {
             10.0f, 0.0f, 10000.0f, "%.0f");
         ImGui::DragFloat("Cloud Top", &m_cloudBufferData.cloudTop,
             10.0f, 0.0f, 10000.0f, "%.0f");
-        ImGui::DragFloat("Layer Bottom", &m_cloudBufferData.cloudsLayerBottom,
-            1.0f, -1000.0f, 0.0f, "%.0f");
-        ImGui::DragFloat("Layer Top", &m_cloudBufferData.cloudsLayerTop,
-            1.0f, -1000.0f, 0.0f, "%.0f");
         ImGui::Separator();
 
         // [ Shape ]
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Shape ]");
         ImGui::SliderFloat("Coverage", &m_cloudBufferData.cloudCoverage,
-            0.0f, 1.0f);
-        ImGui::SliderFloat("Layer Coverage", &m_cloudBufferData.cloudsLayerCoverage,
             0.0f, 1.0f);
         ImGui::DragFloat("Base Scale", &m_cloudBufferData.cloudBaseScale,
             0.01f, 0.01f, 10.0f, "%.2f");
@@ -178,19 +172,20 @@ void VolumetricCloud::OnGui() {
         ImGui::Separator();
 
         // [ Ambient ]
+        ImGuiColorEditFlags hdrFlags = ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float;
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Day Ambient ]");
-        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.ambientTop.x);
-        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.ambientBottom.x);
+        ImGui::ColorEdit3("Ambient Top##Day", &m_cloudBufferData.ambientTop.x, hdrFlags);
+        ImGui::ColorEdit3("Ambient Bottom##Day", &m_cloudBufferData.ambientBottom.x, hdrFlags);
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ SunSet Ambient ]");
-        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.sunsetAmbientTop.x);
-        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.sunsetAmbientBottom.x);
+        ImGui::ColorEdit3("Ambient Top##Sunset", &m_cloudBufferData.sunsetAmbientTop.x, hdrFlags);
+        ImGui::ColorEdit3("Ambient Bottom##Sunset", &m_cloudBufferData.sunsetAmbientBottom.x, hdrFlags);
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "[ Night Ambient ]");
-        ImGui::ColorEdit3("Ambient Top", &m_cloudBufferData.nightAmbientTop.x);
-        ImGui::ColorEdit3("Ambient Bottom", &m_cloudBufferData.nightAmbientBottom.x);
+        ImGui::ColorEdit3("Ambient Top##Night", &m_cloudBufferData.nightAmbientTop.x, hdrFlags);
+        ImGui::ColorEdit3("Ambient Bottom##Night", &m_cloudBufferData.nightAmbientBottom.x, hdrFlags);
         ImGui::Separator();
 
         // [ Wind ]

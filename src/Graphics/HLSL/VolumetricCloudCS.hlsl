@@ -14,7 +14,6 @@
 // https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf
 // https://iquilezles.org/articles/fog/
 #include "Common.hlsli"
-#include "Atmosphere.hlsli"
 #include "Volumetric.hlsli"
 #include "Remap.hlsli"
 #include "Noise.hlsli"
@@ -36,13 +35,12 @@ cbuffer VolumetricCloudBuffer : register(b2)
     // Row 2: 구름 영역
     float  vCloudBottom;
     float  vCloudTop;
-    float  vCloudsLayerBottom;
-    float  vCloudsLayerTop;
+    float2 vPadding1;
     // Row 3: 구름 형상 제어
     float  vCloudCoverage;
-    float  vCloudsLayerCoverage;
     float  vCloudBaseScale;
     float  vCloudDetailScale;
+    float  vPadding2;
     // Row 4 : 구름 밀도 및 가장자리 부드러움
     float  vCloudDensity;
     float  vBaseEdgeSoftness;
@@ -55,22 +53,22 @@ cbuffer VolumetricCloudBuffer : register(b2)
     float  vMinTransmittance;
     // Row 6: 구름 색상 (Ambient)
     float3 vAmbientBottom;
-    float  vPadding1;
+    float  vPadding3;
     // Row 7: 구름 색상 (Ambient)
     float3 vAmbientTop;
-    float  vPadding2;
+    float  vPadding4;
     // Row 8: 구름 색상 (Ambient)
     float3 vSunsetAmbientBottom;
-    float  vPadding3;
+    float  vPadding5;
     // Row 9: 구름 색상 (Ambient)
     float3 vSunsetAmbientTop;
-    float  vPadding4;
+    float  vPadding6;
     // Row 10: 구름 색상 (Ambient)
     float3 vNightAmbientBottom;
-    float  vPadding5;
+    float  vPadding7;
     // Row 11: 구름 색상 (Ambient)
     float3 vNightAmbientTop;
-    float  vPadding6;
+    float  vPadding8;
     // Row 12: 바람
     float2 vWindDirection;
     float  vWindSpeed;
@@ -85,11 +83,7 @@ cbuffer VolumetricCloudBuffer : register(b2)
 #define EARTH_RADIUS                 vPlanetRadius
 #define CLOUDS_BOTTOM                vCloudBottom
 #define CLOUDS_TOP                   vCloudTop
-#define CLOUDS_LAYER_BOTTOM          vCloudsLayerBottom
-#define CLOUDS_LAYER_TOP             vCloudsLayerTop
-
 #define CLOUDS_COVERAGE              vCloudCoverage
-#define CLOUDS_LAYER_COVERAGE        vCloudsLayerCoverage
 #define CLOUDS_BASE_SCALE            vCloudBaseScale
 #define CLOUDS_DETAIL_SCALE          vCloudDetailScale
 
@@ -134,7 +128,7 @@ float GetCloudMapBase(float3 p, float norY, float dist = 0.0f)
     
     float n = norY * norY;
     n *= cloud.b; // Cloud Type (B채널)
-    n += pow(saturate(1.0f - norY), 16.0f); // 하단 부드러움
+    n += pow(saturate(1.0f - norY), 16.0f);
     
     // R: 기본 밀도, G: 디테일 가이드
     return remap(cloud.r - n, cloud.g, 1.0f);
@@ -172,16 +166,6 @@ float GetWorleyNoiseMip(float3 pos, float dist)
     
     return value / totalAmplitude;
 } // SampleOctaveNoise
-
-float GetWorleyNoise(float3 p)
-{
-    static const float WORLEY_UV_OFFSET = 0.0016f;
-    float2 detailWindOffset = WIND_DIRECTION * TIME * WIND_SPEED * WIND_SCALE;
-    
-    float3 p3d = (abs(p) + float3(detailWindOffset.x, 0, detailWindOffset.y))
-                 * (WORLEY_UV_OFFSET * CLOUDS_BASE_SCALE * CLOUDS_DETAIL_SCALE);
-    return WorleyNoise.SampleLevel(LinearWrapSampler, p3d, 0).r;
-} // GetCloudMapDetail
 
 float GetBlueNoise(uint2 pixelPos)
 {
@@ -338,7 +322,7 @@ float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPo
             float ms = compute_multiple_scattering(alpha, dD);
             
             float3 lighting = shadow + ms * LIGHTING_SCALE;
-            float3 S = (ambientLight + LIGHT_COLOR.rgb * lighting * heightBright * powderFactor)
+            float3 S = (ambientLight + get_dynamic_light_color(LIGHT_DIRECTION.y).rgb * lighting * heightBright * powderFactor)
                         * alpha * sunDimFactor;
 
             float dTrans = exp(-alpha * dD);
@@ -372,116 +356,6 @@ float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPo
     return float4(scatteredLight, transmittance);
 } // RaymarchClouds
 
-float ComputeFogDensity(float3 pos, float norY)
-{
-    float3 ps = pos;
-
-    float m = GetCloudMapBase(ps, norY);
-    m *= cloud_gradient(norY);
-    
-    float dstrength = smoothstep(1.0f, 0.5f, m);
-    
-    if (dstrength > 0.0f)
-    {
-        m -= GetWorleyNoise(ps) * dstrength * CLOUDS_DETAIL_STRENGTH;
-    }
-
-    m = smoothstep(0.0f, CLOUDS_BASE_EDGE_SOFTNESS, m + (CLOUDS_LAYER_COVERAGE - 1.0f));
-
-    return clamp(m * CLOUDS_DENSITY, 0.0f, 1.0f);
-} // ComputeFogDensity
-
-float RaymarchShadowFog(float3 from, float sundotrd)
-{
-    float dd = CLOUDS_LAYER_SHADOW_MARGE_STEP_SIZE;
-    float3 rd = LIGHT_DIRECTION; // 태양 방향
-    float d = dd * 0.5f;
-    float shadow = 1.0f;
-
-    for (int s = 0; s < CLOUD_SELF_SHADOW_STEPS; s++)
-    {
-        float3 pos = from + rd * d;
-        float norY = clamp((pos.y - CLOUDS_LAYER_BOTTOM) / (CLOUDS_LAYER_TOP - CLOUDS_LAYER_BOTTOM), 0.0f, 1.0f);
-
-        if (norY > CLOUDS_LAYER_TOP)
-        {
-            return shadow;
-        }
-
-        float muE = ComputeFogDensity(pos, norY);
-        shadow *= exp(-muE * dd);
-
-        dd *= CLOUDS_SHADOW_MARGE_STEP_MULTIPLY;
-        d += dd;
-    }
-    return shadow;
-} // RaymarchShadowFog
-
-float4 RaymarchFog(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPos)
-{
-    if (rd.y > 0.0f)
-    {
-        return float4(0, 0, 0, 1);
-    }
-
-    float3 sphereCenter = float3(ro.x, -EARTH_RADIUS, ro.z);
-    float3 pro = ro;
-    pro.xz *= 1.0f;
-    pro.y = 0.0f;
-
-    // 평면 교차점 계산 
-    float start = CLOUDS_LAYER_TOP / rd.y;
-    float end = CLOUDS_LAYER_BOTTOM / rd.y;
-    end = min(end, sceneDist); // 렌더링된 다른 물체 앞까지만 마칭
-    
-    if (start > sceneDist)
-        return float4(0, 0, 0, 1);
-    
-    float sundotrd = dot(rd, -LIGHT_DIRECTION);
-
-    // 레이마칭 설정
-    float d = start;
-    float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
-
-    float noise = GetBlueNoise(pixelPos);
-    d -= dD * noise;
-
-    float scattering = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
-                           henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
-
-    float transmittance = 1.0;
-    float3 scatteredLight = float3(0.0, 0.0, 0.0);
-
-    for (int s = 0; s < CLOUD_MARCH_STEPS; s++)
-    {
-        float3 p = pro + d * rd;
-
-        float norY = clamp((p.y - CLOUDS_LAYER_BOTTOM) / (CLOUDS_LAYER_TOP - CLOUDS_LAYER_BOTTOM), 0.0f, 1.0f);
-        float alpha = ComputeFogDensity(p, norY);
-
-        if (alpha > 0.0f)
-        {
-            sceneDist = min(sceneDist, d);
-            float3 ambientLight = lerp(CLOUDS_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, norY);
-
-            // 빛 계산
-            float3 S = 0.7f * (ambientLight + LIGHT_COLOR.rgb * (scattering * RaymarchShadowFog(p, sundotrd))) * alpha;
-            float dTrans = exp(-alpha * dD);
-            // Beer-Lambert
-            float3 Sint = (S - S * dTrans) * (1.0f / max(alpha, 0.0001f));
-            
-            scatteredLight += transmittance * Sint;
-            transmittance *= dTrans;
-        }
-
-        if (transmittance <= CLOUDS_MIN_TRANSMITTANCE)
-            break;
-        d += dD;
-    }
-    
-    return float4(scatteredLight, transmittance);
-} // RaymarchFog
-
 [numthreads(8, 8, 1)]
 void main( uint3 DTid : SV_DispatchThreadID )
 {
@@ -495,7 +369,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
 
     float2 uv = (float2(DTid.xy) + 0.5f) / float2(width, height);
     float3 ro = CAMERA_POSITION;
-    float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV); // 카메라 방향
+    float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV);
     float sceneDepth = SceneDepth.Load(int3(DTid.xy, 0)).r;
     float dist = MAX_DIST;
     
@@ -506,8 +380,8 @@ void main( uint3 DTid : SV_DispatchThreadID )
         dist = length(worldPos - ro);
     }
 
-    // col.rgb: 산란된 구름 빛 (Scattered Light)
-    // col.a: 투과율 (Transmittance, 1.0이면 투명, 0.0이면 꽉 찬 구름)
+    // col.rgb: 산란된 구름 빛
+    // col.a: 투과율
     float4 col = float4(0.0f, 0.0f, 0.0f, 1.0f);
     
     if (rd.y > 0.0f)
@@ -515,13 +389,6 @@ void main( uint3 DTid : SV_DispatchThreadID )
         col = RaymarchClouds(ro, rd, dist, DTid.xy);
         float fogAmount = 1.0f - (0.1f + exp(-dist * 0.0001));
         col.rgb = lerp(col.rgb, GetSkyColor(rd) * (1.0f - col.a), fogAmount);
-    }
-    else
-    {
-        // TODO: FOG
-        col = RaymarchFog(ro, rd, dist, DTid.xy);
-        float fogAmount = HEIGHT_BASED_FOG_C * (1. - exp(-dist * rd.y * (0.1f * HEIGHT_BASED_FOG_B))) / rd.y;
-        col.rgb = lerp(col.rgb, GetSkyColor(rd) * (1. - col.a), clamp(fogAmount, 0., 1.));
     }
     
     OutTexture[DTid.xy] = col;

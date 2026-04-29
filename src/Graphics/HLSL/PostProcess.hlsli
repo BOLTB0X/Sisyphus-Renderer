@@ -2,6 +2,7 @@
 // https://www.shadertoy.com/view/4dSBDt
 // https://www.shadertoy.com/view/Dtd3zl
 // https://www.shadertoy.com/view/MdX3Rr
+// https://www.shadertoy.com/view/4sX3Rs
 // https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
 // https://github.com/chihirobelmo/volumetric-cloud-for-directx11/blob/main/VolumetricCloud/shaders/PostAA.hlsl
 // https://github.com/NadirRoGue/RenderEngine/blob/master/RenderEngine/RenderEngine/shaders/postprocess/PostProcessRender.frag
@@ -80,5 +81,30 @@ float3 YCoCg_to_RGB(float3 YCoCg)
     float Cg = YCoCg.z - (0.5f * 256.0f / 255.0f);
     return float3(Y + Co - Cg, Y + Cg, Y - Co - Cg);
 } // YCoCg_to_RGB
+
+float get_luminance(float3 color, float3 luminance)
+{
+    return dot(color, luminance);
+} // getLuminance
+
+float get_cross_luminance(Texture2D scene, SamplerState samp, float2 lightUV, float InterpolationOffest)
+{
+    if (lightUV.x < 0.0f || lightUV.x > 1.0f || lightUV.y < 0.0f || lightUV.y > 1.0f)
+    {
+        return 0.0f;
+    }
+
+    float2 offset = float2(0.005f, 0.005f);
+    float3 c0 = scene.SampleLevel(samp, lightUV, 0).rgb;
+    float3 c1 = scene.SampleLevel(samp, lightUV + float2(offset.x, 0), 0).rgb;
+    float3 c2 = scene.SampleLevel(samp, lightUV - float2(offset.x, 0), 0).rgb;
+    float3 c3 = scene.SampleLevel(samp, lightUV + float2(0, offset.y), 0).rgb;
+    float3 c4 = scene.SampleLevel(samp, lightUV - float2(0, offset.y), 0).rgb;
+
+    float3 avgColor = (c0 + c1 + c2 + c3 + c4) * 0.2f;
+    float luminance = dot(avgColor, float3(0.299f, 0.587f, 0.114f)); // 밝기 계산
+    
+    return smoothstep(InterpolationOffest, 1.0f, luminance);
+} // get_cross_luminance
 
 #endif // _POSTPROCESS_HLSLI_

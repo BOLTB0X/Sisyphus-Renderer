@@ -9,6 +9,7 @@
 #define SAMPLER_SLOT     0
 #define TEX_SLOT_CURRENT 0
 #define TEX_SLOT_HISTORY 1
+#define TEX_SLOT_DEPTH   2
 #define CONSTANS_SLOT    2
 
 using namespace DirectX;
@@ -49,6 +50,7 @@ bool TAA::Init(const InitParams& params) {
 } // Init
 
 void TAA::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+	m_taaData.preViewProj = XMMatrixTranspose(params.preViewProj);
 	m_taaData.blendFactor = params.blendFactor;
 	m_taaData.texelSize = params.texelSize;
 
@@ -67,6 +69,7 @@ void TAA::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->PSSetSamplers(SAMPLER_SLOT, 1, &params.linerSampler);
 	context->PSSetShaderResources(TEX_SLOT_CURRENT, 1, &params.currentSRV);
 	context->PSSetShaderResources(TEX_SLOT_HISTORY, 1, &historySRV);
+	context->PSSetShaderResources(TEX_SLOT_DEPTH, 1, &params.depthSRV);
 	context->Draw(3, 0);
 } // Render
 

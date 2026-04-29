@@ -29,6 +29,8 @@ cbuffer DirectionalLightBuffer : register(b1)
     
     float4 cLightAmbient;
     float4 cLightDiffuse;
+    float4 cSunSetLight;
+    float4 cNightLight;
     
     float3 cLightLookAt;
     float  dPadding2;
@@ -50,6 +52,8 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define LIGHT_DIRECTION normalize(cLightDirection)
 #define LIGHT_COLOR     cLightDiffuse
 #define LIGHT_AMBIENT   cLightAmbient
+#define LIGHT_SUNSET    cSunSetLight
+#define LIGHT_NIGHT     cNightLight
 #define LIGHT_LOOKAT    cLightLookAt
 #define LIGHT_VIEW      cLightView
 #define LIGHT_PROJ      cLightProj
@@ -80,7 +84,6 @@ static float3 get_world_from_depth(float2 uv, float depth, float4x4 invView, flo
 
     float4 worldPos = mul(clipPos, invProj);
     worldPos *= (1.0f / worldPos.w);
-    //worldPos /= worldPos.w;
     worldPos = mul(worldPos, invView);
 
     return worldPos.xyz;
@@ -113,6 +116,22 @@ static float2 get_spherical_uv(float3 rd)
     uv.y = 0.5f - (asin(clamp(rd.y, -1.0f, 1.0f)) / PI);
     return uv;
 } // get_spherical_uv
+
+static float4 get_dynamic_light_color(float3 lightDir)
+{
+    float3 dayColor = LIGHT_COLOR.rgb;
+    float3 sunsetColor = LIGHT_SUNSET.rgb;
+    float3 nightColor = LIGHT_NIGHT.rgb;
+
+    float t_sunset = smoothstep(-0.4f, 0.0f, lightDir.y);
+    float t_night = smoothstep(0.0f, 0.2f, lightDir.y);
+
+    float3 finalColor = lerp(dayColor, sunsetColor, t_sunset);
+    
+    finalColor = lerp(finalColor, nightColor, t_night);
+
+    return float4(finalColor, 1.0f);
+} // get_dynamic_light_color
 
 
 #endif // _COMMON_HLSLI_

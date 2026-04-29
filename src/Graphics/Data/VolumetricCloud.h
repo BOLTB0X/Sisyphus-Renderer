@@ -54,13 +54,12 @@ private:
         // Row 2
         float             cloudBottom;         // 1350.0f
         float             cloudTop;            // 2350.0f
-        float             cloudsLayerBottom;   // -150.0f
-        float             cloudsLayerTop;      // -70.0f
+        DirectX::XMFLOAT2 padding1;
         // Row 3
         float             cloudCoverage;       // 0.52f
-        float             cloudsLayerCoverage; // 0.41f
 		float             cloudBaseScale;      // 1.51f
 		float             cloudDetailScale;    // 20.0f
+        float             padding2;
         // Row 4
         float             cloudDensity;        // 0.03f
         float             baseEdgeSoftness;    // 0.1f
@@ -73,22 +72,22 @@ private:
         float             minTransmittance;     // 0.1f
         // Row 6
         DirectX::XMFLOAT3 ambientBottom;
-        float             padding1;
+        float             padding3;
         // Row 7
         DirectX::XMFLOAT3 ambientTop;
-        float             padding2;
+        float             padding4;
         // Row 8
         DirectX::XMFLOAT3 sunsetAmbientBottom;
-        float             padding3;
+        float             padding5;
         // Row 9
         DirectX::XMFLOAT3 sunsetAmbientTop;
-        float             padding4;
+        float             padding6;
         // Row 10
         DirectX::XMFLOAT3 nightAmbientBottom;
-        float             padding5;
+        float             padding7;
         // Row 11
         DirectX::XMFLOAT3 nightAmbientTop;
-        float             padding6;
+        float             padding8;
         // Row 12
 		DirectX::XMFLOAT2 windDirection;       // (0.5f, 0.5f)
 		float             windSpeed;           // 1.0f
@@ -106,13 +105,12 @@ private:
 
             cloudBottom = CLOUD_BOTTOM; 
             cloudTop = CLOUD_TOP;
-			cloudsLayerBottom = CLOUDS_LAYER_BOTTOM;
-			cloudsLayerTop = CLOUDS_LAYER_TOP;
+            padding1 = { 0.0f, 0.0f };
 
             cloudCoverage = CLOUD_COVERAGE;
-			cloudsLayerCoverage = CLOUDS_LAYER_COVERAGE;
             cloudBaseScale = CLOUD_BASE_SCALE;
 			cloudDetailScale = CLOUD_DETAIL_SCALE;
+            padding2 = 0.0f;
 
             cloudDensity = CLOUD_DENSITY;
             baseEdgeSoftness = CLOUD_BASE_EDGE_SOFTNESS;
@@ -125,19 +123,19 @@ private:
             minTransmittance = CLOUD_MIN_TRANSMITTANCE;
 
             ambientBottom = CLOUD_DAY_AMBIENT_COLOR_BOTTOM;
-			padding1 = 0.0f;
+			padding3 = 0.0f;
             ambientTop = CLOUD_DAY_AMBIENT_COLOR_TOP;
-			padding2 = 0.0f;
+			padding4 = 0.0f;
 
             sunsetAmbientBottom = CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM;
-            padding3 = 0.0f;
+            padding5 = 0.0f;
             sunsetAmbientTop = CLOUD_SUNSET_AMBIENT_COLOR_TOP;
-            padding4 = 0.0f;
+            padding6 = 0.0f;
 
             nightAmbientBottom = CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM;
-            padding5 = 0.0f;
+            padding7 = 0.0f;
             nightAmbientTop = CLOUD_NIGHT_AMBIENT_COLOR_TOP;
-            padding6 = 0.0f;
+            padding8 = 0.0f;
 
 			windDirection = WIND_DIRECTION;
 			windSpeed = WIND_SPEED;

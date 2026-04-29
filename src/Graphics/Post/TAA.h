@@ -24,13 +24,15 @@ public:
 	}; // InitParams
 
 	struct RenderParams {
+		DirectX::XMMATRIX         preViewProj;
 		ID3D11ShaderResourceView* currentSRV;
+		ID3D11ShaderResourceView* depthSRV;
 		ID3D11SamplerState*       linerSampler;
 		float                     blendFactor;
 		DirectX::XMFLOAT2         texelSize;
 
-		RenderParams() : currentSRV(nullptr), linerSampler(nullptr),
-			blendFactor(0.0f), texelSize(0.0f, 0.0f) {
+		RenderParams() : preViewProj(DirectX::XMMatrixIdentity()), currentSRV(nullptr), depthSRV(nullptr), 
+			linerSampler(nullptr), blendFactor(0.0f), texelSize(0.0f, 0.0f) {
 		}
 	}; // RenderParams
 
@@ -44,13 +46,14 @@ public:
 
 private:
 	struct TAABuffer {
+		DirectX::XMMATRIX preViewProj;
 		float             blendFactor;
 		DirectX::XMFLOAT3 padding1;
 		DirectX::XMFLOAT2 texelSize;
 		DirectX::XMFLOAT2 padding2;
 
-		TAABuffer() : blendFactor(1.0f), padding1(0.0f, 0.0f, 0.0f),
-			texelSize(0.0f, 0.0f), padding2(0.0f, 0.0f) {
+		TAABuffer() : preViewProj(DirectX::XMMatrixIdentity()), blendFactor(1.0f),
+			padding1(0.0f, 0.0f, 0.0f), texelSize(0.0f, 0.0f) , padding2(0.0f, 0.0f) {
 		}
 	}; // TAABuffer
 

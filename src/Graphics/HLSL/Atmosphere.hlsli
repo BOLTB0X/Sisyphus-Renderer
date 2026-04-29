@@ -48,7 +48,7 @@ float2 atmosphere_earth_intersect(float3 ro, float3 rayDir, float atmos_radius_m
 
 float2 ray_shell_intersection(float3 ro_meter, float3 rd, float earthRadius, float minHeight, float maxHeight)
 {
-    // 행성 중심을 원점으로 맞춤 (카메라 위치에 지구 반지름만큼 더함)
+    // 행성 중심을 원점으로 맞춤
     float3 planetCenter = float3(0, -earthRadius, 0);
     float3 relativeRo = ro_meter - planetCenter;
 
