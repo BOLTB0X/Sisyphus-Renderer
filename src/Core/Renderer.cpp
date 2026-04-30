@@ -460,6 +460,7 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
 void Renderer::ApplyComposite(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
     ID3D11RenderTargetView* compositeRTV = m_Composite->GetRTV();
     context->OMSetRenderTargets(1, &compositeRTV, nullptr);
     m_Composite->ClearRT(context);
@@ -475,13 +476,14 @@ void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
 
-    ID3D11RenderTargetView* bloomRTV = m_Post->GetRTV();
-    context->OMSetRenderTargets(1, &bloomRTV, nullptr);
+    ID3D11RenderTargetView* postRTV = m_Post->GetRTV();
+    context->OMSetRenderTargets(1, &postRTV, nullptr);
     m_Post->ClearRT(context);
 
     PostEffects::RenderParams effectParam;
     effectParam.inputSRV = m_Composite->GetSRV();
     effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+    effectParam.transmittanceSRV = m_VolumetricCloud->GetTransmittanceSRV();
     effectParam.linerSampler = states->GetLinearWrapSamplerState();
     effectParam.lightUV = m_DirectionalLight->GetUV(m_Camera->GetViewMatrix(), m_Camera->GetProjectionMatrix());
     m_Post->Render(context, effectParam);

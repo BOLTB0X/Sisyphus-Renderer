@@ -27,10 +27,12 @@ public:
     struct RenderParams {
         ID3D11ShaderResourceView* inputSRV;
         ID3D11ShaderResourceView* cloudSRV;
+        ID3D11ShaderResourceView* transmittanceSRV;
         ID3D11SamplerState*       linerSampler;
         DirectX::XMFLOAT2         lightUV;
-        RenderParams() : inputSRV(nullptr), cloudSRV(nullptr), linerSampler(nullptr)
-        , lightUV(0.0f, 0.0f) {
+
+        RenderParams() : inputSRV(nullptr), cloudSRV(nullptr), transmittanceSRV(nullptr),
+            linerSampler(nullptr) ,lightUV(0.0f, 0.0f) {
         }
     }; // RenderParams
 
@@ -60,9 +62,9 @@ private:
         GodRayBuffer() {
             lightUV = { 0.5f, 0.5f };
             density = 0.8f;
-            weight = 0.05f;
-            decay = 0.85f;
-            exposure = 1.0f;
+            weight = 0.042f;
+            decay = 0.928f;
+            exposure = 0.2f;
             luminanceThreshold = 0.8f;
             padding = 0.0f;
         }

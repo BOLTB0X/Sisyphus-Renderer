@@ -28,6 +28,7 @@ public:
     ID3D11ShaderResourceView* GetDepthSRV() const;
     RenderTexture*            GetDepthRT() const;
     ID3D11RenderTargetView*   GetRTV() const;
+    D3D11_VIEWPORT            GetViewPort() const;
 
 private:
     bool InitViews(int, int);

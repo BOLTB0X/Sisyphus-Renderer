@@ -45,6 +45,7 @@ public:
     void OnGui();
 
     ID3D11ShaderResourceView* GetCloudSRV();
+    ID3D11ShaderResourceView* GetTransmittanceSRV();
 
 private:
     struct VolumetricCloudBuffer {
@@ -153,6 +154,7 @@ private:
 
 private:
     std::unique_ptr<RenderTexture>              m_resultRT;
+    std::unique_ptr<RenderTexture>              m_transmittanceRT;
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_computeShader;
     Microsoft::WRL::ComPtr<ID3D11Buffer>        m_cloudBuffer;
     // buffer

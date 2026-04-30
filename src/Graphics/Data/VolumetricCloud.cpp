@@ -10,7 +10,8 @@
 // define
 #define SAMPLER_SLOT1          0
 #define SAMPLER_SLOT2          1
-#define UAV_SLOT               0
+#define RES_UAV_SLOT           0
+#define TRA_UAV_SLOT           1
 #define TEX_SLOT_DEPTH         1
 #define TEX_SLOT_CLOUD_LUT     2
 #define TEX_SLOT_WORLEY_NOISE  3
@@ -25,6 +26,7 @@ using namespace DebugHelper;
 
 VolumetricCloud::VolumetricCloud() {
 	m_resultRT = std::make_unique<RenderTexture>();
+    m_transmittanceRT = std::make_unique<RenderTexture>();
 	m_linerWrapSampler = nullptr;
 	m_pointClampSampler = nullptr;
 	m_cloudMapLUTSRV = nullptr;
@@ -47,6 +49,11 @@ bool VolumetricCloud::Init(const InitParams& params) {
 
     if (!m_resultRT->Init(params.device, halfWidth, halfHeight,
         RenderTexture::RenderTextureType::UAV, DXGI_FORMAT_R16G16B16A16_FLOAT)) {
+        return false;
+    }
+
+    if (!m_transmittanceRT->Init(params.device, halfWidth, halfHeight,
+        RenderTexture::RenderTextureType::UAV, DXGI_FORMAT_R16_FLOAT)) {
         return false;
     }
 
@@ -74,7 +81,9 @@ void VolumetricCloud::Execute(ID3D11DeviceContext* context, const ExecuteParams&
 	}
 
 	ID3D11UnorderedAccessView* pUAV = m_resultRT->GetUAV();
-	context->CSSetUnorderedAccessViews(UAV_SLOT, 1, &pUAV, nullptr);
+	ID3D11UnorderedAccessView* tUAV = m_transmittanceRT->GetUAV();
+	context->CSSetUnorderedAccessViews(RES_UAV_SLOT, 1, &pUAV, nullptr);
+	context->CSSetUnorderedAccessViews(TRA_UAV_SLOT, 1, &tUAV, nullptr);
 
 	context->CSSetSamplers(SAMPLER_SLOT1, 1, &m_linerWrapSampler);
 	context->CSSetSamplers(SAMPLER_SLOT2, 1, &m_pointClampSampler);
@@ -90,7 +99,8 @@ void VolumetricCloud::Execute(ID3D11DeviceContext* context, const ExecuteParams&
 	context->Dispatch(gridX, gridY, 1);
 
 	ID3D11UnorderedAccessView* nullUAV = nullptr;
-	context->CSSetUnorderedAccessViews(UAV_SLOT, 1, &nullUAV, nullptr);
+	context->CSSetUnorderedAccessViews(RES_UAV_SLOT, 1, &nullUAV, nullptr);
+	context->CSSetUnorderedAccessViews(TRA_UAV_SLOT, 1, &nullUAV, nullptr);
 } // Execute
 
 void VolumetricCloud::OnGui() {
@@ -236,6 +246,10 @@ void VolumetricCloud::OnGui() {
 ID3D11ShaderResourceView* VolumetricCloud::GetCloudSRV() {
 	return m_resultRT->GetSRV();
 } // GetCloudSRV
+
+ID3D11ShaderResourceView* VolumetricCloud::GetTransmittanceSRV() {
+    return m_transmittanceRT->GetSRV();
+} // GetTransmittanceSRV
 
 bool VolumetricCloud::UpdateVolumetricCloudBuffer(ID3D11DeviceContext* context) {
 	using namespace ShaderHelper;

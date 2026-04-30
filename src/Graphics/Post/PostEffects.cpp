@@ -105,7 +105,7 @@ void PostEffects::Render(ID3D11DeviceContext* context, const RenderParams& param
     context->PSSetSamplers(SAMPLER_SLOT, 1, &params.linerSampler);
 
     ApplyBloom(context, params.inputSRV);
-    ApplyGodRays(context, params.inputSRV, params.cloudSRV, params.lightUV);
+    ApplyGodRays(context, params.inputSRV, params.transmittanceSRV, params.lightUV);
     ApplyLensflare(context, params.inputSRV, params.cloudSRV, params.lightUV);
     ApplyComposite(context);
 } // Render
@@ -124,7 +124,7 @@ void PostEffects::ApplyBloom(ID3D11DeviceContext* context, ID3D11ShaderResourceV
 } // ApplyBloom
 
 void PostEffects::ApplyGodRays(ID3D11DeviceContext* context,
-    ID3D11ShaderResourceView* sceneSRV, ID3D11ShaderResourceView* cloudSRV, DirectX::XMFLOAT2 lightUV) {
+    ID3D11ShaderResourceView* sceneSRV, ID3D11ShaderResourceView* trSRV, DirectX::XMFLOAT2 lightUV) {
     ID3D11ShaderResourceView* nullSRV = nullptr;
 
     ID3D11RenderTargetView* godRayRTV = m_rayRT->GetRTV();
@@ -140,7 +140,7 @@ void PostEffects::ApplyGodRays(ID3D11DeviceContext* context,
 
     context->PSSetShaderResources(TEX_RT_SLOT_SRV, 1, &sceneSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT_SRV, 1, &m_depthSRV);
-    context->PSSetShaderResources(TEX_CLOUD_SLOT_SRV, 1, &cloudSRV);
+    context->PSSetShaderResources(TEX_CLOUD_SLOT_SRV, 1, &trSRV);
     context->Draw(3, 0);
 
     context->PSSetShaderResources(TEX_RT_SLOT_SRV, 1, &nullSRV);

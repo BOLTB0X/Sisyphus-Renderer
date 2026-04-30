@@ -19,6 +19,7 @@
 #include "Noise.hlsli"
 
 RWTexture2D<float4> OutTexture : register(u0);
+RWTexture2D<float>  OutTransmittance : register(u1);
 SamplerState        LinearWrapSampler : register(s0);
 SamplerState        PointClampSampler : register(s1);
 Texture2D<float>    SceneDepth : register(t1);
@@ -370,7 +371,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float2 uv = (float2(DTid.xy) + 0.5f) / float2(width, height);
     float3 ro = CAMERA_POSITION;
     float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV);
-    float sceneDepth = SceneDepth.Load(int3(DTid.xy, 0)).r;
+    float sceneDepth = SceneDepth.Load(int3(DTid.xy * 2, 0)).r;
     float dist = MAX_DIST;
     
     // 터레인 or 오브젝트가 있는 픽셀인지 확인
@@ -392,4 +393,5 @@ void main( uint3 DTid : SV_DispatchThreadID )
     }
     
     OutTexture[DTid.xy] = col;
+    OutTransmittance[DTid.xy] = col.a;
 } // main

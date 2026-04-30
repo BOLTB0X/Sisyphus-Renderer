@@ -109,3 +109,4 @@ D3D11State*               D3D11Manager::GetStates() const { return m_state.get()
 ID3D11ShaderResourceView* D3D11Manager::GetDepthSRV() const { return m_depthRT->GetSRV(); }
 RenderTexture*            D3D11Manager::GetDepthRT() const { return m_depthRT.get(); }
 ID3D11RenderTargetView*   D3D11Manager::GetRTV() const { return m_renderTargetView.Get(); }
+D3D11_VIEWPORT            D3D11Manager::GetViewPort() const { return m_viewport; }

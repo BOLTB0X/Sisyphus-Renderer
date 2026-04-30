@@ -1,13 +1,15 @@
 // GodRayPS.hlsl
 // https://www.shadertoy.com/view/ltcXDH
 // https://www.shadertoy.com/view/ssV3zh
+// https://godotshaders.com/shader/
+// https://medium.com/community-play-3d/god-rays-whats-that-5a67f26aeac2
 #include "Common.hlsli"
 #include "PostProcess.hlsli"
 
 SamplerState LinearSampler : register(s0);
 Texture2D    InputTex : register(t0);
 Texture2D    DepthTex : register(t1);
-Texture2D    CloudTex : register(t2);
+Texture2D    TransmittanceTex : register(t2);
 
 cbuffer GodRayBuffer : register(b2)
 {
@@ -29,11 +31,15 @@ cbuffer GodRayBuffer : register(b2)
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    float luminance = get_cross_luminance(InputTex, LinearSampler, LIGHT_UV, THRESHOLD);
-    float cloudTransmittanceAtSun = CloudTex.SampleLevel(LinearSampler, LIGHT_UV, 0).a;
+    if (LIGHT_UV.x < 0.0f || LIGHT_UV.x > 1.0f ||
+        LIGHT_UV.y < 0.0f || LIGHT_UV.y > 1.0f)
+        return float4(0, 0, 0, 0);
     
-    if (luminance * cloudTransmittanceAtSun < 0.1f)
-        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float luminance = get_cross_luminance(InputTex, LinearSampler, LIGHT_UV, THRESHOLD);
+    float cloudTransmittanceAtSun = TransmittanceTex.SampleLevel(LinearSampler, LIGHT_UV, 0).r;
+    
+    //if (luminance * cloudTransmittanceAtSun < 0.2f)
+    //    return float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     float2 deltaTexCoord = (input.uv - LIGHT_UV);
     deltaTexCoord *= 1.0f / (float) NUM_SAMPLES * DENSITY;
@@ -47,27 +53,23 @@ float4 main(PS_INPUT input) : SV_TARGET
     {
         uv -= deltaTexCoord;
         
-        float cloudT = CloudTex.SampleLevel(LinearSampler, uv, 0).a;
+        float cloudT = TransmittanceTex.SampleLevel(LinearSampler, uv, 0).r;
         
         float depth = DepthTex.SampleLevel(LinearSampler, uv, 0).r;
-        float isSky = (depth < 0.9999f) ? 1.0f : 0.0f;
+        float isSky = (depth <= 0.0001f) ? 1.0f : 0.0f;
         cloudT *= isSky;
+        
+        float behindCloud = 1.0f - cloudT;
         
         // 밝은 하이라이트(태양 근처) 추출
         float3 sampleColor = InputTex.SampleLevel(LinearSampler, uv, 0).rgb;
-        float sampleLum = dot(sampleColor, float3(0.299f, 0.587f, 0.114f));
         
-        sampleColor *= smoothstep(0.5f, 1.0f, sampleLum);
-
-        float distToSun = length(uv - LIGHT_UV);
-        float sunMask = saturate(1.0f - distToSun * 3.0f);
-        
-        sampleColor *= cloudT * sunMask;
+        sampleColor *= cloudT;
         
         // 누적 및 감쇄
         color += sampleColor * illuminationDecay * WEIGHT;
         illuminationDecay *= DECAY;
     } // for
 
-    return float4(color * EXPOSURE * luminance, 1.0f);
+    return float4(get_dynamic_light_color(LIGHT_DIRECTION).rgb * color * EXPOSURE * luminance, 1.0f);
 } // main
