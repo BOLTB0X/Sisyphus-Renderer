@@ -4,6 +4,9 @@
 #include "ShadowMap.hlsli"
 #include "Ground.hlsli"
 
+SamplerComparisonState shadowSampler : register(s5);
+Texture2D shadowMap : register(t10);
+
 struct PS_IN
 {
     float4 pos : SV_POSITION;
@@ -38,9 +41,6 @@ cbuffer ShadowBuffer : register(b4)
     float  sSpread;
     float4 sPadding;
 }; // ShadowBuffer
-
-SamplerComparisonState shadowSampler : register(s5);
-Texture2D              shadowMap : register(t10);
 
 #define WORLD               cWorld
 

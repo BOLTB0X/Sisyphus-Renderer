@@ -88,4 +88,20 @@ namespace MathHelper { // 벡터 함수
         return DirectX::XMFLOAT3(DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw), 0.0f);
     } // VectorToRotation
 
+    inline DirectX::XMMATRIX TransformUVRotationMatrix(float radians)
+    {
+        return DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) * DirectX::XMMatrixRotationZ(radians) * DirectX::XMMatrixTranslation(0.5f, 0.5f, 0.0f);
+    } // TransformUVRotationMatrix
+
+    inline DirectX::XMMATRIX GetUVRotationMatrix(const DirectX::XMMATRIX& view)
+    {
+        using namespace DirectX;
+
+        float m00 = XMVectorGetX(view.r[0]);
+        float m01 = XMVectorGetY(view.r[0]);
+        float camRot = atan2(m01, m00);
+
+        return XMMatrixTranspose(TransformUVRotationMatrix(camRot));
+    } // GetUVRotationMatrix
+
 } // 벡터 연산

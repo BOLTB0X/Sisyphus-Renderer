@@ -1,9 +1,5 @@
-// CompositeVS.hlsl
-struct PS_INPUT
-{
-    float4 pos : SV_POSITION;
-    float2 uv : TEXCOORD0;
-}; // VS_OUT
+// PostVS.hlsl
+#include "PostProcess.hlsli"
 
 PS_INPUT main(uint vID : SV_VertexID)
 {

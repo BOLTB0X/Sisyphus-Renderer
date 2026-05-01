@@ -30,8 +30,10 @@ namespace SharedConstants {
 
         // Light
         static constexpr DirectX::XMFLOAT3 LIGHT_DIR = { 0.5f, -1.0f, 0.5f };
-        static constexpr DirectX::XMFLOAT4 LIGHT_DIFFUSE = { 1.0f, 1.0f, 1.0f, 1.0f };
+        static constexpr DirectX::XMFLOAT4 LIGHT_DIFFUSE = { 255.0f * (3.0f / 255.0f), 250.0f * (3.0f / 255.0f), 245.0f * (3.0f / 255.0f), 1.0f };
         static constexpr DirectX::XMFLOAT4 LIGHT_AMBIENT = { 1.0f, 0.9f, 0.85f, 1.0f };
+        static constexpr DirectX::XMFLOAT4 SUNSET_LIGHT_COLOR = { 255.0f * (5.0f / 255.0f), 120.0f * (5.0f / 255.0f),  30.0f * (5.0f / 255.0f), 1.0f };
+        static constexpr DirectX::XMFLOAT4 NIGHT_LIGHT_COLOR = { 20.0f * (1.0f / 255.0f),  35.0f * (1.0f / 255.0f),  65.0f * (1.0f / 255.0f), 1.0f };
 
         // VolumeTextures
         static constexpr DirectX::XMFLOAT3 TEXTURE_SIZE = { 128.0f, 128.0f, 128.0f };
@@ -45,7 +47,7 @@ namespace SharedConstants {
 
         // WeatherMap
         static constexpr DirectX::XMFLOAT2 WEATHER_MAP_RESOLUTION = { 1024.0f, 1024.0f };
-\
+
         // Ground
         static constexpr DirectX::XMFLOAT3 DARK_SAND = { 0.6f, 0.45f, 0.3f };
         static constexpr DirectX::XMFLOAT3 LIGHT_SAND = { 0.85f, 0.7f, 0.5f };
@@ -57,13 +59,10 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 2.0f;
 
         // Cloud
-        static constexpr float             CLOUD_BOTTOM = 1350.0f;
-        static constexpr float             CLOUD_TOP = 2350.0f;
-        static constexpr float             CLOUDS_LAYER_BOTTOM = -150.0f;
-        static constexpr float             CLOUDS_LAYER_TOP = -70.0f;
+        static constexpr float             CLOUD_BOTTOM = 2350.0f;
+        static constexpr float             CLOUD_TOP = 3350.0f;
 
 		static constexpr float             CLOUD_COVERAGE = 0.52f;
-        static constexpr float             CLOUDS_LAYER_COVERAGE = 0.41f;
         static constexpr float             CLOUD_BASE_SCALE = 1.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
@@ -77,8 +76,24 @@ namespace SharedConstants {
         static constexpr float             CLOUD_SCATTERING_LERP = 0.5f;
         static constexpr float             CLOUD_MIN_TRANSMITTANCE = 0.1f;
 
-        static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_TOP = { 149.0f * (1.5f / 255.0f), 167.0f * (1.5f / 255.0f), 200.0f * (1.5f / 255.0f) };
-        static constexpr DirectX::XMFLOAT3 CLOUD_AMBIENT_COLOR_BOTTOM = { 39.0f * (1.5f / 255.0f), 67.0f * (1.5f / 255.0f), 87.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_DAY_AMBIENT_COLOR_TOP = { 149.0f * (1.5f / 255.0f), 167.0f * (1.5f / 255.0f), 200.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_DAY_AMBIENT_COLOR_BOTTOM = { 39.0f * (1.5f / 255.0f), 67.0f * (1.5f / 255.0f), 87.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_SUNSET_AMBIENT_COLOR_TOP = { 180.0f * (1.5f / 255.0f), 100.0f * (1.5f / 255.0f), 60.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM = { 80.0f * (1.5f / 255.0f), 50.0f * (1.5f / 255.0f), 40.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_NIGHT_AMBIENT_COLOR_TOP = { 15.0f * (1.5f / 255.0f), 20.0f * (1.5f / 255.0f), 35.0f * (1.5f / 255.0f) };
+        static constexpr DirectX::XMFLOAT3 CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM = { 5.0f * (1.5f / 255.0f), 10.0f * (1.5f / 255.0f), 15.0f * (1.5f / 255.0f) };
+        
+        static constexpr DirectX::XMFLOAT2 WIND_DIRECTION = { 0.5f, -0.5f };
+        static constexpr float  WIND_SPEED = 1.5f;
+        static constexpr float  WIND_SCALE = 200.0f;
+
+        static constexpr float HENYEY_GREENSTEIN_SCALE = 2.5f;
+        static constexpr float POWDER_FACTOR = 0.75f;
+        static constexpr float LIGHTING_SCALE = 0.2f;
+        static constexpr float HORIZON_FADE_SCALE = 0.08f;
+
+        // lensflare
+        static constexpr DirectX::XMFLOAT3 LENSFLARE_RETOUCH_COLOR = { 1.4f, 1.2f, 1.0f };
 
     } // BuffersConstants
 }

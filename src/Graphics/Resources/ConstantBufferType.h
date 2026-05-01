@@ -17,12 +17,13 @@ namespace ConstantBuffer {
     }; // MatrixBuffer
 
     struct ShadowBuffer {
-        // Row 1
         DirectX::XMMATRIX world;
+
         float             mapWidth;
         float             mapHeight;
         float             bias;
         float             spread;
+
         DirectX::XMFLOAT4 padding;
 
         ShadowBuffer() {
@@ -60,17 +61,28 @@ namespace ConstantBuffer {
     struct DirectionalLightBuffer {
         DirectX::XMFLOAT3 direction;
         float             padding1;
+
         DirectX::XMFLOAT4 ambient;
+
         DirectX::XMFLOAT4 diffuse;
+
+        DirectX::XMFLOAT4 sunset;
+
+        DirectX::XMFLOAT4 night;
+
         DirectX::XMFLOAT3 lookAt;
         float             padding2;
+
         DirectX::XMMATRIX lightViewMatrix;
+
         DirectX::XMMATRIX lightProjectionMatrix;
 
         DirectionalLightBuffer() :
             direction(0.0f, -1.0f, 0.0f), padding1(0.0f),
             ambient(0.2f, 0.2f, 0.2f, 1.0f),
             diffuse(1.0f, 1.0f, 1.0f, 1.0f),
+            sunset(0.0f, 0.0f, 0.0f, 1.0f),
+            night(0.0f, 0.0f, 0.0f, 1.0f),
             lookAt(0.0f, 0.0f, 0.0f), padding2(0.0f),
             lightViewMatrix(DirectX::XMMatrixIdentity()),
             lightProjectionMatrix(DirectX::XMMatrixIdentity()) {

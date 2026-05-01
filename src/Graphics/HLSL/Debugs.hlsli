@@ -47,11 +47,17 @@ float4 raymarch_spherical_debug(float3 ro_meter, float3 rd, float maxDist, float
     // 테스트용 시각화
     // 구름 껍질의 진입점 위치를 계산
     float3 hitPos = ro_meter + rd * tNear;
-    
-    // 지평선 부근에서 구름이 멀어지는 느낌을 보기 위해 거리 기반으로 색상 부여
+
     float distanceDistortion = saturate(tNear / 100000.0); // 100km 기준
     return float4(1.0, 0.2, 0.2, 0.5 * (1.0 - distanceDistortion));
 } // raymarch_spherical_debug
 
+float4 check_sun_luminance(float2 uv, float2 sunPos, Texture2D tex, SamplerState samp)
+{
+    float2 diff = abs(uv - sunPos);
+    if (diff.x < 0.005f && diff.y < 0.005f)
+        return float4(1, 0, 0, 1);
+    return float4(tex.SampleLevel(samp, uv, 0).rgb, 1.0f);
+} // check_sun_luminance
 
 #endif // _DEBUGS_HLSLI_

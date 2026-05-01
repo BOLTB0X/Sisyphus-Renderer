@@ -1,6 +1,13 @@
 // StonePS.hlsl
 #include "Common.hlsli"
 
+Texture2D albedoTexture : register(t0);
+Texture2D normalTexture : register(t1);
+Texture2D metallicTexture : register(t2);
+Texture2D roughnessTexture : register(t3);
+Texture2D aoTexture : register(t4);
+SamplerState sampler0 : register(s0);
+
 struct PS_INPUT
 {
     float4 position : SV_POSITION;
@@ -9,21 +16,14 @@ struct PS_INPUT
     float3 worldPos : TEXCOORD1;
 }; // PS_INPUT
 
-Texture2D    albedoTexture    : register(t0);
-Texture2D    normalTexture    : register(t1);
-Texture2D    metallicTexture  : register(t2);
-Texture2D    roughnessTexture : register(t3);
-Texture2D    aoTexture        : register(t4);
-SamplerState sampler0      : register(s0);
-
 float4 main(PS_INPUT input) : SV_TARGET
 {
     float4 textureColor = albedoTexture.Sample(sampler0, input.texCoord);
-    float3 lightDir = normalize(-LIGHT_DIRECTION);
+    float3 lightDir = -LIGHT_DIRECTION;
     float3 normal = normalize(input.normal);
     float lightIntensity = saturate(dot(normal, lightDir));
     float4 ambient = float4(0.1f, 0.1f, 0.1f, 1.0f);
-    float4 color = (textureColor * LIGHT_COLOR * lightIntensity) + (textureColor * ambient);
+    float4 color = (textureColor * get_dynamic_light_color(LIGHT_DIRECTION.y) * lightIntensity) + (textureColor * ambient);
     float4 aoData = aoTexture.Sample(sampler0, input.texCoord);
     color.rgb *= aoData.r;
 

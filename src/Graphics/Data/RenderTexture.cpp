@@ -1,5 +1,7 @@
 #include "Pch.h"
 #include "RenderTexture.h"
+// Utils
+#include "Helpers/DebugHelper.h"
 
 RenderTexture::RenderTexture() : m_width(0), m_height(0) {
 } // RenderTexture
@@ -31,6 +33,7 @@ bool RenderTexture::Init(ID3D11Device* device, int width, int height, RenderText
     case RenderTextureType::UAV:
         texDesc.Format = format;
         texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+        texDesc.MipLevels = 1;
         break;
 
     case RenderTextureType::Depth:
@@ -38,8 +41,9 @@ bool RenderTexture::Init(ID3D11Device* device, int width, int height, RenderText
         texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
         texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         break;
-    }
 
+    } // switch
+    
     if (FAILED(device->CreateTexture2D(&texDesc, nullptr, m_texture.GetAddressOf()))) {
         return false;
     }
@@ -48,11 +52,40 @@ bool RenderTexture::Init(ID3D11Device* device, int width, int height, RenderText
     case RenderTextureType::Normal:
     case RenderTextureType::UAV:
     {
+
         if (FAILED(device->CreateRenderTargetView(m_texture.Get(), nullptr, m_rtv.GetAddressOf()))) return false;
         if (FAILED(device->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.GetAddressOf()))) return false;
 
         if (type == RenderTextureType::UAV) {
             if (FAILED(device->CreateUnorderedAccessView(m_texture.Get(), nullptr, m_uav.GetAddressOf()))) return false;
+
+            // =========================================================
+            // [수정된 부분] 밉맵용 별도 보조 텍스처(m_mipTexture) 생성
+            // =========================================================
+            D3D11_TEXTURE2D_DESC mipDesc = texDesc; // 원본 설정(크기, 포맷 등) 복사
+
+            // UAV 플래그를 제거하고 RTV와 SRV만 남깁니다.
+            mipDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            mipDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS; // 밉맵 생성 플래그 추가
+            mipDesc.MipLevels = 0; // 하드웨어가 지원하는 전체 밉 체인 생성 허용
+
+            // 1. 실제로 m_mipTexture를 GPU에 생성합니다. (이 코드가 빠져있었습니다!)
+            if (FAILED(device->CreateTexture2D(&mipDesc, nullptr, m_mipTexture.GetAddressOf()))) {
+                return false;
+            }
+
+            // 2. 생성된 m_mipTexture를 바라보는 Mipped SRV를 생성합니다.
+            D3D11_SHADER_RESOURCE_VIEW_DESC mipSrvDesc = {};
+            mipSrvDesc.Format = format;
+            mipSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+            mipSrvDesc.Texture2D.MostDetailedMip = 0;
+            mipSrvDesc.Texture2D.MipLevels = -1; // 모든 밉 레벨에 접근 가능하도록 설정
+
+            if (FAILED(device->CreateShaderResourceView(
+                m_mipTexture.Get(), &mipSrvDesc, m_mippedSRV.GetAddressOf()))) {
+                return false;
+            }
+            // =========================================================
         }
         break;
     }
@@ -74,10 +107,11 @@ bool RenderTexture::Init(ID3D11Device* device, int width, int height, RenderText
         srvDesc.Texture2D.MostDetailedMip = 0;
         srvDesc.Texture2D.MipLevels = 1;
 
-        if (FAILED(device->CreateShaderResourceView(m_texture.Get(), &srvDesc, m_srv.GetAddressOf()))) return false;
+        if (FAILED(device->CreateShaderResourceView(
+            m_texture.Get(), &srvDesc, m_srv.GetAddressOf()))) return false;
         break;
     }
-    }
+    } // switch
 
     return true;
 } // Init
@@ -95,8 +129,20 @@ void RenderTexture::ClearDepth(ID3D11DeviceContext* context, float depth, UINT8 
     }
 } // ClearDepth
 
+void RenderTexture::GenerateMips(ID3D11DeviceContext* context) {
+    if (!m_mipTexture || !m_mippedSRV) {
+        DebugHelper::DebugPrint("GenerateMips: mipTexture 또는 mippedSRV가 null!");
+        return;
+    }
+    context->CopySubresourceRegion(
+        m_mipTexture.Get(), 0, 0, 0, 0,  // 대상: mipTexture의 mip0
+        m_texture.Get(), 0, nullptr);      // 소스: texture의 mip0
+    context->GenerateMips(m_mippedSRV.Get());
+} // GenerateMips
+
 ID3D11Texture2D*           RenderTexture::GetTexture() const { return m_texture.Get(); }
 ID3D11ShaderResourceView*  RenderTexture::GetSRV() const { return m_srv.Get(); }
+ID3D11ShaderResourceView*  RenderTexture::GetMippedSRV() const { return m_mippedSRV.Get(); }
 ID3D11RenderTargetView*    RenderTexture::GetRTV() const { return m_rtv.Get(); }
 ID3D11DepthStencilView*    RenderTexture::GetDSV() const { return m_dsv.Get(); }
 ID3D11UnorderedAccessView* RenderTexture::GetUAV() const { return m_uav.Get(); }

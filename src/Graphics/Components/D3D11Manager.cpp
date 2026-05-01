@@ -10,7 +10,7 @@ D3D11Manager::D3D11Manager() {
     m_displayInfo = std::make_unique<DisplayInfo>();
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
-    m_depthBuffer = std::make_unique<RenderTexture>();
+    m_depthRT = std::make_unique<RenderTexture>();
     m_viewport = {0}; 
 } // D3D11Manager
 
@@ -18,7 +18,7 @@ D3D11Manager::D3D11Manager(const D3D11Manager& other) {
     m_displayInfo = std::make_unique<DisplayInfo>();
     m_core = std::make_unique<D3D11CoreResources>();
     m_state = std::make_unique<D3D11State>();
-    m_depthBuffer = std::make_unique<RenderTexture>();
+    m_depthRT = std::make_unique<RenderTexture>();
     m_viewport = { 0 };
 } // D3D11Manager
 
@@ -46,10 +46,10 @@ void D3D11Manager::BeginScene(float r, float g, float b, float a) {
 
     // 화면 및 깊이 버퍼 클리어
     context->ClearRenderTargetView(m_renderTargetView.Get(), color);
-    m_depthBuffer->ClearDepth(context, 1.0f, 0);
+    m_depthRT->ClearDepth(context, 1.0f, 0);
 
     // 렌더 타겟 바인딩 및 뷰포트 설정
-    context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthBuffer->GetDSV());
+    context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthRT->GetDSV());
     context->RSSetViewports(1, &m_viewport);
 } // BeginScene
 
@@ -63,7 +63,7 @@ void D3D11Manager::RestoreViewport() {
 } // RestoreViewport
 
 bool D3D11Manager::InitViews(int width, int height) {
-    if (!m_depthBuffer->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::Depth)) {
+    if (!m_depthRT->Init(m_core->GetDevice(), width, height, RenderTexture::RenderTextureType::Depth)) {
         DebugHelper::DebugPrint("RenderTexture를 이용한 뎁스 버퍼 초기화 실패");
         return false;
     }
@@ -106,5 +106,7 @@ void D3D11Manager::InitViewport(int width, int height) {
 ID3D11Device*             D3D11Manager::GetDevice() const  { return m_core->GetDevice(); }
 ID3D11DeviceContext*      D3D11Manager::GetDeviceContext() const { return m_core->GetDeviceContext(); }
 D3D11State*               D3D11Manager::GetStates() const { return m_state.get(); }
-ID3D11ShaderResourceView* D3D11Manager::GetDepthSRV() const { return m_depthBuffer->GetSRV(); }
+ID3D11ShaderResourceView* D3D11Manager::GetDepthSRV() const { return m_depthRT->GetSRV(); }
+RenderTexture*            D3D11Manager::GetDepthRT() const { return m_depthRT.get(); }
 ID3D11RenderTargetView*   D3D11Manager::GetRTV() const { return m_renderTargetView.Get(); }
+D3D11_VIEWPORT            D3D11Manager::GetViewPort() const { return m_viewport; }

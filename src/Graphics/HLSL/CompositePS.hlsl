@@ -1,17 +1,14 @@
 // CompositePS.hlsl
-Texture2D    LowResCloudTex : register(t0);
-Texture2D<float> mainDepth : register(t1);
-SamplerState LinearSampler : register(s0);
+#include "PostProcess.hlsli"
 
-struct PS_INPUT
-{
-    float4 pos : SV_POSITION;
-    float2 uv : TEXCOORD0;
-}; // PS_INPUT
+SamplerState WrapSampler : register(s0);
+Texture2D    BloomFlareTex : register(t0);
+Texture2D    GodRayTex : register(t1);
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    float4 cloudColor = LowResCloudTex.Sample(LinearSampler, input.uv);
-    return cloudColor;
-    //return float4(1, 0, 0, 1);
+    float3 scene = BloomFlareTex.Sample(WrapSampler, input.uv).rgb;
+    float3 godRay = GodRayTex.Sample(WrapSampler, input.uv).rgb;
+
+    return float4(scene + godRay, 1.0f);
 } // main
