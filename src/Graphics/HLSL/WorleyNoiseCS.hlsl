@@ -22,8 +22,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float r = tilable_voronoi(coord, 16.0f, 3.0f);
     float g = tilable_voronoi(coord, 4.0f, 8.0f);
     float b = tilable_voronoi(coord, 4.0f, 16.0f);
-
-    // r, g, b를 섞어 구름의 "살"을 깎아낼 최종 값을 계산
     float c = max(0.0f, 1.0f - (r + g * 0.5f + b * 0.25f) / 1.75f);
 
     // 3D 텍스처(UAV)에 기록

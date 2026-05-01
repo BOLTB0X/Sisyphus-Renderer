@@ -37,9 +37,6 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     float luminance = get_cross_luminance(InputTex, LinearSampler, LIGHT_UV, THRESHOLD);
     float cloudTransmittanceAtSun = TransmittanceTex.SampleLevel(LinearSampler, LIGHT_UV, 0).r;
-    
-    //if (luminance * cloudTransmittanceAtSun < 0.2f)
-    //    return float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     float2 deltaTexCoord = (input.uv - LIGHT_UV);
     deltaTexCoord *= 1.0f / (float) NUM_SAMPLES * DENSITY;

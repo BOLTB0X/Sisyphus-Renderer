@@ -37,13 +37,6 @@ float3 Lensflare(float2 uv, float2 pos)
     float dist = length(main);
     dist = pow(abs(dist), 0.1f);
     
-    // 코어
-    float n = noise_texture(NoiseTex, LinearWrapSampler, float2((ang - TIME) * 16.0f, dist * 32.0f));
-    float f0 = 1.0f / (length(uv - pos) * SUN_TIGHT + 1.0f);
-    f0 = f0 + f0 * (sin(noise_texture(NoiseTex, LinearWrapSampler, 
-            float2(sin((ang - TIME) * 2.0f + pos.x) * 4.0f - cos((ang - TIME) * 3.0f + pos.y), 0.0f)) * 8.0f)
-                * 0.1f + dist * 0.1f + 0.8f);
-    
     // 링, halo
     float f1 = max(0.01f - pow(abs(length(uv + 1.2f * pos)), 1.9f), 0.0f) * 7.0f;
     float f2 = max(1.0f / (1.0f + 32.0f * pow(abs(length(uvd + 0.8f * pos)), 2.0f)), 0.0f) * 0.25f;
@@ -71,7 +64,6 @@ float3 Lensflare(float2 uv, float2 pos)
     c.g += f22 + f42 + f52 + f62;
     c.b += f23 + f43 + f53 + f63;
     c = c * 1.3f - float3(length(uvd) * 0.05f, length(uvd) * 0.05f, length(uvd) * 0.05f);
-    c += float3(f0, f0, f0);
     
     return c;
 } // Lensflare
