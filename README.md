@@ -2,10 +2,9 @@
 
 ![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
 
-<p align="center">
-  <img width="500" height="300" alt="떠오른다" src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" />
-  <br/> 시지프스의 돌
-</p>
+![그가 본 것은](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true)
+
+시지프스의 돌
 
 ## Quick Start
 
