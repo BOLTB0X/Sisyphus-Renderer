@@ -278,17 +278,17 @@ AAA급 물리 기반 볼류메트릭 레이마칭(구름맵, 월리 노이즈, R
     <tr>
       <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a> </a>
+      <a> 볼류매트릭 </a>
       </p>
       </td>
         <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a></a>
+      <a> 렌즈플레어 </a>
       </p>
       </td>
         <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a></a>
+      <a> 태양 위치에 따른 구름 색상 변경 </a>
       </p>
       </td>
     </tr>
@@ -326,17 +326,17 @@ AAA급 물리 기반 볼류메트릭 레이마칭(구름맵, 월리 노이즈, R
     <tr>
       <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a> </a>
+      <a>God Rays </a>
       </p>
       </td>
             <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a></a>
+      <a> depths </a>
       </p>
       </td>
                   <td style="text-align:center; font-size:14px; font-weight:bold;">
       <p align="center">
-      <a></a></a>
+      <a> 렌즈플레어와 혼합 </a>
       </p>
       </td>
     </tr>
