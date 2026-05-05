@@ -6,12 +6,6 @@
   <p><strong>God Rays(Raymarching Light)</strong></p>
 </div>
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master00.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B42.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-</div>
-
 <table>
   <tr>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="320"></td>
@@ -81,6 +75,8 @@ PostEffects::RenderGodRays()
   └─ [최종 색상 출력]
      └─ 태양의 동적 색상 * 누적된 color * EXPOSURE * 태양 기본 밝기
 ```
+
+
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/09Volumetric_%EA%B0%93%EB%A0%88%EC%9D%B401.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
