@@ -480,31 +480,6 @@ float3 cloud   = CloudMap.SampleLevel(LinearWrapSampler, pos.xz, mipLevel).rgb;
 
 ---
 
-## [성능]
-
-> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
-
-| 상황 | FPS |
-|---|---|
-| 일반 구름 뷰 | 50 ~ 59 |
-| 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
-
-유사한 ShaderToy 볼류메트릭 구현체들이 동일 환경에서 **20 ~ 30fps** 수준인 것과 비교하면 상당한 차이가 있다 생각함
-
-단순히 빠른 것이 아니라 **품질을 유지하면서** 빠른 것이 핵심
-
-- 노을, 낮, 밤 **동적 Ambient 전환**
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **YCoCg Variance Clipping** TAA
-- **Bloom + Lens Flare + God Ray** 후처리
-
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Volumetric/real)
-
----
-
 ## [참고]
 
 - [Guerrilla games: Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine)
