@@ -143,7 +143,7 @@ start SisyphusRenderer.sln
 ### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
 
 <div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master06_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
     <br>
