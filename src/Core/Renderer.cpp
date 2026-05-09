@@ -232,43 +232,70 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 } // Init
 
 void Renderer::Shutdown() {
-    // [최상위 UI 레이어]
     if (m_ImGuiMgr) {
         m_ImGuiMgr.reset();
     }
-    //  [렌더링 객체]
-    if (m_SkyBox) {
-        m_SkyBox.reset();
+
+    // 후처리 및 포스트 이펙트
+    if (m_TAA) {
+        m_TAA.reset();
     }
-    if (m_AtmosphereLUT) {
-        m_AtmosphereLUT.reset();
-	}
-    if (m_Stone) {
-        m_Stone.reset();
-    }
-    if (m_Ground) {
-        m_Ground.reset();
-    }
-    // [리소스 생성기 및 중간 데이터]
-    if (m_CloudMapLUT) {
-        m_CloudMapLUT.reset();
+    if (m_Post) {
+        m_Post.reset();
     }
     if (m_Composite) {
         m_Composite.reset();
-	}
+    }
+
+    // 렌더 타겟 및 그림자
+    if (m_sceneRT) {
+        m_sceneRT.reset();
+    }
     if (m_ShadowMap) {
         m_ShadowMap.reset();
     }
-    // [렌더러 핵심 컴포넌트]
-    if (m_DirectionalLight) {
-        m_DirectionalLight.reset();
+
+    // 볼류매트릭 및 대기 렌더링 객체
+    if (m_VolumetricCloud) {
+        m_VolumetricCloud.reset();
+    }
+    if (m_CloudMapLUT) {
+        m_CloudMapLUT.reset();
+    }
+    if (m_AtmosphereLUT) {
+        m_AtmosphereLUT.reset();
+    }
+    if (m_SkyBox) {
+        m_SkyBox.reset();
+    }
+
+    // 일반 지오메트리 렌더링 객체
+    if (m_Ground) {
+        m_Ground.reset();
+    }
+    if (m_Stone) {
+        m_Stone.reset();
+    }
+
+    // 렌더러 핵심 컴포넌트 및 매니저
+    if (m_TextureMgr) {
+        m_TextureMgr.reset();
     }
     if (m_Camera) {
         m_Camera.reset();
     }
-    if (m_TextureMgr) {
-        m_TextureMgr.reset();
+    if (m_DirectionalLight) {
+        m_DirectionalLight.reset();
     }
+
+    // 상수 버퍼]
+    if (m_lightBuffer) {
+        m_lightBuffer.Reset();
+    }
+    if (m_frameBuffer) {
+        m_frameBuffer.Reset();
+    }
+
     // 그래픽스 API 코어
     if (m_D3D11Mgr) {
         m_D3D11Mgr.reset();

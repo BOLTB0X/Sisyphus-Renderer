@@ -5,7 +5,7 @@
 ## Self Introduce
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>시지프스의 돌</strong></p>
 </div>
@@ -18,6 +18,12 @@
 | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
 
 유사한 ShaderToy 볼류메트릭 구현체들이 동일 환경에서 **20 ~ 30fps** 수준인 것과 비교하면 상당한 차이가 있다 생각함
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>시지프스의 돌</strong></p>
+</div>
 
 단순히 빠른 것이 아니라 **품질을 유지하면서** 빠른 것이 핵심
 
@@ -83,6 +89,14 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg
 # 프로젝트 열기 (or cmake --build . 실행)
 start SisyphusRenderer.sln
 ```
+
+### 4. 사용한 에셋
+
+- [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+
+- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+
+- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
 
 </details>
 
