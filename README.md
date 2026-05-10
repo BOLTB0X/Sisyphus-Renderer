@@ -12,12 +12,20 @@
 
 > 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
 
-| 상황 | FPS |
-|---|---|
-| 일반 구름 뷰 | 50 ~ 59 |
-| 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
 
-유사한 ShaderToy 볼류메트릭 구현체들이 동일 환경에서 **20 ~ 30fps** 수준인 것과 비교하면 상당한 차이가 있다 생각함
+  | 상황 | FPS |
+  |---|---|
+  | 일반 구름 뷰 | 50 ~ 59 |
+  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
+
+</div>
+
+
+Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
