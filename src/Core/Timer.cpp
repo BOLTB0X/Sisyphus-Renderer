@@ -38,14 +38,10 @@ void Timer::Frame() {
 
 	QueryPerformanceCounter((LARGE_INTEGER*)&currentTime);
 
-	// 현재 시간을 마지막으로 조회한 시점 이후 경과된 시간의 차이를 계산
 	elapsedTicks = currentTime - m_startTime;
 
-	// 프레임 시간을 계산.
 	m_frameTime = (float)elapsedTicks / m_frequency;
 	m_totalTime += m_frameTime;
-
-	// 타이머를 다시 시작
 	m_startTime = currentTime;
 	return;
 } // Frame
@@ -78,5 +74,5 @@ int Timer::GetTiming() {
 	return (int)milliseconds;
 } // GetTiming
 
-float Timer::GetFrameTime() { return m_frameTime; }
+float        Timer::GetFrameTime() { return m_frameTime; }
 const float& Timer::GetTotalTime() { return m_totalTime; }

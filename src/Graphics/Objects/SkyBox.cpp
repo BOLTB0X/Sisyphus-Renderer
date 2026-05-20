@@ -83,27 +83,6 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     ID3D11UnorderedAccessView* nullUAV = nullptr;
     context->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
 
-    //// [Step A] 저해상도 렌더링 준비
-    //// 현재 메인 렌더 타겟과 뷰포트를 저장, 나중에 복구용
-    //ID3D11RenderTargetView* mainRTV = nullptr;
-    //ID3D11DepthStencilView* mainDSV = nullptr;
-    //context->OMGetRenderTargets(1, &mainRTV, &mainDSV);
-
-    //D3D11_VIEWPORT oldViewport;
-    //UINT numViewports = 1;
-    //context->RSGetViewports(&numViewports, &oldViewport);
-
-    //// 저해상도 RT 청소 및 설정
-    //float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    //context->ClearRenderTargetView(m_volumetricRT->GetRTV(), clearColor);
-
-    //D3D11_VIEWPORT lowResViewport = { 0.0f, 0.0f, (float)SharedConstants::ScreenConstants::WIDTH / 2.0f, (float)SharedConstants::ScreenConstants::HEIGHT / 2.0f, 0.0f, 1.0f };
-    //context->RSSetViewports(1, &lowResViewport);
-
-    //ID3D11RenderTargetView* lowResRTV = m_volumetricRT->GetRTV();
-    //context->OMSetRenderTargets(1, &lowResRTV, nullptr); // 대기/구름은 깊이 쓰기 안 함
-
-    // [Step B] 저해상도 RT에 SkyBox(대기+구름) 그리기
     context->IASetInputLayout(m_layout.Get());
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
@@ -125,20 +104,6 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     ID3D11ShaderResourceView* nullSRV = nullptr;
     context->PSSetShaderResources(TEX_SLOT_DEPTH, 1, &nullSRV);
 	context->PSSetShaderResources(TEX_SLOT_LUT, 1, &nullSRV);
-
- //   // [Step C] 메인 화면으로 복구 및 풀스크린 합성
- //   context->RSSetViewports(1, &oldViewport);
- //   context->OMSetRenderTargets(1, &mainRTV, mainDSV);
-
- //   // 합성용 셰이더 설정
- //   context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-	//m_Composite->Render(context, m_volumetricRT->GetSRV(), m_linerWrapSampler);
- //   // 리소스 반납
- //   ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
- //   context->PSSetShaderResources(0, 5, nullSRVs);
-
- //   if (mainRTV) mainRTV->Release();
- //   if (mainDSV) mainDSV->Release();
 } // Render
 
 void SkyBox::OnGui() {

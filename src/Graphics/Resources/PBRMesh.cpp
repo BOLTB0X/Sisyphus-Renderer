@@ -51,8 +51,6 @@ void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
     // 입력 조립기 세팅
     context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &m_stride, &m_offset);
     context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-    
-    // 프리미티브 토폴로지 설정
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 드로우 콜

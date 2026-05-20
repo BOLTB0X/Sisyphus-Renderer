@@ -304,7 +304,6 @@ void Renderer::Shutdown() {
 
 bool Renderer::Frame(float deltaTime) {
     m_renderingTime += deltaTime;
-    //m_DirectionalLight->Rotate(deltaTime);
     return Render();
 } // Frame
 

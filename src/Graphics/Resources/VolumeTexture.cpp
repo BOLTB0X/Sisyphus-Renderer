@@ -22,7 +22,6 @@ bool VolumeTexture::Init(ID3D11Device* device, UINT width, UINT height, UINT dep
     texDesc.MipLevels = 0;
     texDesc.Format = format;
     texDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
-    // 밉맵 생성을 위해서는 반드시 RENDER_TARGET 바인드 플래그가 필요 (DirectX 11 제약 사항)
     texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_RENDER_TARGET;
     texDesc.Usage = D3D11_USAGE_DEFAULT;
 
@@ -63,4 +62,4 @@ ID3D11UnorderedAccessView* VolumeTexture::GetUAV() const { return m_uav.Get(); }
 ID3D11Texture3D*           VolumeTexture::GetTexture() const { return m_texture.Get(); }
 UINT                       VolumeTexture::GetWidth() const { return m_width; }
 UINT                       VolumeTexture::GetHeight() const { return m_height; }
-UINT VolumeTexture::GetDepth() const { return m_depth; }
+UINT                       VolumeTexture::GetDepth() const { return m_depth; }

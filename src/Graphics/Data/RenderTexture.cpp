@@ -59,33 +59,25 @@ bool RenderTexture::Init(ID3D11Device* device, int width, int height, RenderText
         if (type == RenderTextureType::UAV) {
             if (FAILED(device->CreateUnorderedAccessView(m_texture.Get(), nullptr, m_uav.GetAddressOf()))) return false;
 
-            // =========================================================
-            // [수정된 부분] 밉맵용 별도 보조 텍스처(m_mipTexture) 생성
-            // =========================================================
-            D3D11_TEXTURE2D_DESC mipDesc = texDesc; // 원본 설정(크기, 포맷 등) 복사
-
-            // UAV 플래그를 제거하고 RTV와 SRV만 남깁니다.
+            D3D11_TEXTURE2D_DESC mipDesc = texDesc;
             mipDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            mipDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS; // 밉맵 생성 플래그 추가
-            mipDesc.MipLevels = 0; // 하드웨어가 지원하는 전체 밉 체인 생성 허용
+            mipDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+            mipDesc.MipLevels = 0;
 
-            // 1. 실제로 m_mipTexture를 GPU에 생성합니다. (이 코드가 빠져있었습니다!)
             if (FAILED(device->CreateTexture2D(&mipDesc, nullptr, m_mipTexture.GetAddressOf()))) {
                 return false;
             }
 
-            // 2. 생성된 m_mipTexture를 바라보는 Mipped SRV를 생성합니다.
             D3D11_SHADER_RESOURCE_VIEW_DESC mipSrvDesc = {};
             mipSrvDesc.Format = format;
             mipSrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             mipSrvDesc.Texture2D.MostDetailedMip = 0;
-            mipSrvDesc.Texture2D.MipLevels = -1; // 모든 밉 레벨에 접근 가능하도록 설정
+            mipSrvDesc.Texture2D.MipLevels = -1;
 
             if (FAILED(device->CreateShaderResourceView(
                 m_mipTexture.Get(), &mipSrvDesc, m_mippedSRV.GetAddressOf()))) {
                 return false;
             }
-            // =========================================================
         }
         break;
     }

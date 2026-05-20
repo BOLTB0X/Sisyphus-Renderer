@@ -66,7 +66,7 @@ void CloudComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
 	context->PSSetShaderResources(TEX_SLOT_SCENE, 1, &params.sceneSRV);
 	context->PSSetShaderResources(TEX_SLOT_CLOUD, 1, &params.cloudSRV);
 
-	context->Draw(3, 0); // 삼각형 1개로 전체 화면을 덮는 풀스크린 삼각형
+	context->Draw(3, 0);
 } // Render
 
 void CloudComposite::ClearRT(ID3D11DeviceContext* context) {
