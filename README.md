@@ -106,6 +106,8 @@ start SisyphusRenderer.sln
 
 - [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
 
+- [unity.com: discussions - Import PNG Heightmaps To Unity](https://discussions.unity.com/t/import-png-heightmaps-to-unity/932728)
+
 </details>
 
 ## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
