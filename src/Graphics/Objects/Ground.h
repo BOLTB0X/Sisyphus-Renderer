@@ -4,18 +4,21 @@
 #include <DirectXMath.h>
 #include <memory>
 #include "Components/Transform.h"
+#include "Components/QuadTree.h"
 #include "Resources/ConstantBufferType.h"
 #include "Utils/SharedConstants/BuffersConstants.h"
 
-class DefaultMesh;
+class Frustum;
+class Texture;
 
 class Ground {
 public:
     struct InitParams {
-        ID3D11Device* device;
-        HWND          hwnd;
+        ID3D11Device*             device;
+        HWND                      hwnd;
+        std::shared_ptr<Texture>  heightMapTex;
 
-		InitParams() : device(nullptr), hwnd(nullptr) {
+		InitParams() : device(nullptr), hwnd(nullptr), heightMapTex(nullptr) {
         }
     }; // InitParams
 
@@ -24,9 +27,10 @@ public:
         float                     time;
 		ID3D11ShaderResourceView* shadowSRV;
 		ID3D11SamplerState*       shadowSampler;
+        Frustum*                  frustum;
 
         RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f),
-            shadowSRV(nullptr), shadowSampler(nullptr) {
+            shadowSRV(nullptr), shadowSampler(nullptr), frustum(nullptr) {
         }
     }; // RenderParams
 
@@ -70,9 +74,10 @@ private:
 
     bool UpdateGroundBuffer(ID3D11DeviceContext*);
     bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&);
+    void GenerateTerrainGrid(int, int, float, std::vector<QuadTree::BoxVertex>&, std::vector<unsigned long>&);
 
 private:
-    std::unique_ptr<DefaultMesh>               m_mesh;
+    std::unique_ptr<QuadTree>                  m_quadTree;
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
@@ -86,4 +91,6 @@ private:
     ConstantBuffer::ShadowBuffer               m_ShadowData;
     ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;
+    std::shared_ptr<Texture>                   m_heightMap;
+
 }; // Ground

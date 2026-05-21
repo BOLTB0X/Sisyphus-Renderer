@@ -36,6 +36,8 @@ namespace SharedConstants {
         const std::string STONE = "assets/Stone/Stone.fbx";
         const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";
         const std::string NOISE_2D = "assets/Noise/noise.png";
+        const std::string HEIGHT = "assets/Map/heightmap.png";
+
         const std::string KEY_CLOUD_VOL = "CloudNoise";
         const std::string KEY_WORLEY_NOISE = "WorleyNoise";
     } // PathConstants

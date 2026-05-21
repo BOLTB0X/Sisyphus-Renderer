@@ -44,6 +44,8 @@ bool Stone::Init(const InitParams& params) {
     }
 
 	m_sampler = params.linerSampler;
+
+    SetPosition(0.0f, 1.0f, 0.0f);
     return true;
 } // Init
 

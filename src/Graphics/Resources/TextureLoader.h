@@ -5,5 +5,9 @@
 class TextureLoader {
 public:
     static bool CreateTextureFromFile(ID3D11Device*, ID3D11DeviceContext*,
-        const std::string&, ID3D11ShaderResourceView**);
+        const std::string&, ID3D11ShaderResourceView**,
+        std::vector<unsigned char>* outPixels = nullptr,
+        int* outWidth = nullptr,
+        int* outHeight = nullptr
+    );
 }; // TextureLoader

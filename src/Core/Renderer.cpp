@@ -158,6 +158,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     Ground::InitParams groundInitParams;
     groundInitParams.device = device;
     groundInitParams.hwnd = hwnd;
+	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT);
 
     if (!m_Ground->Init(groundInitParams)) {
         return false;
@@ -436,6 +437,7 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     groundParams.time = m_renderingTime;
     groundParams.shadowSRV = m_ShadowMap->GetSRV();
     groundParams.shadowSampler = states->GetShadowSamplerState();
+	groundParams.frustum = m_Camera->GetFrustum();
     m_Ground->Render(context, groundParams);
 } // DrawGround
 

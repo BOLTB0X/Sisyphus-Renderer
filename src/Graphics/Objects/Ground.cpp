@@ -1,6 +1,7 @@
 #include "Pch.h"
 #include "Ground.h"
-#include "Resources/DefaultMesh.h"
+#include "Resources/Texture.h"
+#include "Components/Frustum.h"
 // utils
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
@@ -20,21 +21,31 @@ using namespace PathConstants;
 using namespace ConstantBuffer;
 
 Ground::Ground() {
-	m_mesh = std::make_unique<DefaultMesh>();
+    m_quadTree = std::make_unique<QuadTree>();
+	m_heightMap = nullptr;
     m_transform = Transform();
 	m_prevGoundData.padding1 = -1.0f;
     m_prevShadowData.padding.x = -1.0f;
 } // Ground
 
 Ground::~Ground() {
+    m_heightMap = nullptr;
 } // ~Ground
 
 bool Ground::Init(const InitParams& params) {
-    if (params.device == nullptr) {
+    if (params.device == nullptr || params.heightMapTex == nullptr) {
         return false;
     }
+    
 
-    if (!m_mesh->Init(params.device, 1, DefaultMesh::DefaultMeshType::Quad)) {
+    std::vector<QuadTree::BoxVertex> vertices;
+    std::vector<unsigned long> indices;
+    m_heightMap = params.heightMapTex;
+
+    GenerateTerrainGrid(128, 128, 10.0f, vertices, indices);
+
+    if (!m_quadTree->Init(params.device, vertices, indices)) {
+        DebugHelper::DebugPrint("m_quadTree->Init 실패");
         return false;
     }
 
@@ -50,20 +61,19 @@ bool Ground::Init(const InitParams& params) {
 } // Init
 
 void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+    if (!params.frustum) {
+        return;
+    }
+
     context->IASetInputLayout(m_layout.Get());
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
     context->PSSetShaderResources(TEXTURE_SLOT, 1, &params.shadowSRV);
     context->PSSetSamplers(SAMPLER_SLOT, 1, &params.shadowSampler);
 
-    float camX = params.cameraPosition.x;
-    float camZ = params.cameraPosition.z;
-    float groundScale = 500.0f;
-    XMMATRIX scale = XMMatrixScaling(groundScale, groundScale, 1.0f);
-    XMMATRIX rot = XMMatrixRotationX(XMConvertToRadians(90.0f));
-    XMMATRIX trans = XMMatrixTranslation(camX, -1.0f, camZ);
-    XMMATRIX world = scale * rot * trans;
+    XMMATRIX world = XMMatrixIdentity();
 
     m_worldData.world = XMMatrixTranspose(world);
     if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
@@ -81,16 +91,26 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
         context->PSSetConstantBuffers(BUFFER_SLOT_SHADOW, 1, m_shadowBuffer.GetAddressOf());
     }
 
-    m_mesh->RenderBuffer(context);
-    context->DrawIndexed(m_mesh->GetIndexCount(), 0, 0);
+    std::vector<QuadTree::QuadTreeNode*> visibleNodes;
+    m_quadTree->GetVisibleNodes(params.frustum, visibleNodes);
+
+    UINT stride = sizeof(QuadTree::BoxVertex);
+    UINT offset = 0;
+
+    // 시야에 들어온 노드들만 순회하며 그림
+    for (auto* node : visibleNodes) {
+        context->IASetVertexBuffers(0, 1, node->groundVertexBuffer.GetAddressOf(), &stride, &offset);
+        context->IASetIndexBuffer(node->groundIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+        context->DrawIndexed(node->groundIndexCount, 0, 0);
+    }
 
     ID3D11ShaderResourceView* nullSRV = nullptr;
     context->PSSetShaderResources(TEXTURE_SLOT, 1, &nullSRV);
 } // Render
 
 void Ground::DrawIndexed(ID3D11DeviceContext* context) {
-    m_mesh->RenderBuffer(context);
-    context->DrawIndexed(m_mesh->GetIndexCount(), 0, 0);
+
 } // DrawIndexed
 
 void Ground::OnGui() {
@@ -107,7 +127,7 @@ void Ground::OnGui() {
 } // OnGui
 
 XMMATRIX Ground::GetWorldMatrix() {
-    return m_transform.GetWorldMatrix();
+    return XMMatrixIdentity();
 } // GetWorldMatrix
 
 bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
@@ -168,3 +188,55 @@ bool Ground::UpdateShadowBuffer(ID3D11DeviceContext* context, const DirectX::XMM
     m_prevShadowData = m_ShadowData;
     return true;
 } // UpdateShadowBuffer
+
+void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<QuadTree::BoxVertex>& outVertices, std::vector<unsigned long>& outIndices) {
+    outVertices.clear();
+    outIndices.clear();
+
+    float halfWidth = (width * scale) * 0.5f;
+    float halfDepth = (depth * scale) * 0.5f;
+
+    // 버텍스 생성
+    for (int z = 0; z < depth; ++z) {
+        for (int x = 0; x < width; ++x) {
+            QuadTree::BoxVertex v;
+            v.position = XMFLOAT3((x * scale) - halfWidth, -1.0f, (z * scale) - halfDepth);
+
+            float texU = (float)x / (width - 1);
+            float texV = (float)z / (depth - 1);
+
+            int texPixelX = static_cast<int>(texU * (m_heightMap->GetWidth() - 1));
+            int texPixelY = static_cast<int>(texV * (m_heightMap->GetHeight() - 1));
+
+            // 캡슐화된 텍스처 객체에서 깔끔하게 높이 추출!
+            float h = m_heightMap->GetPixelHeight(texPixelX, texPixelY);
+            // 정점 Y축으로 밀어올리기
+            v.position.y = h * 50.0f; // 50.0f는 지형 최대 높이 증폭값
+
+            // 텍스처 타일링을 위해 텍스처 좌표 조정
+            v.texcoord = XMFLOAT2((float)x / (width - 1), (float)z / (depth - 1));
+
+            outVertices.push_back(v);
+        }
+    }
+
+    // 인덱스 생성 (Quad -> 2 Triangles)
+    for (int z = 0; z < depth - 1; ++z) {
+        for (int x = 0; x < width - 1; ++x) {
+            unsigned long topLeft = (z * width) + x;
+            unsigned long topRight = topLeft + 1;
+            unsigned long bottomLeft = ((z + 1) * width) + x;
+            unsigned long bottomRight = bottomLeft + 1;
+
+            // 첫 번째 삼각형
+            outIndices.push_back(topLeft);
+            outIndices.push_back(bottomLeft);
+            outIndices.push_back(topRight);
+
+            // 두 번째 삼각형
+            outIndices.push_back(bottomLeft);
+            outIndices.push_back(bottomRight);
+            outIndices.push_back(topRight);
+        }
+    }
+} // GenerateTerrainGrid

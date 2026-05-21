@@ -11,7 +11,10 @@ bool TextureLoader::CreateTextureFromFile(
     ID3D11Device* device,
     ID3D11DeviceContext* context,
     const std::string& filename,
-    ID3D11ShaderResourceView** outSRV) {
+    ID3D11ShaderResourceView** outSRV,
+    std::vector<unsigned char>* outPixels,
+    int* outWidth,
+    int* outHeight) {
     HRESULT hr = S_OK;
     DirectX::ScratchImage image;
 
@@ -30,6 +33,28 @@ bool TextureLoader::CreateTextureFromFile(
     if (FAILED(hr)) {
         DebugHelper::DebugPrint(filename + " 로드 실패");
         return false;
+    }
+
+    if (outPixels && outWidth && outHeight) {
+        *outWidth = static_cast<int>(image.GetMetadata().width);
+        *outHeight = static_cast<int>(image.GetMetadata().height);
+
+        // 계산을 쉽게 하기 위해 항상 R8G8B8A8 포맷으로 변환해서 뽑아냄
+        DirectX::ScratchImage convertedImage;
+        if (image.GetMetadata().format != DXGI_FORMAT_R8G8B8A8_UNORM) {
+            hr = DirectX::Convert(
+                image.GetImages(), image.GetImageCount(), image.GetMetadata(),
+                DXGI_FORMAT_R8G8B8A8_UNORM, DirectX::TEX_FILTER_DEFAULT,
+                DirectX::TEX_THRESHOLD_DEFAULT, convertedImage);
+            if (SUCCEEDED(hr)) {
+                const DirectX::Image* img = convertedImage.GetImage(0, 0, 0);
+                outPixels->assign(img->pixels, img->pixels + img->slicePitch);
+            }
+        }
+        else {
+            const DirectX::Image* img = image.GetImage(0, 0, 0);
+            outPixels->assign(img->pixels, img->pixels + img->slicePitch);
+        } // if - else
     }
 
     if (image.GetMetadata().mipLevels == 1) {
