@@ -158,7 +158,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     Ground::InitParams groundInitParams;
     groundInitParams.device = device;
     groundInitParams.hwnd = hwnd;
-	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT);
+	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
 
     if (!m_Ground->Init(groundInitParams)) {
         return false;

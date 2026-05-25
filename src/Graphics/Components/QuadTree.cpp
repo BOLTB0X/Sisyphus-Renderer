@@ -5,8 +5,8 @@
 #include "Helpers/DebugHelper.h"
 #include <algorithm>
 #define  MAX_TRIANGLES_PER_NODE 10000
-#define  MAX_POS 999999.0f
-#define  MIN_POS -999999.0f
+#define  MAX_POS                999999.0f
+#define  MIN_POS                -999999.0f
 
 using namespace DirectX;
 
@@ -18,7 +18,7 @@ QuadTree::QuadTree()
 QuadTree::~QuadTree() {
 } // ~QuadTree
 
-bool QuadTree::Init(ID3D11Device* device, const std::vector<BoxVertex>& vertices, const std::vector<unsigned long>& indices) {
+bool QuadTree::Init(ID3D11Device* device, const std::vector<TerrainVertex>& vertices, const std::vector<UINT>& indices) {
     if (vertices.empty() || indices.empty()) {
         return false;
     }
@@ -34,11 +34,23 @@ bool QuadTree::Init(ID3D11Device* device, const std::vector<BoxVertex>& vertices
     }
 
     // 루트 노드의 중심점과 전체 크기 계산
+    float rangeX = maxX - minX;
+    float rangeZ = maxZ - minZ;
     m_rootNode->centerX = (minX + maxX) / 2.0f;
     m_rootNode->centerZ = (minZ + maxZ) / 2.0f;
-    m_rootNode->width = max(maxX - minX, maxZ - minZ);
+    m_rootNode->width = max(rangeX, rangeZ) * 1.01f;
 
     m_rootNode->CalculateBounds();
+
+    D3D11_BUFFER_DESC vertexBufferDesc = {};
+    vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth = sizeof(TerrainVertex) * vertices.size();
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA vertexData = {};
+    vertexData.pSysMem = vertices.data();
+    HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, m_globalVertexBuffer.GetAddressOf());
+    if (FAILED(hr)) return false;
 
     BuildTree(device, m_rootNode.get(), vertices, indices);
 
@@ -53,29 +65,31 @@ void QuadTree::GetVisibleNodes(Frustum* frustum, std::vector<QuadTreeNode*>& out
     }
 } // GetVisibleNodes
 
-void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::vector<BoxVertex>& vertices, const std::vector<unsigned long>& indices) {
+ID3D11Buffer* QuadTree::GetGlobalVertexBuffer() const { 
+    return m_globalVertexBuffer.Get();
+} // GetGlobalVertexBuffer
+
+void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::vector<TerrainVertex>& vertices, const std::vector<UINT>& indices) {
     int triangleCount = indices.size() / 3;
 
     // 현재 노드가 담당할 삼각형 개수가 제한치 이하로 떨어졌다면 리프 노드로 확정
     if (triangleCount <= m_maxTriangles) {
         node->isLeaf = true;
         node->groundIndexCount = indices.size();
-        DebugHelper::DebugPrint("Leaf index count: " + std::to_string(indices.size()));
 
-        // Vertex Buffer 생성
-        D3D11_BUFFER_DESC vertexBufferDesc = {};
-        vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        vertexBufferDesc.ByteWidth = sizeof(BoxVertex) * vertices.size();
-        vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        node->boundsMinY = MAX_POS;
+        node->boundsMaxY = MIN_POS;
 
-        D3D11_SUBRESOURCE_DATA vertexData = {};
-        vertexData.pSysMem = vertices.data();
-        device->CreateBuffer(&vertexBufferDesc, &vertexData, node->groundVertexBuffer.GetAddressOf());
+        // 현재 노드에 할당된 인덱스에 해당하는 정점들만의 높이를 구함
+        for (unsigned long idx : indices) {
+            node->boundsMinY = std::min(node->boundsMinY, vertices[idx].position.y);
+            node->boundsMaxY = max(node->boundsMaxY, vertices[idx].position.y);
+        }
 
         // Index Buffer 생성
         D3D11_BUFFER_DESC indexBufferDesc = {};
         indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-        indexBufferDesc.ByteWidth = sizeof(unsigned long) * indices.size();
+        indexBufferDesc.ByteWidth = sizeof(UINT) * indices.size();
         indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
         D3D11_SUBRESOURCE_DATA indexData = {};
@@ -107,37 +121,38 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
         node->children[i]->width = childWidth;
         node->children[i]->CalculateBounds();
 
-        std::vector<BoxVertex> childVertices;
-        std::vector<unsigned long> childIndices;
+        std::vector<UINT> childIndices;
 
         // 현재 노드가 가진 모든 삼각형을 검사하여 해당 자식 영역에 속하는지 판별
         for (size_t j = 0; j < indices.size(); j += 3) {
-            BoxVertex v1 = vertices[indices[j]];
-            BoxVertex v2 = vertices[indices[j + 1]];
-            BoxVertex v3 = vertices[indices[j + 2]];
+            UINT idx1 = indices[j];
+            UINT idx2 = indices[j + 1];
+            UINT idx3 = indices[j + 2];
+
+            TerrainVertex v1 = vertices[idx1];
+            TerrainVertex v2 = vertices[idx2];
+            TerrainVertex v3 = vertices[idx3];
 
             // 삼각형의 중심점을 구함
-            float triCenterX = (v1.position.x + v2.position.x + v3.position.x) / 3.0f;
-            float triCenterZ = (v1.position.z + v2.position.z + v3.position.z) / 3.0f;
+            float triMinX = std::min(v1.position.x, std::min(v2.position.x, v3.position.x));
+            float triMaxX = max(v1.position.x, max(v2.position.x, v3.position.x));
+            float triMinZ = std::min(v1.position.z, std::min(v2.position.z, v3.position.z));
+            float triMaxZ = max(v1.position.z, max(v2.position.z, v3.position.z));
 
-            // 삼각형 중심이 자식 노드의 Bounding Box 안에 있는지 확인
-            if (triCenterX >= node->children[i]->boundsMinX && triCenterX <= node->children[i]->boundsMaxX &&
-                triCenterZ >= node->children[i]->boundsMinZ && triCenterZ <= node->children[i]->boundsMaxZ)
+            if (!(triMaxX < node->children[i]->boundsMinX ||
+                triMinX > node->children[i]->boundsMaxX ||
+                triMaxZ < node->children[i]->boundsMinZ ||
+                triMinZ > node->children[i]->boundsMaxZ))
             {
-                childVertices.push_back(v1);
-                childVertices.push_back(v2);
-                childVertices.push_back(v3);
-
-                unsigned long currentIndex = static_cast<unsigned long>(childIndices.size());
-                childIndices.push_back(currentIndex);
-                childIndices.push_back(currentIndex + 1);
-                childIndices.push_back(currentIndex + 2);
+                childIndices.push_back(idx1);
+                childIndices.push_back(idx2);
+                childIndices.push_back(idx3);
             }
         }
 
         // 해당 영역에 할당된 삼각형이 있다면 재귀적으로 트리를 더 타고 진행
         if (!childIndices.empty()) {
-            BuildTree(device, node->children[i].get(), childVertices, childIndices);
+            BuildTree(device, node->children[i].get(), vertices, childIndices);
         }
         else {
             // 해당 영역이 텅 비어있다면 불필요한 노드를 메모리에서 삭제
@@ -153,7 +168,6 @@ void QuadTree::CheckVisibility(QuadTreeNode* node, Frustum* frustum, std::vector
     float minHeight = -500.0f;
     float maxHeight = 500.0f;
 
-    // 절두체 Bounding Box 교차 검사
     bool isInside = frustum->CheckBoundingBoxMinMax(
         node->boundsMaxX, maxHeight, node->boundsMaxZ,
         node->boundsMinX, minHeight, node->boundsMinZ

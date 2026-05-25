@@ -74,7 +74,7 @@ private:
 
     bool UpdateGroundBuffer(ID3D11DeviceContext*);
     bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&);
-    void GenerateTerrainGrid(int, int, float, std::vector<QuadTree::BoxVertex>&, std::vector<unsigned long>&);
+    void GenerateTerrainGrid(int, int, float, std::vector<QuadTree::TerrainVertex>&, std::vector<UINT>&);
 
 private:
     std::unique_ptr<QuadTree>                  m_quadTree;

@@ -38,11 +38,11 @@ bool Ground::Init(const InitParams& params) {
     }
     
 
-    std::vector<QuadTree::BoxVertex> vertices;
-    std::vector<unsigned long> indices;
+    std::vector<QuadTree::TerrainVertex> vertices;
+    std::vector<UINT> indices;
     m_heightMap = params.heightMapTex;
 
-    GenerateTerrainGrid(128, 128, 10.0f, vertices, indices);
+    GenerateTerrainGrid(500, 500, 5.0f, vertices, indices);
 
     if (!m_quadTree->Init(params.device, vertices, indices)) {
         DebugHelper::DebugPrint("m_quadTree->Init 실패");
@@ -94,12 +94,15 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     std::vector<QuadTree::QuadTreeNode*> visibleNodes;
     m_quadTree->GetVisibleNodes(params.frustum, visibleNodes);
 
-    UINT stride = sizeof(QuadTree::BoxVertex);
+    UINT stride = sizeof(QuadTree::TerrainVertex);
     UINT offset = 0;
+
+    ID3D11Buffer* globalVB = m_quadTree->GetGlobalVertexBuffer();
+
+    context->IASetVertexBuffers(0, 1, &globalVB, &stride, &offset);
 
     // 시야에 들어온 노드들만 순회하며 그림
     for (auto* node : visibleNodes) {
-        context->IASetVertexBuffers(0, 1, node->groundVertexBuffer.GetAddressOf(), &stride, &offset);
         context->IASetIndexBuffer(node->groundIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         context->DrawIndexed(node->groundIndexCount, 0, 0);
@@ -136,7 +139,8 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
     if (!InitVertexShader(device, hwnd, PathConstants::GROUND_VS,
@@ -189,38 +193,73 @@ bool Ground::UpdateShadowBuffer(ID3D11DeviceContext* context, const DirectX::XMM
     return true;
 } // UpdateShadowBuffer
 
-void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<QuadTree::BoxVertex>& outVertices, std::vector<unsigned long>& outIndices) {
+void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<QuadTree::TerrainVertex>& outVertices, std::vector<UINT>& outIndices) {
     outVertices.clear();
     outIndices.clear();
+    outVertices.reserve(width * depth);
 
     float halfWidth = (width * scale) * 0.5f;
     float halfDepth = (depth * scale) * 0.5f;
 
-    // 버텍스 생성
     for (int z = 0; z < depth; ++z) {
         for (int x = 0; x < width; ++x) {
-            QuadTree::BoxVertex v;
-            v.position = XMFLOAT3((x * scale) - halfWidth, -1.0f, (z * scale) - halfDepth);
+            QuadTree::TerrainVertex v;
+            v.position = XMFLOAT3((x * scale) - halfWidth, 0.0f, (z * scale) - halfDepth);
 
-            float texU = (float)x / (width - 1);
-            float texV = (float)z / (depth - 1);
+            int safeX = max(1, std::min(width - 2, x));
+            int safeZ = max(1, std::min(depth - 2, z));
 
-            int texPixelX = static_cast<int>(texU * (m_heightMap->GetWidth() - 1));
-            int texPixelY = static_cast<int>(texV * (m_heightMap->GetHeight() - 1));
+            // 높이맵 샘플링용 UV 계산 (안전한 좌표 기반)
+            float sampleU = (float)safeX / (width - 1);
+            float sampleV = (float)safeZ / (depth - 1);
 
-            // 캡슐화된 텍스처 객체에서 깔끔하게 높이 추출!
+            int texPixelX = static_cast<int>(sampleU * (m_heightMap->GetWidth() - 1));
+            int texPixelY = static_cast<int>(sampleV * (m_heightMap->GetHeight() - 1));
+
             float h = m_heightMap->GetPixelHeight(texPixelX, texPixelY);
-            // 정점 Y축으로 밀어올리기
-            v.position.y = h * 50.0f; // 50.0f는 지형 최대 높이 증폭값
+            v.position.y = h * 150.0f;
 
-            // 텍스처 타일링을 위해 텍스처 좌표 조정
-            v.texcoord = XMFLOAT2((float)x / (width - 1), (float)z / (depth - 1));
+            // ⭐ 텍스처 매핑용 UV는 실제 정점의 인덱스(x, z)를 그대로 사용해야 텍스처가 밀리지 않음
+            float actualU = (float)x / (width - 1);
+            float actualV = (float)z / (depth - 1);
+            v.texcoord = XMFLOAT2(actualU, actualV);
 
             outVertices.push_back(v);
         }
-    }
+    } // for - vertices
 
-    // 인덱스 생성 (Quad -> 2 Triangles)
+    // 노말계산: 중앙 차분법
+    for (int z = 0; z < depth; ++z) {
+        for (int x = 0; x < width; ++x) {
+            int index = (z * width) + x;
+
+            // 주변 정점 좌표 바운더리 체크
+            int leftX = max(0, x - 1);
+            int rightX = std::min(width - 1, x + 1);
+            int bottomZ = max(0, z - 1);
+            int topZ = std::min(depth - 1, z + 1);
+
+            // 주변 정점들의 실제 높이(Y) 가져오기
+            float hL = outVertices[(z * width) + leftX].position.y;
+            float hR = outVertices[(z * width) + rightX].position.y;
+            float hB = outVertices[(bottomZ * width) + x].position.y;
+            float hT = outVertices[(topZ * width) + x].position.y;
+
+            float actualDistX = static_cast<float>(rightX - leftX) * scale;
+            float actualDistZ = static_cast<float>(topZ - bottomZ) * scale;
+
+            // X축 방향 경사 벡터와 Z축 방향 경사 벡터 구하기
+            XMVECTOR tangentX = XMVectorSet(actualDistX, hR - hL, 0.0f, 0.0f);
+            XMVECTOR tangentZ = XMVectorSet(0.0f, hT - hB, actualDistZ, 0.0f);
+
+            // 두 벡터를 외적하여 수직인 노말 벡터 추출 (왼손 좌표계 기준 Z 외적 X)
+            XMVECTOR normalVec = XMVector3Normalize(XMVector3Cross(tangentZ, tangentX));
+
+            // 계산된 노말을 정점 구조체에 저장
+            XMStoreFloat3(&outVertices[index].normal, normalVec);
+        }
+	} // for - normal
+
     for (int z = 0; z < depth - 1; ++z) {
         for (int x = 0; x < width - 1; ++x) {
             unsigned long topLeft = (z * width) + x;
@@ -238,5 +277,5 @@ void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<
             outIndices.push_back(bottomRight);
             outIndices.push_back(topRight);
         }
-    }
+	} // for- indices
 } // GenerateTerrainGrid

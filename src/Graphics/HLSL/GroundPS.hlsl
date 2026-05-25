@@ -11,6 +11,7 @@ struct PS_IN
 {
     float4 pos : SV_POSITION;
     float3 worldPos : POSITION;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD;
 }; // PS_IN
 
@@ -60,7 +61,7 @@ float4 main(PS_IN input) : SV_TARGET
     
     float3 baseColor = lerp(COLOR_DARK_SAND, COLOR_LIGHT_SAND, sandPattern);
     
-    float3 normal = float3(0, 1, 0);
+    float3 normal = normalize(input.normal);
     float diff = saturate(dot(normal, -LIGHT_DIRECTION));
     
     float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);

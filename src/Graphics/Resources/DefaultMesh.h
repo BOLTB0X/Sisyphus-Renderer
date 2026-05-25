@@ -14,7 +14,7 @@
      struct BoxVertex {
          DirectX::XMFLOAT3 position;
          DirectX::XMFLOAT2 texcoord;
-     }; // BoxVertex
+     }; // TerrainVertex
 
  public:
      DefaultMesh();

@@ -39,22 +39,33 @@ bool TextureLoader::CreateTextureFromFile(
         *outWidth = static_cast<int>(image.GetMetadata().width);
         *outHeight = static_cast<int>(image.GetMetadata().height);
 
-        // 계산을 쉽게 하기 위해 항상 R8G8B8A8 포맷으로 변환해서 뽑아냄
+        const DirectX::Image* img = nullptr;
         DirectX::ScratchImage convertedImage;
+
         if (image.GetMetadata().format != DXGI_FORMAT_R8G8B8A8_UNORM) {
             hr = DirectX::Convert(
                 image.GetImages(), image.GetImageCount(), image.GetMetadata(),
                 DXGI_FORMAT_R8G8B8A8_UNORM, DirectX::TEX_FILTER_DEFAULT,
                 DirectX::TEX_THRESHOLD_DEFAULT, convertedImage);
+
             if (SUCCEEDED(hr)) {
-                const DirectX::Image* img = convertedImage.GetImage(0, 0, 0);
-                outPixels->assign(img->pixels, img->pixels + img->slicePitch);
+                img = convertedImage.GetImage(0, 0, 0);
             }
         }
         else {
-            const DirectX::Image* img = image.GetImage(0, 0, 0);
-            outPixels->assign(img->pixels, img->pixels + img->slicePitch);
-        } // if - else
+            img = image.GetImage(0, 0, 0);
+        }
+
+        if (img) {
+            size_t pureRowBytes = (*outWidth) * 4;
+            outPixels->resize((*outHeight) * pureRowBytes);
+
+            for (int y = 0; y < *outHeight; ++y) {
+                uint8_t* dest = outPixels->data() + (y * pureRowBytes);
+                const uint8_t* src = img->pixels + (y * img->rowPitch);
+                memcpy(dest, src, pureRowBytes);
+            }
+        }
     }
 
     if (image.GetMetadata().mipLevels == 1) {
