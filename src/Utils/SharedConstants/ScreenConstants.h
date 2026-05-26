@@ -11,7 +11,7 @@ namespace SharedConstants {
         static constexpr bool  VSYNC_ENABLED  = true;
         static constexpr int   WIDTH          = 800;
         static constexpr int   HEIGHT         = 600;
-        static constexpr float DEPTH          = 3000.0f;
+        static constexpr float DEPTH          = 8000.0f;
         static constexpr float NEAR_PLANE     = 0.1f;
         static constexpr int   CUBE_MAP_SIZE  = 512;
     } // ScreenConstants

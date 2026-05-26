@@ -39,7 +39,8 @@ float Texture::GetPixelHeight(int x, int y) const {
     // 흑백 높이맵이므로
     int i = ((y * m_width) + x) * 4;
 
-    // 0 ~ 255 값을 0.0f ~ 1.0f 사이의 비율로 반환
+    if (i >= m_cpuPixels.size()) return 0.0f;
+
     return static_cast<float>(m_cpuPixels[i]) / 255.0f;
 } // GetPixelHeight
 

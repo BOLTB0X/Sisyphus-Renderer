@@ -75,7 +75,9 @@ private:
 
 private:
     std::unique_ptr<QuadTreeNode>        m_rootNode;
-    unsigned int                         m_maxTriangles;
+    UINT                                 m_maxTriangles;
+    float                                m_maxHeight;
+	float                                m_minHeight;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_globalVertexBuffer;
 }; // QuadTree
