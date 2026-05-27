@@ -45,7 +45,6 @@ bool Stone::Init(const InitParams& params) {
 
 	m_sampler = params.linerSampler;
 
-    //SetPosition(0.0f, 1.0f, 0.0f);
     return true;
 } // Init
 
@@ -81,8 +80,7 @@ void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 
 void Stone::DrawIndexed(ID3D11DeviceContext* context) {
     for (const auto& mesh : m_meshes) {
-        mesh->RenderBuffer(context);
-
+        mesh->BindBuffers(context);
         context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
     }
 } // DrawIndexed
@@ -188,6 +186,10 @@ void Stone::Rotate(const XMFLOAT3& delta) {
 void Stone::Rotate(float x, float y, float z) {
     m_transform.Rotate(x, y, z);
 } // Rotate
+
+XMFLOAT3 Stone::GetPosition() const {
+    return m_transform.GetPosition();
+} // GetPosition
 
 XMMATRIX Stone::GetWorldMatrix() {
     return m_transform.GetWorldMatrix();

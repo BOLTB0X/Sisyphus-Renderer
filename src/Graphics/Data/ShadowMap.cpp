@@ -65,17 +65,23 @@ void ShadowMap::ClearShadowDepth(ID3D11DeviceContext* context) {
 
 RenderTexture*            ShadowMap::GetShadowRT() const { return m_shadowRT.get(); }
 const D3D11_VIEWPORT&     ShadowMap::GetViewport() const { return m_shadowViewport; }
-ID3D11DepthStencilView*   ShadowMap::GetDSV() { return m_shadowRT->GetDSV(); } // GetDSV
-ID3D11ShaderResourceView* ShadowMap::GetSRV() { return m_shadowRT->GetSRV(); } // GetSRV
+ID3D11DepthStencilView*   ShadowMap::GetDSV() { return m_shadowRT->GetDSV(); }
+ID3D11ShaderResourceView* ShadowMap::GetSRV() { return m_shadowRT->GetSRV(); }
 
 bool ShadowMap::InitShader(ID3D11Device* device, HWND hwnd) {
     using namespace ShaderHelper;
 
+    if (!device || !hwnd) {
+        return false;
+	}
+
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    if (!InitVertexShader(device, hwnd, PathConstants::DEPTH_VS,
+    if (!InitVertexShader(device, hwnd,
+        PathConstants::DEPTH_VS,
         layoutDesc, ARRAYSIZE(layoutDesc), m_vertexShader.GetAddressOf(), m_layout.GetAddressOf())) {
         return false;
     }
@@ -94,10 +100,6 @@ bool ShadowMap::UpdateMatrixBuffer(ID3D11DeviceContext* context,
     data.world = XMMatrixTranspose(world);
     data.view = XMMatrixTranspose(view);
     data.projection = XMMatrixTranspose(projection);
-
-    if (memcmp(&m_prevMatrixBufferData, &data, sizeof(MatrixBuffer)) == 0) {
-        return true;
-    }
 
     if (!ShaderHelper::UpdateConstantBuffer(context, m_matrixBuffer.Get(), data)) {
         return false;

@@ -371,7 +371,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float2 uv = (float2(DTid.xy) + 0.5f) / float2(width, height);
     float3 ro = CAMERA_POSITION;
     float3 rd = ray_direction_restore(uv, PROJ_INV, VIEW_INV);
-    float sceneDepth = SceneDepth.Load(int3(DTid.xy * 2, 0)).r;
+    float sceneDepth = SceneDepth.SampleLevel(PointClampSampler, uv, 0).r;
     float dist = MAX_DIST;
     
     // 터레인 or 오브젝트가 있는 픽셀인지 확인

@@ -8,17 +8,18 @@
 #include "SharedConstants/BuffersConstants.h"
 #include "Helpers/DebugHelper.h"
 #include "Helpers/ShaderHelper.h"
-//
+// DX11
 #include <DirectXMath.h>
 // define
-#define QUAD_MAX_LENG      800
-#define QUAD_SCALE         15.0f
-#define HEIGHT_SCALE       250.0f
-#define TEXTURE_SLOT       10
-#define SAMPLER_SLOT       5
-#define BUFFER_SLOT_WORLD  2
-#define BUFFER_SLOT_GROUND 3
-#define BUFFER_SLOT_SHADOW 4
+#define QUAD_MAX_LENG       800
+#define QUAD_SCALE          5.0f
+#define HEIGHT_SCALE        250.0f
+#define OBJECT_SHADOW_SLOT  10
+#define TERRAIN_SHADOW_SLOT 11
+#define SAMPLER_SLOT        5
+#define BUFFER_SLOT_WORLD   2
+#define BUFFER_SLOT_GROUND  3
+#define BUFFER_SLOT_SHADOW  4
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -31,10 +32,14 @@ Ground::Ground() {
     m_transform = Transform();
 	m_prevGoundData.padding1 = -1.0f;
     m_prevShadowData.padding.x = -1.0f;
+    m_objectShadowSRV = nullptr;
+	m_terrainShadowSRV = nullptr;
 } // Ground
 
 Ground::~Ground() {
     m_heightMap = nullptr;
+    m_objectShadowSRV = nullptr;
+	m_terrainShadowSRV = nullptr;
 } // ~Ground
 
 bool Ground::Init(const InitParams& params) {
@@ -69,12 +74,16 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
         return;
     }
 
+    m_objectShadowSRV = params.objectShadowSRV;
+    m_terrainShadowSRV = params.terrainShadowSRV;
+
     context->IASetInputLayout(m_layout.Get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-    context->PSSetShaderResources(TEXTURE_SLOT, 1, &params.shadowSRV);
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_objectShadowSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &m_terrainShadowSRV);
     context->PSSetSamplers(SAMPLER_SLOT, 1, &params.shadowSampler);
 
     XMMATRIX world = XMMatrixIdentity();
@@ -112,11 +121,24 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     }
 
     ID3D11ShaderResourceView* nullSRV = nullptr;
-    context->PSSetShaderResources(TEXTURE_SLOT, 1, &nullSRV);
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &nullSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &nullSRV);
 } // Render
 
 void Ground::DrawIndexed(ID3D11DeviceContext* context) {
+    std::vector<QuadTree::QuadTreeNode*> allLeafNodes;
+    QuadTree::CollectAllLeaves(m_quadTree->GetRootNode(), allLeafNodes);
 
+    UINT stride = sizeof(QuadTree::TerrainVertex);
+    UINT offset = 0;
+    ID3D11Buffer* globalVB = m_quadTree->GetGlobalVertexBuffer();
+    context->IASetVertexBuffers(0, 1, &globalVB, &stride, &offset);
+
+    for (auto* node : allLeafNodes) {
+        context->IASetIndexBuffer(node->groundIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+        context->DrawIndexed(node->groundIndexCount, 0, 0);
+    }
+    DebugHelper::DebugPrint("DrawIndexed 호출됨 - 리프 노드 수: " + std::to_string(allLeafNodes.size()));
 } // DrawIndexed
 
 void Ground::OnGui() {
@@ -129,12 +151,48 @@ void Ground::OnGui() {
         m_GoundData = GroundBuffer();
     }
 
+    ImGui::Spacing();
+
+    if (m_objectShadowSRV) {
+        ImGui::Text("Object Shadow Preview");
+        ImGui::Image((ImTextureID)m_objectShadowSRV, ImVec2(256, 256));
+    }
+
+    if (m_terrainShadowSRV) {
+        ImGui::Text("Terrain Shadow Preview");
+        ImGui::Image((ImTextureID)m_terrainShadowSRV, ImVec2(256, 256));
+	}
+
     ImGui::End();
 } // OnGui
 
 XMMATRIX Ground::GetWorldMatrix() {
     return XMMatrixIdentity();
 } // GetWorldMatrix
+
+float Ground::GetHeightAt(float worldX, float worldZ) const {
+    if (!m_heightMap) {
+        return 0.0f;
+    }
+
+    float halfSize = (QUAD_MAX_LENG * QUAD_SCALE) * 0.5f;
+
+    float u = (worldX + halfSize) / (QUAD_MAX_LENG * QUAD_SCALE);
+    float v = (worldZ + halfSize) / (QUAD_MAX_LENG * QUAD_SCALE);
+
+    if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f) {
+        return 0.0f;
+    }
+
+    float innerWidth = (float)(m_heightMap->GetWidth() - 3);
+    float innerHeight = (float)(m_heightMap->GetHeight() - 3);
+
+    int texPixelX = 1 + static_cast<int>(u * innerWidth);
+    int texPixelY = 1 + static_cast<int>(v * innerHeight);
+
+    float h = m_heightMap->GetPixelHeight(texPixelX, texPixelY);
+    return h * HEIGHT_SCALE;
+} // GetHeightAt
 
 bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
     using namespace ShaderHelper;
@@ -208,9 +266,9 @@ void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<
     int h = m_heightMap->GetHeight();
 
     float top = m_heightMap->GetPixelHeight(w / 2, 0);        // 위쪽 중앙
-    float bottom = m_heightMap->GetPixelHeight(w / 2, h - 1);      // 아래쪽 중앙
-    float left = m_heightMap->GetPixelHeight(0, h / 2);      // 왼쪽 중앙
-    float right = m_heightMap->GetPixelHeight(w - 1, h / 2);      // 오른쪽 중앙
+    float bottom = m_heightMap->GetPixelHeight(w / 2, h - 1); // 아래쪽 중앙
+    float left = m_heightMap->GetPixelHeight(0, h / 2);       // 왼쪽 중앙
+    float right = m_heightMap->GetPixelHeight(w - 1, h / 2);  // 오른쪽 중앙
 
     for (int z = 0; z < depth; ++z) {
         for (int x = 0; x < width; ++x) {
@@ -220,7 +278,7 @@ void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<
             float sampleU = (float)x / (width - 1);
             float sampleV = (float)z / (depth - 1);
 
-            float innerWidth = (float)(m_heightMap->GetWidth() - 3);  // 안쪽 픽셀 범위
+            float innerWidth = (float)(m_heightMap->GetWidth() - 3);
             float innerHeight = (float)(m_heightMap->GetHeight() - 3);
 
             int texPixelX = 1 + static_cast<int>(sampleU * innerWidth);

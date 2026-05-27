@@ -4,8 +4,9 @@
 #include "ShadowMap.hlsli"
 #include "Ground.hlsli"
 
-SamplerComparisonState shadowSampler : register(s5);
-Texture2D shadowMap : register(t10);
+SamplerComparisonState ShadowSampler : register(s5);
+Texture2D ObjectShadowMap : register(t10);
+Texture2D TerrainShadowMap : register(t11);
 
 struct PS_IN
 {
@@ -67,8 +68,25 @@ float4 main(PS_IN input) : SV_TARGET
     float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);
     float4 lightClipPos = mul(lightViewPos, LIGHT_PROJ);
     
-    float2 shadowMapSize = SHADOW_MAP_SIZE;
-    float shadowFactor = calculate_poisson_shadow(shadowSampler, shadowMap, lightClipPos, shadowMapSize, SHADOW_SPREAD, SHADOW_BIAS);
+    float4 objLightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_OBJECT_VIEW);
+    float4 objLightClipPos = mul(objLightViewPos, LIGHT_OBJECT_PROJ);
+    
+    float3 ndcPos = lightClipPos.xyz / lightClipPos.w;
+    
+    
+    float terrainShadow = 1.0f;
+    float objectShadow = 1.0f;
 
-    return float4(baseColor * shadowFactor * diff, 1.0f);
+    if (ndcPos.x >= -1.0f && ndcPos.x <= 1.0f &&
+    ndcPos.y >= -1.0f && ndcPos.y <= 1.0f &&
+    ndcPos.z >= 0.0f && ndcPos.z <= 1.0f)
+    {
+        terrainShadow = calculate_poisson_shadow(ShadowSampler, TerrainShadowMap, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+        objectShadow = calculate_poisson_shadow(ShadowSampler, ObjectShadowMap, objLightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+    }
+    
+    float shadowFactor = min(terrainShadow, objectShadow);
+    float lighting = saturate(diff * shadowFactor);
+    
+    return float4(baseColor * lighting, 1.0f);
 } // main

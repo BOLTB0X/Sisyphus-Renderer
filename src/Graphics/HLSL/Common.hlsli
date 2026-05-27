@@ -2,10 +2,11 @@
 #ifndef _COMMON_HLSLI_
 #define _COMMON_HLSLI_
 
-#define KM       1000.0f
-#define PI       3.14159265f
-#define MIN_DIST float(1e-4f)
-#define MAX_DIST float(1e7f)
+#define KM              1000.0f
+#define PI              3.14159265f
+#define MIN_DIST        float(1e-4f)
+#define MAX_DIST        float(1e7f)
+#define DEFAULT_AMBIENT float4(0.03f, 0.03f, 0.03f, 1.0f)
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -37,6 +38,9 @@ cbuffer DirectionalLightBuffer : register(b1)
     
     matrix cLightView;
     matrix cLightProj;
+    
+    matrix cObjectView;
+    matrix cObjectProj;
 }; // DirectionalLightBuffer
 
 #define CAMERA_POSITION   cCameraPosition
@@ -49,14 +53,17 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define VIEW_INV     cViewInv
 #define PROJ_INV     cProjInv
 
-#define LIGHT_DIRECTION normalize(cLightDirection)
-#define LIGHT_COLOR     cLightDiffuse
-#define LIGHT_AMBIENT   cLightAmbient
-#define LIGHT_SUNSET    cSunSetLight
-#define LIGHT_NIGHT     cNightLight
-#define LIGHT_LOOKAT    cLightLookAt
-#define LIGHT_VIEW      cLightView
-#define LIGHT_PROJ      cLightProj
+#define LIGHT_DIRECTION   normalize(cLightDirection)
+#define LIGHT_COLOR       cLightDiffuse
+#define LIGHT_AMBIENT     cLightAmbient
+#define LIGHT_SUNSET      cSunSetLight
+#define LIGHT_NIGHT       cNightLight
+#define LIGHT_LOOKAT      cLightLookAt
+#define LIGHT_VIEW        cLightView
+#define LIGHT_PROJ        cLightProj
+#define LIGHT_OBJECT_VIEW cObjectView
+#define LIGHT_OBJECT_PROJ cObjectProj
+
 
 static float depth_to_meter(float z, matrix proj)
 {

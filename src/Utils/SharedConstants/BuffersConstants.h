@@ -55,8 +55,8 @@ namespace SharedConstants {
         // Shadow
         static constexpr float             SHADOWMAP_WIDTH = 2048;
         static constexpr float             SHADOWMAP_HEIGHT = 2048;
-        static constexpr float             BIAS = 0.001f;
-        static constexpr float             SPREAD = 2.0f;
+        static constexpr float             BIAS = 0.005f;
+        static constexpr float             SPREAD = 3.0f;
 
         // Cloud
         static constexpr float             CLOUD_BOTTOM = 2350.0f;

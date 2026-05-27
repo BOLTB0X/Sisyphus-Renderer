@@ -2,7 +2,9 @@
 #include "Pch.h"
 #include "QuadTree.h"
 #include "Frustum.h"
+// Utils
 #include "Helpers/DebugHelper.h"
+// STL
 #include <algorithm>
 #include <cfloat>
 // define
@@ -55,8 +57,8 @@ bool QuadTree::Init(ID3D11Device* device, const std::vector<TerrainVertex>& vert
 
     D3D11_SUBRESOURCE_DATA vertexData = {};
     vertexData.pSysMem = vertices.data();
-    HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, m_globalVertexBuffer.GetAddressOf());
-    if (FAILED(hr)) {
+    if (FAILED(device->CreateBuffer(
+        &vertexBufferDesc, &vertexData, m_globalVertexBuffer.GetAddressOf()))) {
         return false;
     }
 
@@ -67,9 +69,24 @@ bool QuadTree::Init(ID3D11Device* device, const std::vector<TerrainVertex>& vert
         realMinY = std::min(realMinY, v.position.y);
         realMaxY = max(realMaxY, v.position.y);
     }
-    DebugHelper::DebugPrint("Real vertex Y: " + std::to_string(realMinY) + " ~ " + std::to_string(realMaxY));
+    //DebugHelper::DebugPrint("Real vertex Y: " + std::to_string(realMinY) + " ~ " + std::to_string(realMaxY));
     return true;
 } // Init
+
+void QuadTree::CollectAllLeaves(QuadTreeNode* node, std::vector<QuadTreeNode*>& out) {
+    if (node == nullptr) {
+        return;
+    }
+
+    if (node->isLeaf) {
+        out.push_back(node);
+        return;
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        CollectAllLeaves(node->children[i].get(), out);
+    }
+} // CollectAllLeaves
 
 void QuadTree::GetVisibleNodes(Frustum* frustum, std::vector<QuadTreeNode*>& outVisibleNodes) {
     outVisibleNodes.clear();
@@ -82,6 +99,10 @@ void QuadTree::GetVisibleNodes(Frustum* frustum, std::vector<QuadTreeNode*>& out
 ID3D11Buffer* QuadTree::GetGlobalVertexBuffer() const { 
     return m_globalVertexBuffer.Get();
 } // GetGlobalVertexBuffer
+
+QuadTree::QuadTreeNode* QuadTree::GetRootNode() const {
+    return m_rootNode.get();
+} // GetRootNode
 
 void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::vector<TerrainVertex>& vertices, const std::vector<UINT>& indices) {
     int triangleCount = indices.size() / 3;
@@ -193,14 +214,16 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
 } // BuildTree
 
 void QuadTree::CheckVisibility(QuadTreeNode* node, Frustum* frustum, std::vector<QuadTreeNode*>& outVisibleNodes) {
-    if (!node) return;
+    if (node == nullptr) {
+        return;
+    }
 
     bool isInside = frustum->CheckBoundingBoxMinMax(
         node->boundsMaxX, node->boundsMaxY, node->boundsMaxZ,
         node->boundsMinX, node->boundsMinY, node->boundsMinZ
     );
     // 시야에서 벗어났다면 이 노드 아래로는 검사할 필요도 없이 전부 컬링
-    if (!isInside) {
+    if (isInside == false) {
         return;
     }
 

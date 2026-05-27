@@ -6,7 +6,8 @@
 #include "Components/Transform.h"
 #include "Components/QuadTree.h"
 #include "Resources/ConstantBufferType.h"
-#include "Utils/SharedConstants/BuffersConstants.h"
+// Utils
+#include "SharedConstants/BuffersConstants.h"
 
 class Frustum;
 class Texture;
@@ -25,12 +26,14 @@ public:
     struct RenderParams {
         DirectX::XMFLOAT3         cameraPosition;
         float                     time;
-		ID3D11ShaderResourceView* shadowSRV;
+		ID3D11ShaderResourceView* objectShadowSRV;
+		ID3D11ShaderResourceView* terrainShadowSRV;
 		ID3D11SamplerState*       shadowSampler;
         Frustum*                  frustum;
 
         RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f),
-            shadowSRV(nullptr), shadowSampler(nullptr), frustum(nullptr) {
+            objectShadowSRV(nullptr), terrainShadowSRV(nullptr),
+            shadowSampler(nullptr), frustum(nullptr) {
         }
     }; // RenderParams
 
@@ -44,6 +47,7 @@ public:
 
     void              OnGui();
     DirectX::XMMATRIX GetWorldMatrix();
+    float             GetHeightAt(float, float) const;
 
 private:
     struct GroundBuffer {
@@ -60,7 +64,6 @@ private:
         }
     }; // GroundBuffer
 
-private:
     struct WorldBuffer {
         DirectX::XMMATRIX world;
 
@@ -92,5 +95,6 @@ private:
     ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;
     std::shared_ptr<Texture>                   m_heightMap;
-
+    ID3D11ShaderResourceView*                  m_objectShadowSRV;
+    ID3D11ShaderResourceView*                  m_terrainShadowSRV;
 }; // Ground

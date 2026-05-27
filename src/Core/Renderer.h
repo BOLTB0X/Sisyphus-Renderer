@@ -43,6 +43,7 @@ public:
 
 private:
     bool Render();
+	void UpdateObjectTransform();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessing(ID3D11DeviceContext*, D3D11State*);
@@ -66,13 +67,14 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
 
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
-    std::unique_ptr<Stone>                m_Stone;
     std::unique_ptr<Camera>               m_Camera;
+    std::unique_ptr<Stone>                m_Stone;
 	std::unique_ptr<SkyBox>               m_SkyBox;
     std::unique_ptr<Ground>               m_Ground;
     std::unique_ptr<DirectionalLight>     m_DirectionalLight;
     std::unique_ptr<VolumetricCloud>      m_VolumetricCloud;
-    std::unique_ptr<ShadowMap>            m_ShadowMap;
+    std::unique_ptr<ShadowMap>            m_ObjectShadowMap;
+    std::unique_ptr<ShadowMap>            m_TerrainShadowMap;
     std::unique_ptr<CloudMap>             m_CloudMapLUT;
     std::unique_ptr<AtmosphereMap>        m_AtmosphereLUT;
     std::unique_ptr<CloudComposite>       m_Composite;

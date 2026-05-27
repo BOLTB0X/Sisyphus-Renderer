@@ -7,6 +7,7 @@
 #define SAMPLER_SLOT   0
 #define TEX_SLOT_SCENE 0
 #define TEX_SLOT_CLOUD 1
+#define TEX_SLOT_DEPTH 2
 #define CONSTANS_SLOT  2
 
 using namespace DirectX;
@@ -65,6 +66,7 @@ void CloudComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
 	context->PSSetSamplers(SAMPLER_SLOT, 1, &params.linerSampler);
 	context->PSSetShaderResources(TEX_SLOT_SCENE, 1, &params.sceneSRV);
 	context->PSSetShaderResources(TEX_SLOT_CLOUD, 1, &params.cloudSRV);
+	context->PSSetShaderResources(TEX_SLOT_DEPTH, 1, &params.depthSRV);
 
 	context->Draw(3, 0);
 } // Render

@@ -51,6 +51,7 @@ public:
 	void Rotate(const DirectX::XMFLOAT3&);
 	void Rotate(float, float, float);
 
+	DirectX::XMFLOAT3 GetPosition() const;
     DirectX::XMMATRIX GetWorldMatrix();
     unsigned int 	  GetRenderCount() const;
 

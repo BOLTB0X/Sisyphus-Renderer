@@ -11,6 +11,9 @@ public:
     struct InitParams {
         ID3D11Device* device;
         HWND          hwnd;
+
+        InitParams() : device(nullptr), hwnd(nullptr) {
+		}
     }; // InitParams
 
     struct RenderParams {

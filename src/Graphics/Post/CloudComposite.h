@@ -27,6 +27,7 @@ public:
 	struct RenderParams {
 		ID3D11ShaderResourceView* sceneSRV;
 		ID3D11ShaderResourceView* cloudSRV;
+		ID3D11ShaderResourceView* depthSRV;
 		ID3D11SamplerState*       linerSampler;
 	}; // RenderParams
 

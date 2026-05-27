@@ -37,10 +37,12 @@
 #include "SharedConstants/BuffersConstants.h"
 #include "SharedConstants/ShadowConstants.h"
 // define
-#define FRAME_CB_SLOT 0
-#define DIRL_CB_SLOT  1
-#define POST_PS_SLOT1 0
-#define POST_PS_SLOT2 1
+#define OBJECT_SHADOW_SLOT  10
+#define TERRAIN_SHADOW_SLOT 11
+#define FRAME_CB_SLOT       0
+#define DIRL_CB_SLOT        1
+#define POST_PS_SLOT1       0
+#define POST_PS_SLOT2       1
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -52,13 +54,14 @@ using namespace ShaderHelper;
 
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
-    m_Stone = std::make_unique<Stone>();
     m_Camera = std::make_unique<Camera>();
+    m_Stone = std::make_unique<Stone>();
 	m_SkyBox = std::make_unique<SkyBox>();
     m_Ground = std::make_unique<Ground>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
 	m_VolumetricCloud = std::make_unique<VolumetricCloud>();
-    m_ShadowMap = std::make_unique<ShadowMap>();
+	m_ObjectShadowMap = std::make_unique<ShadowMap>();
+	m_TerrainShadowMap = std::make_unique<ShadowMap>();
 	m_CloudMapLUT = std::make_unique<CloudMap>();
 	m_AtmosphereLUT = std::make_unique<AtmosphereMap>();
 	m_Composite = std::make_unique<CloudComposite>();
@@ -179,7 +182,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     ShadowMap::InitParams shadowParams;
     shadowParams.device = device;
     shadowParams.hwnd = hwnd;
-    if (!m_ShadowMap->Init(shadowParams)) {
+    if (!m_ObjectShadowMap->Init(shadowParams) || !m_TerrainShadowMap->Init(shadowParams)) {
         return false;
     }
 
@@ -252,8 +255,11 @@ void Renderer::Shutdown() {
     if (m_sceneRT) {
         m_sceneRT.reset();
     }
-    if (m_ShadowMap) {
-        m_ShadowMap.reset();
+    if (m_TerrainShadowMap) {
+        m_TerrainShadowMap.reset();
+    }
+    if (m_ObjectShadowMap) {
+        m_ObjectShadowMap.reset();
     }
 
     // 볼류매트릭 및 대기 렌더링 객체
@@ -305,6 +311,10 @@ void Renderer::Shutdown() {
 
 bool Renderer::Frame(float deltaTime) {
     m_renderingTime += deltaTime;
+    m_Camera->Update();
+    m_DirectionalLight->Update();
+
+    UpdateObjectTransform();
     return Render();
 } // Frame
 
@@ -334,9 +344,6 @@ bool Renderer::Render() {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
-    m_Camera->Update();
-    m_DirectionalLight->Update();
-
     ShadowPass(context, states);
     MainPass(context, states);
     PostProcessing(context, states);
@@ -346,24 +353,47 @@ bool Renderer::Render() {
     return true;
 } // Render
 
+void Renderer::UpdateObjectTransform() {
+    if (!m_Stone || !m_Ground) {
+        return;
+    }
+    
+    XMFLOAT3 pos = m_Stone->GetPosition();
+    float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    m_Stone->SetPosition(pos.x, terrainY + 1.0f, pos.z);
+
+    m_DirectionalLight->UpdateObjectShadow(m_Stone->GetPosition());
+} // UpdateObjectTransform
+
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
-    context->OMSetRenderTargets(1, &m_nullRTV, m_ShadowMap->GetDSV());
-    m_ShadowMap->ClearShadowDepth(context);
+    context->OMSetRenderTargets(1, &m_nullRTV, m_ObjectShadowMap->GetDSV());
+    m_ObjectShadowMap->ClearShadowDepth(context);
+    context->RSSetViewports(1, &m_ObjectShadowMap->GetViewport());
 
-    const auto& viewport = m_ShadowMap->GetViewport();
-    context->RSSetViewports(1, &viewport);
-
-    ShadowMap::RenderParams renderParams;
-    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+	ShadowMap::RenderParams renderParams;
 
     if (m_Stone) {
+        renderParams.viewMatrix = m_DirectionalLight->GetObjectViewMatrix();
+        renderParams.projectionMatrix = m_DirectionalLight->GetObjectProjection();
         renderParams.worldMatrix = m_Stone->GetWorldMatrix();
-        m_ShadowMap->Render(context, renderParams);
+        m_ObjectShadowMap->Render(context, renderParams);
         m_Stone->DrawIndexed(context);
     }
+    context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
+    m_TerrainShadowMap->ClearShadowDepth(context);
+    context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
 
-    context->PSSetShaderResources(10, 1, &m_nullSRV);
+    if (m_Ground) {
+        renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+        renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+        renderParams.worldMatrix = m_Ground->GetWorldMatrix();
+        m_TerrainShadowMap->Render(context, renderParams);
+        m_Ground->DrawIndexed(context);
+    }
+
+    context->OMSetRenderTargets(0, nullptr, nullptr);
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_nullSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &m_nullSRV);
 } // ShadowPass
 
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -408,6 +438,8 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
     lData.night = m_DirectionalLight->GetLight();
     lData.lightViewMatrix = XMMatrixTranspose(m_DirectionalLight->GetViewMatrix());
     lData.lightProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetProjection());
+    lData.objectViewMatrix = XMMatrixTranspose(m_DirectionalLight->GetObjectViewMatrix());
+    lData.objectProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetObjectProjection());
 
     if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
         DebugPrint("프레이버퍼 확인 필요");
@@ -435,9 +467,11 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     Ground::RenderParams groundParams;
     groundParams.cameraPosition = m_Camera->GetPosition();
     groundParams.time = m_renderingTime;
-    groundParams.shadowSRV = m_ShadowMap->GetSRV();
+    groundParams.objectShadowSRV = m_ObjectShadowMap->GetSRV();
+	groundParams.terrainShadowSRV = m_TerrainShadowMap->GetSRV();
     groundParams.shadowSampler = states->GetShadowSamplerState();
 	groundParams.frustum = m_Camera->GetFrustum();
+
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
@@ -496,6 +530,7 @@ void Renderer::ApplyComposite(ID3D11DeviceContext* context, D3D11State* states) 
     CloudComposite::RenderParams renderParam;
     renderParam.sceneSRV = m_sceneRT->GetSRV();
     renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
+	renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
     renderParam.linerSampler = states->GetLinearWrapSamplerState();
     m_Composite->Render(context, renderParam);
 } // ApplyComposite
@@ -532,9 +567,7 @@ void Renderer::ApplyTAA(ID3D11DeviceContext* context, D3D11State* states) {
     taaParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
     taaParam.linerSampler = states->GetLinearWrapSamplerState();
     taaParam.blendFactor = isFirst ? 0.0f : 0.85f;
-    taaParam.texelSize = XMFLOAT2(
-        1.0f / RendererState::ScreenWidth,
-        1.0f / RendererState::ScreenHeight);
+    taaParam.texelSize = XMFLOAT2(1.0f / RendererState::ScreenWidth,1.0f / RendererState::ScreenHeight);
     m_TAA->Render(context, taaParam);
 
     isFirst = false;

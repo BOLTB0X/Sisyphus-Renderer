@@ -17,7 +17,6 @@ public:
     }; // TerrainVertex
 
     struct QuadTreeNode {
-        // 트리 생성(분할)에 쓸 데이터
         float centerX, centerZ;
         float width;
 
@@ -66,8 +65,11 @@ public:
     ~QuadTree();
 
     bool          Init(ID3D11Device*, const std::vector<TerrainVertex>&, const std::vector<UINT>&);
+    static void   CollectAllLeaves(QuadTreeNode*, std::vector<QuadTreeNode*>&);
+
     void          GetVisibleNodes(Frustum*, std::vector<QuadTreeNode*>&);
     ID3D11Buffer* GetGlobalVertexBuffer() const;
+    QuadTreeNode* GetRootNode() const;
 
 private:
     void BuildTree(ID3D11Device*, QuadTreeNode*, const std::vector<TerrainVertex>&, const std::vector<UINT>&);
