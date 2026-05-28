@@ -19,6 +19,7 @@
 #include "Data/VolumetricCloud.h"
 #include "Data/ShadowMap.h"
 #include "Data/CloudMap.h"
+#include "Data/Grass.h"
 // Resources
 #include "Resources/ConstantBufferType.h"
 #include "Resources/VolumeTexture.h"
@@ -67,6 +68,7 @@ Renderer::Renderer() {
 	m_Composite = std::make_unique<CloudComposite>();
     m_Post = std::make_unique<PostEffects>();
     m_TAA = std::make_unique<TAA>();
+	m_Grass = std::make_unique<Grass>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRT = std::make_unique<RenderTexture>();
     m_nullRTV = nullptr;
@@ -164,6 +166,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
 
     if (!m_Ground->Init(groundInitParams)) {
+        return false;
+    }
+
+    Grass::InitParams grassParams;
+    grassParams.device = device;
+    grassParams.hwnd = hwnd;
+
+    if (!m_Grass->Init(grassParams)) {
         return false;
     }
 
@@ -274,6 +284,9 @@ void Renderer::Shutdown() {
     }
     if (m_SkyBox) {
         m_SkyBox.reset();
+    }
+    if (m_Grass) {
+        m_Grass.reset();
     }
 
     // 일반 지오메트리 렌더링 객체
@@ -410,6 +423,7 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     DrawGround(context, states);
     DrawStone(context, states);
     DrawSkyBox(context, states);
+	DrawGrass(context, states);
 	ComputeShaderData(context, states);
 } // MainPass
 
@@ -503,6 +517,24 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
     m_SkyBox->Render(context, skyParams);
     context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 } // DrawSkyBox
+
+void Renderer::DrawGrass(ID3D11DeviceContext* context, D3D11State* states) {
+    if (!m_Grass) {
+        return;
+    }
+    // 양면 렌더링 (풀잎 뒷면도 보여야 함)
+    context->RSSetState(states->GetCullNone());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+
+    Grass::RenderParams grassParams;
+    grassParams.time = m_renderingTime;
+    grassParams.frustum = m_Camera->GetFrustum();
+
+    std::vector<QuadTree::QuadTreeNode*> visibleNodes;
+    grassParams.visibleNodes = &m_Ground->GetVisibleNodes();
+
+    m_Grass->Render(context, grassParams);
+} // DrawGrass
 
 void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* states) {
     AtmosphereMap::ExecuteParams atmoExecParams;

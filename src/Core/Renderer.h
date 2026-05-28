@@ -25,6 +25,7 @@ class AtmosphereMap;
 class CloudComposite;
 class TAA;
 class PostEffects;
+class Grass;
 
 class Renderer {
 public:
@@ -52,6 +53,7 @@ private:
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 	void DrawStone(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
+	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
     void ApplyComposite(ID3D11DeviceContext*, D3D11State*);
@@ -80,6 +82,7 @@ private:
     std::unique_ptr<CloudComposite>       m_Composite;
     std::unique_ptr<PostEffects>          m_Post;
     std::unique_ptr<TAA>                  m_TAA;
+    std::unique_ptr<Grass>                m_Grass;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;

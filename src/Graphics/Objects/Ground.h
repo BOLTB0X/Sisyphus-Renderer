@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <memory>
+#include <vector>
 #include "Components/Transform.h"
 #include "Components/QuadTree.h"
 #include "Resources/ConstantBufferType.h"
@@ -45,9 +46,10 @@ public:
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void DrawIndexed(ID3D11DeviceContext*);
 
-    void              OnGui();
-    DirectX::XMMATRIX GetWorldMatrix();
-    float             GetHeightAt(float, float) const;
+    void                                 OnGui();
+    DirectX::XMMATRIX                    GetWorldMatrix();
+    float                                GetHeightAt(float, float) const;
+    std::vector<QuadTree::QuadTreeNode*> GetVisibleNodes() const;
 
 private:
     struct GroundBuffer {
@@ -81,6 +83,9 @@ private:
 
 private:
     std::unique_ptr<QuadTree>                  m_quadTree;
+    std::vector<QuadTree::QuadTreeNode*>       m_visibleNodes;
+    std::vector<QuadTree::QuadTreeNode*>       m_allLeafNodes;
+
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;

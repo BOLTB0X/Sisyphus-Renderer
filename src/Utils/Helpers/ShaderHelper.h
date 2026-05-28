@@ -7,12 +7,15 @@ namespace ShaderHelper {
 	inline static std::string vsProfile = "vs_5_0";
 	inline static std::string psProfile = "ps_5_0";
     inline static std::string csProfile = "cs_5_0";
+    inline static std::string gsProfile = "gs_5_0";
 
     bool CompileShader(HWND, const std::wstring&, const std::string&, const std::string&, ID3DBlob**);
     void OutputError(ID3DBlob*, HWND, const std::wstring&);
+
     bool InitVertexShader(ID3D11Device*, HWND, const std::wstring&, D3D11_INPUT_ELEMENT_DESC*, UINT, ID3D11VertexShader**, ID3D11InputLayout**);
     bool InitPixelShader(ID3D11Device*, HWND, const std::wstring&, ID3D11PixelShader**);
     bool InitComputingShader(ID3D11Device*, HWND, const std::wstring&, ID3D11ComputeShader**);
+    bool InitGeometryShader(ID3D11Device*, HWND, const std::wstring&, ID3D11GeometryShader**);
 
     template<typename T>
     bool InitConstantBuffer(ID3D11Device* device, ID3D11Buffer** outBuffer) {
@@ -21,10 +24,6 @@ namespace ShaderHelper {
         cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         cbd.ByteWidth = sizeof(T);
-
-        //if (cbd.ByteWidth % 16 != 0) {
-        //    cbd.ByteWidth = (cbd.ByteWidth / 16 + 1) * 16;
-        //}
 
         return SUCCEEDED(device->CreateBuffer(&cbd, nullptr, outBuffer));
     } // InitConstantBuffer

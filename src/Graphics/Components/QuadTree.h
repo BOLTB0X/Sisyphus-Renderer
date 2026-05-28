@@ -60,6 +60,13 @@ public:
 
     }; // QuadTreeNode
 
+    struct GrassSeed {
+        DirectX::XMFLOAT3 position;
+        float             height;
+        DirectX::XMFLOAT2 uv;
+        DirectX::XMFLOAT2 padding;
+    }; // GrassSeed
+
 public:
     QuadTree();
     ~QuadTree();
@@ -72,14 +79,17 @@ public:
     QuadTreeNode* GetRootNode() const;
 
 private:
-    void BuildTree(ID3D11Device*, QuadTreeNode*, const std::vector<TerrainVertex>&, const std::vector<UINT>&);
+    void BuildTree(ID3D11Device*, QuadTreeNode*, const std::vector<TerrainVertex>&, const std::vector<UINT>&, float);
+	void BuildGrassSeeds(ID3D11Device*, QuadTreeNode*, const std::vector<TerrainVertex>&, const std::vector<UINT>&, float);
     void CheckVisibility(QuadTreeNode*, Frustum*, std::vector<QuadTreeNode*>&);
 
 private:
     std::unique_ptr<QuadTreeNode>        m_rootNode;
+    std::vector<GrassSeed>               m_seeds;
     UINT                                 m_maxTriangles;
     float                                m_maxHeight;
 	float                                m_minHeight;
+    int                                  m_grassSeedStep;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_globalVertexBuffer;
 }; // QuadTree

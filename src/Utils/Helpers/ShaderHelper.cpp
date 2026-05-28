@@ -97,4 +97,23 @@ namespace ShaderHelper {
         return true;
     } // InitComputingShader
 
+    bool InitGeometryShader(ID3D11Device* device, HWND hwnd,
+        const std::wstring& path, ID3D11GeometryShader** outGS) {
+
+        Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob;
+
+        if (!CompileShader(hwnd, path, entryPoint, gsProfile, shaderBlob.GetAddressOf())) {
+            return false;
+        }
+
+        if (FAILED(device->CreateGeometryShader(
+            shaderBlob->GetBufferPointer(),
+            shaderBlob->GetBufferSize(),
+            nullptr, outGS))) {
+            return false;
+        }
+
+        return true;
+    } // InitGeometryShader
+
 } // namespace ShaderHelper

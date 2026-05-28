@@ -59,6 +59,7 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 3.0f;
 
         // Cloud
+		static constexpr float             CLOUD_RADIUS = 71000.0f;
         static constexpr float             CLOUD_BOTTOM = 2350.0f;
         static constexpr float             CLOUD_TOP = 3350.0f;
 
@@ -66,7 +67,7 @@ namespace SharedConstants {
         static constexpr float             CLOUD_BASE_SCALE = 1.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
-        static constexpr float             CLOUD_DENSITY = 0.05f;
+        static constexpr float             CLOUD_DENSITY = 0.03f;
         static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
         static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
         static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
@@ -87,9 +88,9 @@ namespace SharedConstants {
         static constexpr float  WIND_SPEED = 1.5f;
         static constexpr float  WIND_SCALE = 200.0f;
 
-        static constexpr float HENYEY_GREENSTEIN_SCALE = 2.5f;
-        static constexpr float POWDER_FACTOR = 0.75f;
-        static constexpr float LIGHTING_SCALE = 0.2f;
+        static constexpr float HENYEY_GREENSTEIN_SCALE = 1.5f;
+        static constexpr float POWDER_FACTOR = 0.5f;
+        static constexpr float LIGHTING_SCALE = 0.1f;
         static constexpr float HORIZON_FADE_SCALE = 0.08f;
 
         // lensflare
