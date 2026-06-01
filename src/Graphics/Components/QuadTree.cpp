@@ -9,8 +9,9 @@
 #include <cfloat>
 // define
 #define  MAX_TRIANGLES_PER_NODE 10000
-#define  GRASS_SEED_STEP        4
-#define  HEIGHT_SCALE        250.0f
+#define  GRASS_SEED_STEP        3
+#define  GRASS_PER_TRIANGLE     6
+#define  HEIGHT_SCALE           250.0f
 
 using namespace DirectX;
 
@@ -134,7 +135,6 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
         indexData.pSysMem = indices.data();
         device->CreateBuffer(&indexBufferDesc, &indexData, node->groundIndexBuffer.GetAddressOf());
 
-        // TODO: Grass
 		BuildGrassSeeds(device, node, vertices, indices, heightScale);
         return;
     } // if (triangleCount <= m_maxTriangles)
@@ -169,7 +169,7 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
         std::vector<UINT> childIndices;
 
         // 현재 노드가 가진 모든 삼각형을 검사하여 해당 자식 영역에 속하는지 판별
-        for (size_t j = 0; j < indices.size(); j += 3) {
+        for (size_t j = 0; j < indices.size(); j += m_grassSeedStep) {
             UINT idx1 = indices[j];
             UINT idx2 = indices[j + 1];
             UINT idx3 = indices[j + 2];
@@ -193,7 +193,7 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
                 childIndices.push_back(idx2);
                 childIndices.push_back(idx3);
             }
-        } // for (size_t j = 0; j < indices.size(); j += 3)
+        } // for (size_t j = 0; j < indices.size(); j += m_grassSeedStep)
 
         // 해당 영역에 할당된 삼각형이 있다면 재귀적으로 트리를 더 타고 진행
         if (!childIndices.empty()) {
@@ -218,51 +218,82 @@ void QuadTree::BuildTree(ID3D11Device* device, QuadTreeNode* node, const std::ve
 
 void QuadTree::BuildGrassSeeds(ID3D11Device* device, QuadTreeNode* node, 
     const std::vector<TerrainVertex>& vertices, const std::vector<UINT>& indices, float heightScale) {
-    m_seeds.clear();
+    std::vector<GrassSeed> localSeeds;
+    std::vector<GrassFarInstance> farInstances;
 
-    for (size_t i = 0; i < indices.size(); i += m_grassSeedStep * 3) {
-        UINT idx = indices[i];
-        const TerrainVertex& v = vertices[idx];
+    // 삼각형 단위로 순회
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        const TerrainVertex& v0 = vertices[indices[i]];
+        const TerrainVertex& v1 = vertices[indices[i + 1]];
+        const TerrainVertex& v2 = vertices[indices[i + 2]];
 
-        // 높이 정규화 (0~1)
-        float heightValue = v.position.y / heightScale;
+        for (int j = 0; j < GRASS_PER_TRIANGLE; ++j) {
+            // 무게중심 좌표계를 위한 난수 생성
+            float r1 = static_cast<float>(rand()) / RAND_MAX;
+            float r2 = static_cast<float>(rand()) / RAND_MAX;
 
-        // 너무 낮거나 높으면 스킵
-        if (heightValue < 0.2f || heightValue > 0.85f) {
-            continue;
-        }
+            if (r1 + r2 > 1.0f) {
+                r1 = 1.0f - r1;
+                r2 = 1.0f - r2;
+            }
+            float r3 = 1.0f - r1 - r2;
 
-        // 높이 기반 밀도 계산
-        float t = std::clamp((heightValue - 0.3f) / (0.7f - 0.3f), 0.0f, 1.0f);
-        float densityThreshold = 1.0f - (t * t * (3.0f - 2.0f * t)); // smoothstep
+            GrassSeed seed;
+            // 삼각형 내부의 정확한 x, y, z 보간 위치 계산
+            seed.position.x = r1 * v0.position.x + r2 * v1.position.x + r3 * v2.position.x;
+            seed.position.y = r1 * v0.position.y + r2 * v1.position.y + r3 * v2.position.y;
+            seed.position.z = r1 * v0.position.z + r2 * v1.position.z + r3 * v2.position.z;
+            seed.uv.x = r1 * v0.texcoord.x + r2 * v1.texcoord.x + r3 * v2.texcoord.x;
+            seed.uv.y = r1 * v0.texcoord.y + r2 * v1.texcoord.y + r3 * v2.texcoord.y;
 
-        // 의사 랜덤
-        float dotVal = v.position.x * 127.1f + v.position.z * 311.7f;
-        float randVal = sinf(dotVal) * 43758.5453f;
-        randVal = randVal - floorf(randVal); // frac
+            float dotVal = seed.position.x * 127.1f + seed.position.z * 311.7f;
+            float randVal = sinf(dotVal) * 43758.5453f;
+            randVal = randVal - floorf(randVal);
 
-        if (randVal > densityThreshold) continue;
+            if (randVal > 0.9f) {
+                continue;
+            }
 
-        GrassSeed seed;
-        seed.position = v.position;
-        seed.height = 1.0f + (randVal * 0.5f); // 1.0 ~ 1.5 랜덤 높이
-        seed.uv = v.texcoord;
-        seed.padding.x = seed.padding.y = 0.0f;
-        m_seeds.push_back(seed);
-    } // for (size_t i = 0; i < indices.size(); i += m_grassSeedStep * 3)
+            seed.height = 1.0f + (randVal * 0.5f);
+            seed.padding.x = 0.0f;
+            seed.padding.y = 0.0f;
+            localSeeds.push_back(seed);
+        } // for (int j = 0; j < GRASS_PER_TRIANGLE; ++j)
+    } // for (size_t i = 0; i < indices.size(); i += 3)
 
-    node->grassSeedCount = (int)m_seeds.size();
+    for (size_t i = 0; i < localSeeds.size(); ++i) {
+        GrassFarInstance inst;
+        inst.position = localSeeds[i].position;
+        inst.scale = localSeeds[i].height * 2.0f;
+        inst.uv = localSeeds[i].uv;
+        farInstances.push_back(inst);
+    } // for (size_t i = 0; i < localSeeds.size(); ++i)
 
-    if (m_seeds.empty() == false) {
+    node->grassSeedCount = (int)localSeeds.size();
+
+    if (localSeeds.empty() == false) {
         D3D11_BUFFER_DESC seedDesc = {};
         seedDesc.Usage = D3D11_USAGE_DEFAULT;
-        seedDesc.ByteWidth = sizeof(GrassSeed) * (UINT)m_seeds.size();
+        seedDesc.ByteWidth = sizeof(GrassSeed) * (UINT)localSeeds.size();
         seedDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
         D3D11_SUBRESOURCE_DATA seedData = {};
-        seedData.pSysMem = m_seeds.data();
+        seedData.pSysMem = localSeeds.data();
         device->CreateBuffer(&seedDesc, &seedData,
             node->grassSeedVertexBuffer.GetAddressOf());
+    }
+
+    if (farInstances.empty() == false) {
+        D3D11_BUFFER_DESC desc = {};
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.ByteWidth = sizeof(GrassFarInstance) * farInstances.size();
+        desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+        D3D11_SUBRESOURCE_DATA data = {};
+        data.pSysMem = farInstances.data();
+        device->CreateBuffer(&desc, &data,
+            node->grassFarInstanceBuffer.GetAddressOf());
+        node->grassFarInstanceCount = farInstances.size();
     }
     return;
 } // BuildGrassSeeds

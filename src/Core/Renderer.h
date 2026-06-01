@@ -26,6 +26,7 @@ class CloudComposite;
 class TAA;
 class PostEffects;
 class Grass;
+class Tree;
 
 class Renderer {
 public:
@@ -49,9 +50,9 @@ private:
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessing(ID3D11DeviceContext*, D3D11State*);
 
-    void UpdateCommonShaderBuffer(ID3D11DeviceContext*);
+    void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
-	void DrawStone(ID3D11DeviceContext*, D3D11State*);
+	void DrawModel(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
@@ -67,6 +68,7 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_frameBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_shadowBuffer;
 
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
     std::unique_ptr<Camera>               m_Camera;

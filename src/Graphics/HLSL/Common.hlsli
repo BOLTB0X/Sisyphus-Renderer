@@ -41,6 +41,12 @@ cbuffer DirectionalLightBuffer : register(b1)
     
     matrix cObjectView;
     matrix cObjectProj;
+    
+    float  cMapWidth;
+    float  cMapHeight;
+    float  cBias;
+    float  cSpread;
+    float4 cPadding3;
 }; // DirectionalLightBuffer
 
 #define CAMERA_POSITION   cCameraPosition
@@ -64,6 +70,24 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define LIGHT_OBJECT_VIEW cObjectView
 #define LIGHT_OBJECT_PROJ cObjectProj
 
+#define SHADOW_MAP_SIZE     float2(cMapWidth, cMapHeight)
+#define SHADOW_BIAS         cBias
+#define SHADOW_SPREAD       cSpread
+
+// 쿼드 로컬 버텍스 (인덱스 없이 4개)
+static const float2 quad_vertex_pos[4] =
+{
+    float2(-1, 0), // left down
+    float2(1, 0), // right down
+    float2(-1, 1), // left up
+    float2(1, 1) // right up
+}; // quad_vertex_pos
+
+static const float2 quad_uv[4] =
+{
+    float2(0, 1), float2(1, 1),
+    float2(0, 0), float2(1, 0)
+}; // quad_uv
 
 static float depth_to_meter(float z, matrix proj)
 {

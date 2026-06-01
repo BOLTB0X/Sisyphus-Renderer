@@ -1,4 +1,4 @@
-// StoneVS.hlsl
+// PBRModelVS.hlsl
 #include "Common.hlsli"
 
 struct VS_INPUT {

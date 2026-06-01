@@ -77,6 +77,9 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Metallic);
             myMaterial.roughness = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Roughness);
             myMaterial.ao = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::AO);
+            myMaterial.alpha = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Alpha);
+            myMaterial.specular = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Specular);
+            myMaterial.lighting = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Lighting);
 
             {
                 std::lock_guard<std::mutex> lock(m_cacheMutex);

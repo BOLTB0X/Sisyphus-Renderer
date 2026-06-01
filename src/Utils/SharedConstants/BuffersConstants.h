@@ -96,5 +96,12 @@ namespace SharedConstants {
         // lensflare
         static constexpr DirectX::XMFLOAT3 LENSFLARE_RETOUCH_COLOR = { 1.4f, 1.2f, 1.0f };
 
+        // GRASS
+        static constexpr float GRASS_BLADE_WIDTH = 5.0f;
+		static constexpr float GRASS_BLADE_HEIGHT = 7.0f;
+        static constexpr float WIND_STRENGTH = 1.0f;
+        static constexpr float DIST = 500.0f;
+        static constexpr float ALPHA_CUT = 0.3f;
+
     } // BuffersConstants
 }

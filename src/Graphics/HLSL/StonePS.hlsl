@@ -1,13 +1,17 @@
 // StonePS.hlsl
 #include "Common.hlsli"
 #include "PBR.hlsli"
+#include "ShadowMap.hlsli"
+
+SamplerState           LinearSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s5);
 
 Texture2D    AlbedoTexture : register(t0);
 Texture2D    NormalTexture : register(t1);
 Texture2D    MetallicTexture : register(t2);
 Texture2D    RoughnessTexture : register(t3);
 Texture2D    AOTexture : register(t4);
-SamplerState LinearSampler : register(s0);
+Texture2D    TerrainShadow : register(t11);
 
 struct PS_INPUT
 {
@@ -60,8 +64,14 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 ambient = DEFAULT_AMBIENT.rgb * albedo.rgb * ao;
     float3 diffuse = kD * albedo.rgb / PI;
     float3 radiance = lightColor * NdotL;
+    
+    float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);
+    float4 lightClipPos = mul(lightViewPos, LIGHT_PROJ);
 
-    float3 col = (diffuse + specular) * radiance + ambient;
+    float terrainShadow = calculate_poisson_shadow(
+        ShadowSampler, TerrainShadow, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+
+    float3 col = (diffuse + specular) * radiance  + ambient;
 
     return float4(saturate(col), albedo.a);
 } // main

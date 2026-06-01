@@ -4,9 +4,12 @@
 #include "ShadowMap.hlsli"
 #include "Ground.hlsli"
 
+SamplerState           LinearSampler : register(s0);
 SamplerComparisonState ShadowSampler : register(s5);
+
 Texture2D ObjectShadowMap : register(t10);
 Texture2D TerrainShadowMap : register(t11);
+Texture2D GroundTex : register(t12);
 
 struct PS_IN
 {
@@ -28,39 +31,22 @@ cbuffer GroundBuffer : register(b3)
     float  gPadding1;
     // [Row 2]
     float3 gLightSand;
-    float gPadding2;
+    float  gDist;
 }; // GroundBuffer
-
-cbuffer ShadowBuffer : register(b4)
-{
-    // [Row 1 ~ 2]
-    matrix sShadowWorld;
-    // [Row 3]
-    float  sMapWidth;
-    float  sMapHeight;
-    float  sBias;
-    // [Row 4]
-    float  sSpread;
-    float4 sPadding;
-}; // ShadowBuffer
 
 #define WORLD               cWorld
 
 #define COLOR_DARK_SAND     gDarkSand
 #define COLOR_LIGHT_SAND    gLightSand
-
-#define SHADOW_WORLD        sShadowWorld
-#define SHADOW_MAP_SIZE     float2(sMapWidth, sMapHeight)
-#define SHADOW_BIAS         sBias
-#define SHADOW_SPREAD       sSpread
+#define GROUND_DETAIL_DIST  gDist
 
 float4 main(PS_IN input) : SV_TARGET
 {
     float distToCamera = length(input.worldPos - CAMERA_POSITION);
-
-    float sandPattern = get_sand_texture(input.worldPos.xz * 0.1, distToCamera);
-    
-    float3 baseColor = lerp(COLOR_DARK_SAND, COLOR_LIGHT_SAND, sandPattern);
+    float2 tiledUV = input.worldPos.xz * 0.02f; // 타일링
+    float4 groundTex = GroundTex.Sample(LinearSampler, tiledUV);
+    float grassBlend = smoothstep(GROUND_DETAIL_DIST * 2.0f, GROUND_DETAIL_DIST * 1.5f, distToCamera);
+    float3 baseColor = lerp(groundTex.rgb, COLOR_DARK_SAND, grassBlend);
     
     float3 normal = normalize(input.normal);
     float diff = saturate(dot(normal, -LIGHT_DIRECTION));
@@ -72,7 +58,6 @@ float4 main(PS_IN input) : SV_TARGET
     float4 objLightClipPos = mul(objLightViewPos, LIGHT_OBJECT_PROJ);
     
     float3 ndcPos = lightClipPos.xyz / lightClipPos.w;
-    
     
     float terrainShadow = 1.0f;
     float objectShadow = 1.0f;

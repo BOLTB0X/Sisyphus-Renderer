@@ -33,6 +33,9 @@ public:
         Microsoft::WRL::ComPtr<ID3D11Buffer> grassSeedIndexBuffer;
         int                                  grassSeedCount;
 
+        Microsoft::WRL::ComPtr<ID3D11Buffer> grassFarInstanceBuffer;
+        int                                  grassFarInstanceCount;
+
         std::unique_ptr<QuadTreeNode>        children[4];
         bool                                 isLeaf;
 
@@ -48,6 +51,7 @@ public:
             boundsMaxZ = 500.0f;
             groundIndexCount = 0;
             grassSeedCount = 0;
+            grassFarInstanceCount = 0;
 			isLeaf = false;
         } // QuadTreeNode
 
@@ -67,6 +71,13 @@ public:
         DirectX::XMFLOAT2 padding;
     }; // GrassSeed
 
+    struct GrassFarInstance {
+        DirectX::XMFLOAT3 position;
+        float             scale;
+        DirectX::XMFLOAT2 uv;
+        DirectX::XMFLOAT2 padding;
+    }; // GrassFarInstance
+
 public:
     QuadTree();
     ~QuadTree();
@@ -85,7 +96,6 @@ private:
 
 private:
     std::unique_ptr<QuadTreeNode>        m_rootNode;
-    std::vector<GrassSeed>               m_seeds;
     UINT                                 m_maxTriangles;
     float                                m_maxHeight;
 	float                                m_minHeight;

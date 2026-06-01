@@ -81,6 +81,12 @@ namespace ConstantBuffer {
 
         DirectX::XMMATRIX objectProjectionMatrix;
 
+        float             shadowMapWidth;
+        float             shadowMapHeight;
+        float             shadowBias;
+        float             shadowSpread;
+        DirectX::XMFLOAT4 padding3;
+
         DirectionalLightBuffer() :
             direction(0.0f, -1.0f, 0.0f), padding1(0.0f),
             ambient(0.2f, 0.2f, 0.2f, 1.0f),
@@ -91,7 +97,9 @@ namespace ConstantBuffer {
             lightViewMatrix(DirectX::XMMatrixIdentity()),
             lightProjectionMatrix(DirectX::XMMatrixIdentity()),
             objectViewMatrix(DirectX::XMMatrixIdentity()),
-            objectProjectionMatrix(DirectX::XMMatrixIdentity()) {
+            objectProjectionMatrix(DirectX::XMMatrixIdentity()), shadowMapWidth(0.0f),
+            shadowMapHeight(0.0f), shadowBias(0.0f), shadowSpread(0.0f),
+            padding3(0.0f, 0.0f, 0.0f, 0.0f) {
         }
     }; // DirectionalLightBuffer
 

@@ -5,6 +5,7 @@
 #include "Objects/Stone.h"
 #include "Objects/SkyBox.h"
 #include "Objects/Ground.h"
+#include "Objects/Grass.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -19,7 +20,6 @@
 #include "Data/VolumetricCloud.h"
 #include "Data/ShadowMap.h"
 #include "Data/CloudMap.h"
-#include "Data/Grass.h"
 // Resources
 #include "Resources/ConstantBufferType.h"
 #include "Resources/VolumeTexture.h"
@@ -38,12 +38,14 @@
 #include "SharedConstants/BuffersConstants.h"
 #include "SharedConstants/ShadowConstants.h"
 // define
-#define OBJECT_SHADOW_SLOT  10
-#define TERRAIN_SHADOW_SLOT 11
-#define FRAME_CB_SLOT       0
-#define DIRL_CB_SLOT        1
-#define POST_PS_SLOT1       0
-#define POST_PS_SLOT2       1
+#define STONE_TRANSFORM_OFFSET 8.0f
+#define OBJECT_SHADOW_SLOT     10
+#define TERRAIN_SHADOW_SLOT    11
+#define SAMPLER_SHADOW_SLOT    5
+#define FRAME_CB_SLOT          0
+#define DIRL_CB_SLOT           1
+#define POST_PS_SLOT1          0
+#define POST_PS_SLOT2          1
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -164,16 +166,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     groundInitParams.device = device;
     groundInitParams.hwnd = hwnd;
 	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
+	groundInitParams.groundSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND)->GetSRV();
+	groundInitParams.linearSampler = linerWrapSampler;
 
     if (!m_Ground->Init(groundInitParams)) {
         return false;
     }
 
-    Grass::InitParams grassParams;
-    grassParams.device = device;
-    grassParams.hwnd = hwnd;
+    Grass::InitParams grassInitParams;
+    grassInitParams.device = device;
+    grassInitParams.hwnd = hwnd;
+	grassInitParams.grass = m_TextureMgr->GetTexture(device, context, PathConstants::GRASS)->GetSRV();
+	grassInitParams.linearSampler = linerWrapSampler;
 
-    if (!m_Grass->Init(grassParams)) {
+    if (!m_Grass->Init(grassInitParams)) {
         return false;
     }
 
@@ -285,11 +291,11 @@ void Renderer::Shutdown() {
     if (m_SkyBox) {
         m_SkyBox.reset();
     }
+
+    // 일반 지오메트리 렌더링 객체
     if (m_Grass) {
         m_Grass.reset();
     }
-
-    // 일반 지오메트리 렌더링 객체
     if (m_Ground) {
         m_Ground.reset();
     }
@@ -373,9 +379,7 @@ void Renderer::UpdateObjectTransform() {
     
     XMFLOAT3 pos = m_Stone->GetPosition();
     float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_Stone->SetPosition(pos.x, terrainY + 1.0f, pos.z);
-
-    m_DirectionalLight->UpdateObjectShadow(m_Stone->GetPosition());
+    m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateObjectTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -386,12 +390,14 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
 	ShadowMap::RenderParams renderParams;
 
     if (m_Stone) {
+        m_DirectionalLight->UpdateObjectShadow(m_Stone->GetPosition());
         renderParams.viewMatrix = m_DirectionalLight->GetObjectViewMatrix();
         renderParams.projectionMatrix = m_DirectionalLight->GetObjectProjection();
         renderParams.worldMatrix = m_Stone->GetWorldMatrix();
         m_ObjectShadowMap->Render(context, renderParams);
         m_Stone->DrawIndexed(context);
     }
+
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
@@ -418,10 +424,10 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->ClearRenderTargetView(sceneRTV, clearColor);
     m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
 
-    UpdateCommonShaderBuffer(context);
+    UpdateCommonShaderBuffer(context, states);
  
     DrawGround(context, states);
-    DrawStone(context, states);
+    DrawModel(context, states);
     DrawSkyBox(context, states);
 	DrawGrass(context, states);
 	ComputeShaderData(context, states);
@@ -433,7 +439,7 @@ void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) 
     ApplyTAA(context, states);
 } // PostProcessing
 
-void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
+void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State* states) {
     FrameBuffer fData;
     fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
     fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
@@ -454,6 +460,10 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
     lData.lightProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetProjection());
     lData.objectViewMatrix = XMMatrixTranspose(m_DirectionalLight->GetObjectViewMatrix());
     lData.objectProjectionMatrix = XMMatrixTranspose(m_DirectionalLight->GetObjectProjection());
+    lData.shadowMapWidth = BuffersConstants::SHADOWMAP_WIDTH;
+    lData.shadowMapHeight = BuffersConstants::SHADOWMAP_HEIGHT;
+    lData.shadowSpread = BuffersConstants::SPREAD;
+    lData.shadowBias = BuffersConstants::BIAS;
 
     if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
         DebugPrint("프레이버퍼 확인 필요");
@@ -462,6 +472,14 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
         DebugPrint("방향광 버퍼 확인 필요");
     }
 
+    ID3D11ShaderResourceView* objectShadowSRV = m_ObjectShadowMap->GetSRV();
+    ID3D11ShaderResourceView* terrainShadowSRV = m_TerrainShadowMap->GetSRV();
+	ID3D11SamplerState* shadowSampler = states->GetShadowSamplerState();
+
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &objectShadowSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
+    context->PSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
+
     // Slot 0: Frame, Slot 1: Light
     context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
@@ -469,10 +487,14 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context) {
     context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
     context->CSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+    context->GSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->GSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 } // UpdateCommonShaderBuffer
 
 void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Ground) return;
+    if (!m_Ground) {
+        return;
+    }
 
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
@@ -481,29 +503,29 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     Ground::RenderParams groundParams;
     groundParams.cameraPosition = m_Camera->GetPosition();
     groundParams.time = m_renderingTime;
-    groundParams.objectShadowSRV = m_ObjectShadowMap->GetSRV();
-	groundParams.terrainShadowSRV = m_TerrainShadowMap->GetSRV();
-    groundParams.shadowSampler = states->GetShadowSamplerState();
 	groundParams.frustum = m_Camera->GetFrustum();
 
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
-void Renderer::DrawStone(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
     context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
-    if (!m_Stone) return;
+    if (!m_Stone) {
+        return;
+    }
 
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
-
     m_Stone->Render(context, stoneParams);
-} // DrawStone
+} // DrawModel
 
 void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Camera || !m_SkyBox) return;
+    if (!m_Camera || !m_SkyBox) {
+        return;
+    }
 
     context->RSSetState(states->GetCullNone());
     context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
@@ -519,21 +541,18 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 } // DrawSkyBox
 
 void Renderer::DrawGrass(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Grass) {
+    if (!m_Grass || !m_Camera || !m_Ground) {
         return;
     }
-    // 양면 렌더링 (풀잎 뒷면도 보여야 함)
     context->RSSetState(states->GetCullNone());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
 
     Grass::RenderParams grassParams;
-    grassParams.time = m_renderingTime;
     grassParams.frustum = m_Camera->GetFrustum();
-
-    std::vector<QuadTree::QuadTreeNode*> visibleNodes;
     grassParams.visibleNodes = &m_Ground->GetVisibleNodes();
 
     m_Grass->Render(context, grassParams);
+    m_Grass->RenderFar(context, grassParams);
 } // DrawGrass
 
 void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* states) {
@@ -614,16 +633,21 @@ void Renderer::UpadteWidgets() {
         ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Light Control",
+            "Directional Light Control",
             [this]() { m_DirectionalLight->OnGui(); }
         ));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Ground Control",
-            [this]() { m_Ground->OnGui(); }
-        ));
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Ground Control",
+        //    [this]() { m_Ground->OnGui(); }
+        //));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Grass Control",
+            [this]() { m_Grass->OnGui(); }
+		));
+
+        /*m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Atmosphere Control",
             [this]() { m_AtmosphereLUT->OnGui(); }
         ));
@@ -636,6 +660,6 @@ void Renderer::UpadteWidgets() {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Post",
             [this]() { m_Post->OnGui(); }
-        ));
+        ));*/
     }
 } // UpadteWidgets

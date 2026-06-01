@@ -1,11 +1,28 @@
 // GrassGS.hlsl
+// https://m.blog.naver.com/PostView.naver?blogId=fah204&logNo=221518704599&referrerCode=0&searchKeyword=grass
+// https://www.rastertek.com/tertut19.html
+// https://www.shadertoy.com/view/lslGR8
 #include "Common.hlsli"
-#define GRASS_WIDTH 0.15f
+#include "Maths.hlsli"
+
+cbuffer GrassBuffer : register(b3)
+{
+    float gGrassWidth;
+    float gGrassHeight;
+    float gWindStrength;
+    float gWindSpeed;
+    
+    float  gDist;
+    float  gAlphaCut;
+    float2 gPadding;
+}; // GrassBuffer
+
+static const float angles[3] = { 0.0f, 1.0472f, 2.0944f };
 
 struct GS_IN
 {
     float3 worldPos : POSITION;
-    float height : HEIGHT;
+    float  height : HEIGHT;
     float2 uv : TEXCOORD;
 }; // GS_IN
 
@@ -15,80 +32,77 @@ struct GS_OUT
     float2 uv : TEXCOORD0;
     float3 normal : NORMAL;
     float3 worldPos : TEXCOORD1;
+    float3 rootWorldPos : TEXCOORD2;
 }; // GS_OUT
 
-[maxvertexcount(24)] // 십자형: 2방향 * 2삼각형 * 3버텍스 * 2면 = 24
-void main(point GS_IN input[1],
-          inout TriangleStream<GS_OUT> stream)
+#define GRASS_WIDTH   gGrassWidth
+#define GRASS_HEIGHT  gGrassHeight
+#define WIND_STRENGTH gWindStrength
+#define WIND_SPEED    gWindSpeed
+#define LIMIT_DIST    gDist
+#define ALPHA_CUT     gAlphaCut
+
+[maxvertexcount(12)]
+void main(point GS_IN input[1], inout TriangleStream<GS_OUT> stream)
 {
     float3 root = input[0].worldPos;
-    float height = input[0].height;
+    float dist = length(root - CAMERA_POSITION);
 
-    // 바람 계산 (끝부분만 흔들림)
-    float windStrength = 0.3f;
-    float windSpeed = 2.0f;
-    float windX = sin(TIME * windSpeed + root.x * 0.5f + root.z * 0.3f) * windStrength;
-    float windZ = cos(TIME * windSpeed * 0.7f + root.z * 0.4f) * windStrength * 0.5f;
-
-    float4 view = mul(float4(0, 0, 0, 1), cView); // 미사용, 빌보드용
-
-    // 두 방향으로 십자형 생성
-    float3 dirs[2] =
+    if (dist > LIMIT_DIST)
     {
-        float3(1, 0, 0), // X축 방향
-        float3(0, 0, 1) // Z축 방향
-    };
+        return;
+    }
+    
+    float height = input[0].height * GRASS_HEIGHT;
+
+    float randRot = get_random_rotation_plane(root.xz);
+
+    float windX = sin(TIME * WIND_SPEED + root.x * 0.3f + root.z * 0.2f) * WIND_STRENGTH;
+    float windZ = cos(TIME * WIND_SPEED * 0.8f + root.z * 0.3f) * WIND_STRENGTH * 0.5f;
+   
+    
+    int billboardCount = 3;
+    if (dist > LIMIT_DIST / 2)
+        billboardCount = 1;
+    else if (dist > LIMIT_DIST / 4)
+        billboardCount = 2;
 
     [unroll]
-    for (int d = 0; d < 2; ++d)
+    for (int d = 0; d < billboardCount; ++d)
     {
-        float3 right = dirs[d] * GRASS_WIDTH;
-        float3 top = float3(windX, height, windZ); // 끝부분 바람
+        float3x3 rot = rotate_Y(angles[d] + randRot);
+        float3 right = mul(float3(GRASS_WIDTH, 0, 0), rot);
 
-        // 4개 버텍스 (쿼드)
         float3 v[4] =
         {
-            root - right, // 왼쪽 아래
-            root + right, // 오른쪽 아래
-            root - right + top, // 왼쪽 위 (바람 적용)
-            root + right + top // 오른쪽 위 (바람 적용)
+            root - right,
+            root + right,
+            root - right + float3(windX, height, windZ),
+            root + right + float3(windX, height, windZ)
         };
 
         float2 uvs[4] =
         {
-            float2(0, 1),
-            float2(1, 1),
-            float2(0, 0),
-            float2(1, 0)
+            float2(0, 1), float2(1, 1),
+            float2(0, 0), float2(1, 0)
         };
 
         float3 normal = normalize(cross(right, float3(0, 1, 0)));
-
-        // 앞면
+        int stripIndices[4] = { 0, 2, 1, 3 };
+        
         GS_OUT p;
-        int triIdx[6] = { 0, 2, 1, 1, 2, 3 };
+        
         [unroll]
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 4; ++i)
         {
-            p.worldPos = v[triIdx[i]];
-            p.position = mul(mul(float4(v[triIdx[i]], 1.0f), cView), cProjection);
-            p.uv = uvs[triIdx[i]];
+            p.worldPos = v[stripIndices[i]];
+            p.rootWorldPos = root;
+            p.position = mul(mul(float4(p.worldPos, 1.0f), VIEW), PROJ);
+            p.uv = uvs[stripIndices[i]];
             p.normal = normal;
             stream.Append(p);
-        }
+        } // for (int i = 0; i < 4; ++i)
+        
         stream.RestartStrip();
-
-        // 뒷면 (컬링 없이 양면 렌더링)
-        int triIdxBack[6] = { 1, 2, 0, 3, 2, 1 };
-        [unroll]
-        for (int j = 0; j < 6; ++j)
-        {
-            p.worldPos = v[triIdxBack[j]];
-            p.position = mul(mul(float4(v[triIdxBack[j]], 1.0f), cView), cProjection);
-            p.uv = uvs[triIdxBack[j]];
-            p.normal = -normal;
-            stream.Append(p);
-        }
-        stream.RestartStrip();
-    }
+    } // for (int d = 0; d < 3; ++d)
 } // main

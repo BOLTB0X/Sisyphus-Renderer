@@ -1,4 +1,4 @@
-// GrassPS.hlsl
+// GrassFarPS.hlsl
 #include "Common.hlsli"
 #include "ShadowMap.hlsli"
 
@@ -9,14 +9,14 @@ Texture2D GrassTex : register(t0);
 Texture2D ObjectShadowMap : register(t10);
 Texture2D TerrainShadowMap : register(t11);
 
-struct GS_OUT
+struct PS_IN
 {
     float4 position : SV_POSITION;
     float2 uv : TEXCOORD0;
-    float3 normal : NORMAL;
     float3 worldPos : TEXCOORD1;
-    float3 rootWorldPos : TEXCOORD2;
-}; // GS_OUT
+    float  dist : TEXCOORD2;
+    float3 rootWorldPos : TEXCOORD3;
+}; // PS_IN
 
 cbuffer GrassBuffer : register(b3)
 {
@@ -37,12 +37,16 @@ cbuffer GrassBuffer : register(b3)
 #define LIMIT_DIST    gDist
 #define ALPHA_CUT     gAlphaCut
 
-float4 main(GS_OUT input, bool isFrontFace : SV_IsFrontFace) : SV_TARGET
-{
-    float4 col = GrassTex.Sample(LinearSampler, input.uv);
-    clip(col.a - ALPHA_CUT);
+float4 main(PS_IN input, bool isFrontFace : SV_IsFrontFace) : SV_TARGET
+{   
+    clip(input.dist - LIMIT_DIST);
+    float mipLevel = clamp(log2(input.dist / 100.0f), 0.0f, 6.0f);
+    float4 col = GrassTex.SampleLevel(LinearSampler, input.uv, mipLevel);
 
-    float3 N = normalize(input.normal);
+    // 알파 컷아웃
+    clip(col.a - ALPHA_CUT);
+    
+    float3 N = float3(0, 1, 0);
     if (!isFrontFace)
     {
         N = -N;
@@ -53,13 +57,13 @@ float4 main(GS_OUT input, bool isFrontFace : SV_IsFrontFace) : SV_TARGET
     float NdotL = saturate(dot(N, L));
     
     float3 snappedPos = float3(input.worldPos.x, input.rootWorldPos.y, input.worldPos.z);
-
+    
     float4 lightViewPos = mul(float4(snappedPos, 1.0f), LIGHT_VIEW);
     float4 lightClipPos = mul(lightViewPos, LIGHT_PROJ);
     
     float4 objLightViewPos = mul(float4(snappedPos, 1.0f), LIGHT_OBJECT_VIEW);
     float4 objLightClipPos = mul(objLightViewPos, LIGHT_OBJECT_PROJ);
-    
+
     float3 ndcPos = lightClipPos.xyz / lightClipPos.w;
     
     float terrainShadow = 1.0f;
@@ -75,11 +79,11 @@ float4 main(GS_OUT input, bool isFrontFace : SV_IsFrontFace) : SV_TARGET
     
     float rawShadow = min(terrainShadow, objectShadow);
     float finalShadow = lerp(0.35f, 1.0f, rawShadow);
-
-    float3 diff = lightColor * NdotL * finalShadow * 0.7f + 0.3f;
     
+    float3 diff = lightColor * NdotL * finalShadow * 0.7f + 0.3f;
     float heightFactor = saturate(input.uv.y);
+    float ambientOcclusion = lerp(0.3f, 1.0f, heightFactor);
     float3 baseColor = col.rgb * lerp(0.4f, 1.0f, 1.0f - heightFactor);
 
-    return float4(baseColor * diff, col.a);
+    return float4(baseColor * diff * ambientOcclusion, col.a);
 } // main

@@ -41,4 +41,20 @@ float2 random2(float2 p)
                           dot(p, float2(269.5f, 183.3f)))) * 43758.5453f);
 } // random2
 
+float3x3 rotate_Y(float angle)
+{
+    float s = sin(angle);
+    float c = cos(angle);
+    return float3x3(
+         c, 0, s,
+         0, 1, 0,
+        -s, 0, c
+    );
+} // rotate_Y
+
+float get_random_rotation_plane(float2 plane)
+{
+    return frac(sin(dot(plane, float2(127.1f, 311.7f))) * 43758.5f) * 3.14159f;
+} // get_random_rotation_plane
+
 #endif // _MATHS_HLSLI_

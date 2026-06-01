@@ -30,6 +30,9 @@ std::vector<AssimpModel::MaterialInfo> AssimpModel::GetMaterialInfos() const {
         info.hasMetallic = (mat.metallic != nullptr);
         info.hasRoughness = (mat.roughness != nullptr);
         info.hasAO = (mat.ao != nullptr);
+		info.hasAlpha = (mat.alpha != nullptr);
+		info.hasSpecular = (mat.specular != nullptr);
+		info.hasLighting = (mat.lighting != nullptr);
         infos.push_back(info);
     }
     return infos;
