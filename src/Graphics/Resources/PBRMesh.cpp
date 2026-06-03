@@ -54,9 +54,6 @@ void PBRMesh::BindBuffers(ID3D11DeviceContext* context) {
 } // BindBuffers
 
 void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
-    //context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &m_stride, &m_offset);
-    //context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-    //context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     BindBuffers(context);
     // 드로우 콜
     context->DrawIndexed(m_indexCount, 0, 0);

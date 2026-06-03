@@ -22,7 +22,9 @@ public:
 		bool hasAO;
 		bool hasAlpha;
 		bool hasSpecular;
-		bool hasLighting;
+		bool hasEmissive;
+		bool hasDisplacement;
+		bool hasLeaf;
 
         MaterialInfo() {
             name = "";
@@ -33,7 +35,9 @@ public:
 			hasAO = false;
 			hasAlpha = false;
 			hasSpecular = false;
-			hasLighting = false;
+			hasEmissive = false;
+			hasDisplacement = false;
+			hasLeaf = false;
         }
     };
 
@@ -53,7 +57,10 @@ protected:
         std::shared_ptr<Texture> ao;
         std::shared_ptr<Texture> alpha;
         std::shared_ptr<Texture> specular;
-        std::shared_ptr<Texture> lighting;
+        std::shared_ptr<Texture> emissive;
+		std::shared_ptr<Texture> displacement;
+        std::shared_ptr<Texture> leaf;
+
     };
 
     bool Init(ID3D11Device*, ID3D11DeviceContext*, std::shared_ptr<TextureManager>, const std::string&);

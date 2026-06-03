@@ -85,6 +85,7 @@ private:
     std::unique_ptr<PostEffects>          m_Post;
     std::unique_ptr<TAA>                  m_TAA;
     std::unique_ptr<Grass>                m_Grass;
+    std::unique_ptr<Tree>                 m_Tree;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;

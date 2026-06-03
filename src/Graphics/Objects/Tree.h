@@ -4,6 +4,7 @@
 #include <memory>
 #include <wrl/client.h>
 #include "Components/Transform.h"
+#include "Data/ShadowMap.h"
 #include "Resources/AssimpModel.h"
 #include "Resources/ConstantBufferType.h"
 
@@ -31,13 +32,23 @@ public:
         }
     }; // RenderParams
 
+    struct CheckLeafBuffer {
+        int               isLeaf;
+        DirectX::XMFLOAT3 padding;
+
+        CheckLeafBuffer() {
+            isLeaf = 0;
+            padding = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+        }
+    }; // CheckLeafBuffer
+
 public:
     Tree();
     virtual ~Tree();
 
     bool Init(const InitParams&);
     void Render(ID3D11DeviceContext*, const RenderParams&);
-    void DrawIndexed(ID3D11DeviceContext*);
+    void RenderShadow(ID3D11DeviceContext*, ShadowMap*, ShadowMap::RenderParams&);
     void OnGui();
 
     void SetPosition(const DirectX::XMFLOAT3&);
@@ -77,10 +88,11 @@ private:
 
     // shader resources
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_barkPixelShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_twigPixelShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_checkLeafBuffer;
 
     WorldBuffer                                m_worldData;
+	CheckLeafBuffer                            m_checkLeafData;
 }; // Tree

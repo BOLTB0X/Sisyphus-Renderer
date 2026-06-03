@@ -11,7 +11,8 @@ Texture2D    NormalTexture : register(t1);
 Texture2D    MetallicTexture : register(t2);
 Texture2D    RoughnessTexture : register(t3);
 Texture2D    AOTexture : register(t4);
-Texture2D    TerrainShadow : register(t11);
+Texture2D    ObjectShadowMap : register(t10);
+Texture2D    TerrainShadowMap : register(t11);
 
 struct PS_INPUT
 {
@@ -67,11 +68,15 @@ float4 main(PS_INPUT input) : SV_TARGET
     
     float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);
     float4 lightClipPos = mul(lightViewPos, LIGHT_PROJ);
+    
+    float4 objLightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_OBJECT_VIEW);
+    float4 objLightClipPos = mul(objLightViewPos, LIGHT_OBJECT_PROJ);
+    
+    float terrainShadow = calculate_poisson_shadow(ShadowSampler, TerrainShadowMap, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+    float objectShadow = calculate_poisson_shadow(ShadowSampler, ObjectShadowMap, objLightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
 
-    float terrainShadow = calculate_poisson_shadow(
-        ShadowSampler, TerrainShadow, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
-
-    float3 col = (diffuse + specular) * radiance  + ambient;
+    float shadowFactor = min(terrainShadow, objectShadow);
+    float3 col = (diffuse + specular) * radiance * shadowFactor + ambient;
 
     return float4(saturate(col), albedo.a);
 } // main

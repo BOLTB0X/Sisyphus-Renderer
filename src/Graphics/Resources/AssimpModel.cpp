@@ -32,14 +32,18 @@ std::vector<AssimpModel::MaterialInfo> AssimpModel::GetMaterialInfos() const {
         info.hasAO = (mat.ao != nullptr);
 		info.hasAlpha = (mat.alpha != nullptr);
 		info.hasSpecular = (mat.specular != nullptr);
-		info.hasLighting = (mat.lighting != nullptr);
+		info.hasEmissive = (mat.emissive != nullptr);
+		info.hasDisplacement = (mat.displacement != nullptr);
+		info.hasLeaf = (mat.leaf != nullptr);
         infos.push_back(info);
     }
     return infos;
 } // GetMaterialInfos
 
 void AssimpModel::AddMesh(std::unique_ptr<PBRMesh> newMesh) {
-    if (newMesh) m_meshes.push_back(std::move(newMesh));
+    if (newMesh) {
+        m_meshes.push_back(std::move(newMesh));
+    }
 } // AddMesh
 
 void AssimpModel::AddMaterial(const Material& material) {

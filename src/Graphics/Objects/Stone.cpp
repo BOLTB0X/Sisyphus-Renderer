@@ -52,9 +52,6 @@ bool Stone::Init(const InitParams& params) {
 } // Init
 
 void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    RenderParams shaderParams;
-    shaderParams.world = GetWorldMatrix();
-
     if (!RenderShader(context, params)) {
         return;
 	}

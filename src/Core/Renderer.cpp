@@ -6,6 +6,7 @@
 #include "Objects/SkyBox.h"
 #include "Objects/Ground.h"
 #include "Objects/Grass.h"
+#include "Objects/Tree.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -71,6 +72,7 @@ Renderer::Renderer() {
     m_Post = std::make_unique<PostEffects>();
     m_TAA = std::make_unique<TAA>();
 	m_Grass = std::make_unique<Grass>();
+    m_Tree = std::make_unique<Tree>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRT = std::make_unique<RenderTexture>();
     m_nullRTV = nullptr;
@@ -128,6 +130,17 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 	stoneInitParams.linerSampler = linerWrapSampler;
 
     if (!m_Stone->Init(stoneInitParams)) {
+        return false;
+    }
+
+    Tree::InitParams treeInitParam;
+    treeInitParam.device = device;
+    treeInitParam.context = context;
+    treeInitParam.hwnd = hwnd;
+    treeInitParam.textMgr = m_TextureMgr;
+    treeInitParam.path = TREE;
+    treeInitParam.linerSampler = linerWrapSampler;
+    if (!m_Tree->Init(treeInitParam)) {
         return false;
     }
 
@@ -380,6 +393,10 @@ void Renderer::UpdateObjectTransform() {
     XMFLOAT3 pos = m_Stone->GetPosition();
     float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
+
+    pos = m_Tree->GetPosition();
+    terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    m_Tree->SetPosition(pos.x, terrainY, pos.z);
 } // UpdateObjectTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -389,12 +406,31 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
 
 	ShadowMap::RenderParams renderParams;
 
+    DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
+    DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
+    DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
+    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * 0.5f);
+
+    m_DirectionalLight->UpdateObjectShadow(shadowFocus);
+
+    DirectX::XMMATRIX sharedView = m_DirectionalLight->GetObjectViewMatrix();
+    DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
+
+    if (m_Tree) {
+        renderParams.viewMatrix = sharedView;
+        renderParams.projectionMatrix = sharedProj;
+        renderParams.worldMatrix = m_Tree->GetWorldMatrix();
+
+        m_ObjectShadowMap->RenderTransparent(context, renderParams);
+        m_Tree->RenderShadow(context, m_ObjectShadowMap.get(), renderParams);
+    }
+
     if (m_Stone) {
-        m_DirectionalLight->UpdateObjectShadow(m_Stone->GetPosition());
-        renderParams.viewMatrix = m_DirectionalLight->GetObjectViewMatrix();
-        renderParams.projectionMatrix = m_DirectionalLight->GetObjectProjection();
+        renderParams.viewMatrix = sharedView;
+        renderParams.projectionMatrix = sharedProj;
         renderParams.worldMatrix = m_Stone->GetWorldMatrix();
-        m_ObjectShadowMap->Render(context, renderParams);
+
+        m_ObjectShadowMap->RenderOpaque(context, renderParams);
         m_Stone->DrawIndexed(context);
     }
 
@@ -406,7 +442,7 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
         renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
         renderParams.worldMatrix = m_Ground->GetWorldMatrix();
-        m_TerrainShadowMap->Render(context, renderParams);
+        m_TerrainShadowMap->RenderOpaque(context, renderParams);
         m_Ground->DrawIndexed(context);
     }
 
@@ -520,6 +556,15 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
     m_Stone->Render(context, stoneParams);
+
+    if (!m_Tree) {
+        return;
+    }
+
+    Tree::RenderParams treeParams;
+    treeParams.world = m_Tree->GetWorldMatrix();
+    m_Tree->Render(context, treeParams);
+
 } // DrawModel
 
 void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
@@ -637,15 +682,20 @@ void Renderer::UpadteWidgets() {
             [this]() { m_DirectionalLight->OnGui(); }
         ));
 
-        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-        //    "Ground Control",
-        //    [this]() { m_Ground->OnGui(); }
-        //));
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Ground Control",
+            [this]() { m_Ground->OnGui(); }
+        ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Grass Control",
             [this]() { m_Grass->OnGui(); }
 		));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Tree Control",
+            [this]() { m_Tree->OnGui(); }
+        ));
 
         /*m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Atmosphere Control",
