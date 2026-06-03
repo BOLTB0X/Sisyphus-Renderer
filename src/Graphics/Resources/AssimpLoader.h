@@ -35,5 +35,5 @@ private:
 
 private:
     std::shared_ptr<TextureManager> m_TextureMgr;
-    std::mutex m_cacheMutex;
+    std::mutex                      m_cacheMutex;
 }; // AssimpLoader

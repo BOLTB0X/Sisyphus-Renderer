@@ -1,11 +1,16 @@
 // DebugHelper.h
 #pragma once
 #define WIN32_LEAN_AND_MEAN
+#include <d3d11.h>
+#include <wrl/client.h>
 #include <windows.h>
 #include <string>
+#include <DirectXMath.h>
 #include <spdlog/spdlog.h>
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam);
+
+class VolumeTexture;
 
 namespace DebugHelper { // HWND
 

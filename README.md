@@ -1,164 +1,173 @@
-# Sisyphus-Renderer - Assimp
+# Sisyphus-Renderer
 
-<p align="center">
-  <table style="width:70%; text-align:center; border-spacing:20px;">
-    <tr>
-        <td style="text-align:center; vertical-align:middle;">
-        <p align="center">
-        <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp-%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%8F%8C.gif?raw=true" 
-             alt="image 2" 
-             style="; object-fit:contain; border:1px solid #ddd; border-radius:4px;"/>
-        </p>
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align:center; font-size:14px; font-weight:bold;">
-      <p align="center">
-      <a></a>Assimp Model Load Test</a>
-      </p>
-      </td>
-    </tr>
-  </table>
-</p>
+![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
 
-## Assimp 사용법
+## Self Introduce
 
-### [객체 관계도]
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>시지프스의 돌</strong></p>
+</div>
 
-- `TextureManager` *(Storage)* : `std::shared_ptr` 기반의 전역 텍스처 창고. 동일한 텍스처의 중복 생성을 원천 봉쇄
+> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
 
-- `AssimpLoader` *(Worker)* : `TextureManager` 를 주입받아 작동하며, 모델 파일을 해석하고 자동으로 텍스처 검색(Fuzzy Search)을 수행합니다.
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
 
-- `AssimpModel` *(Base)* : 로더를 관리하고 로드된 메쉬와 머테리얼 데이터를 소유
+  | 상황 | FPS |
+  |---|---|
+  | 일반 구름 뷰 | 50 ~ 59 |
+  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
 
-- `Stone` *(Derived)* : 구체적인 렌더링 로직(Shader 바인딩 등)에만 집중
-
-    ---
-
-### [[AssimpLoader](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Assimp/src/Graphics/Resources/AssimpLoader.cpp) 핵심 로직]
-
-```cpp
-bool AssimpLoader::LoadMeshModel(ID3D11Device* device, ID3D11DeviceContext* context, const std::string& path, AssimpModel* outModel) {
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path,
-        aiProcess_Triangulate | aiProcess_CalcTangentSpace |
-        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
-        aiProcess_ConvertToLeftHanded);
-
-    if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        return false;
-    }
-
-    std::string directory = std::filesystem::path(path).parent_path().string();
-
-    ProcessMaterials(scene, device, context, directory, outModel);
-    ProcessNode(scene->mRootNode, scene, device, context, outModel);
-
-    return true;
-} // LoadMeshModel
-```
-
-- [`ProcessMaterials`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Assimp/src/Graphics/Resources/AssimpLoader.cpp#L49)
-
-    - 병렬 처리(`std::future`, `deferredContext`)
-
-    - 명령 녹화 후 메인에서 일괄 실행
-
-    - 자동 매핑(`LoadMaterialElement`)
-
-- [`ProcessNode`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Assimp/src/Graphics/Resources/AssimpLoader.cpp#L32)
-
-    - 루트 노드부터 시작해 재귀적으로 자식 노드를 탐색
-    
-    - 각 노드가 가진 변환 행렬과 메쉬 인덱스를 처리하여 모델의 계층 구조와 위치를 렌더링에 반영
-
-    ---
+</div>
 
 
-### [사용 방법: "경로만 던지세요"]
+Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
 
-사용자는 이제 텍스처를 일일이 로드할 필요가 없음
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>시지프스의 돌</strong></p>
+</div>
 
-`Stone/textures/` 폴더에 `Stone_basecolor.png` , `Stone_normal.JPEG` 등의 규칙으로 파일만 넣어두면 끝
+단순히 빠른 것이 아니라 **품질을 유지하면서** 빠른 것이 핵심
 
-```cpp
-auto texMgr = std::make_shared<TextureManager>();
-texMgr->Init(device, context);
+- **Assimp** 로더
+- **Sky LUT**: 대기 산란 Raymarching
+- **Shadow mapping** : Poisson Disk Sampling
+- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
+- **동적 Ambient 전환** : 노을, 낮, 밤
+- **3중 Beer's Law** Shadow
+- **Depth Probability** (구름 하단 그림자)
+- **Bloom + Lens Flare** 후처리
+- **God Rays**: 후처리 Volumetric Scattering
+- **YCoCg Variance Clipping**
+- **TAA**
 
-// 모델 생성 및 초기화 (Stone이 AssimpModel을 상속받으므로)
-auto myStone = std::make_unique<Stone>();
-// 경로만 주면 AssimpLoader가 내부적으로 텍스처를 키워드 매칭하여 자동 바인딩함
-myStone->Init(device, context, hwnd, texMgr, "assets/Stone/Stone.fbx");
 
-// 렌더링
-myStone->Render(context, params);
-```
+이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
+
+*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Volumetric/real)
 
 ---
 
-### [알면 좋은 것들]
+## Quick Start
 
-#### Q1. `AssimpModel::Material` 이 텍스처 포인터를 갖는데 `TextureManager` 가 왜 필요한가?
+<details>
+<summary> open / close </summary>
 
-- **메모리 중복 방지** : 100개의 바위 모델이 동일한 *Stone_Albedo.png* 를 사용하더라도 **VRAM에는 단 한 장만 올라가야 하기에**
+### 1. 필수 요구 사항
 
-- **캐싱** : `TextureManager`는 파일 경로를 `Key` 로 사용하여 이미 로드된 리소스는 즉시 반환하고, 없으면 생성하는 **"지능형 창고" 역할을 수행**
+- **OS** : Windows 10/11
 
-#### Q2. 그냥 클래스 안에 로더를 넣으면 안 되나? 꼭 상속해야 하나? (`AssimpModel` 상속의 당위성)
+- **IDE** : [Visual Studio Community 2022](https://visualstudio.microsoft.com/ko/vs/community/) (C++를 사용한 데스크톱 개발 워크로드 포함)
 
-*`AssimpModel` 내부에 로직을 추가해서 사용해도 상관없음, 하지만*
+- **Build** : [CMake 3.21](https://cmake.org/cmake/help/latest/release/3.21.html) 이상
 
-- **데이터와 로직의 분리** : `AssimpModel`은 **메쉬 데이터와 머테리얼 소유권을 관리하는 '데이터 컨테이너' 역할**
+- **Package Manager** : [vcpkg](https://vcpkg.io/en/)
 
-- **확장성** : `Stone`, `Tree`, `Player` 등은 각기 다른 셰이더나 상수 버퍼를 가질 수 있기에, 공통된 로딩 로직은 부모에게 맡기고, 자식은 자신만의 고유한 렌더링 스타일에만 집중하기 위해
+### 2. 라이브러리 설치 (`vcpkg`)
 
-#### Q3. 파일명이나 경로를 바꾸고 싶다면?
+```bash
+# 터미널/파워쉘에서 다음 라이브러리들을 설치
+vcpkg install imgui[directx11-binding,win32-binding]
+vcpkg install directxtk
+vcpkg install directxtex
+vcpkg install spdlog
+vcpkg install assimp
+```
 
-*ex) _basecolor가 아니라 _bc라고 쓰는데..*
+### 3. 클론 및 빌드
 
-- **중앙 관리 시스템** : `SharedConstants::PBRTextureConstants` 내부의 `PBRTEXTURE_KEYWORD_MAP` 만 수정하면 됌
+```bash
+# 저장소 클론
+git clone https://github.com/BOLTB0X/Sisyphus-Renderer.git
+cd Sisyphus-Renderer
 
-    ```cpp
-    // Utils/SharedConstants/PBRTextureConstants.h
-    namespace SharedConstants {
-    
-        namespace PBRTextureConstants {
-            enum class PBRTextureType {
-                Albedo, Normal, Metallic,
-                Roughness, AO, Alpha, 
-                Displacement, Emissive, Unknown
-            };
+# 빌드 디렉토리 생성
+mkdir build
+cd build
 
-            struct PBRTextureKeyword {
-                PBRTextureType type;
-                std::vector<std::string> keywords;
-            };
+# CMake 구성 (vcpkg 경로 설정 필수)
+cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg.cmake
 
-            inline const    std::vector<PBRTextureKeyword> PBRTEXTURE_KEYWORD_MAP = {
-                { PBRTextureType::Albedo,     { "_basecolor", "_albedo", "_alb", "_diffuse", "_col" } },
-                { PBRTextureType::Normal,     { "_normal", "_nrm", "_norm", "_n" } },
-                { PBRTextureType::Metallic,   { "_metallic", "_metal", "_m" } },
-                { PBRTextureType::Roughness,  { "_roughness", "_rough", "_r" } },
-                { PBRTextureType::AO,         { "_ao", "_occlusion" } },
-                { PBRTextureType::Alpha,      { "_alpha", "_opacity" } }
-            }; // PBRTEXTURE_KEYWORD_MAP
+# 프로젝트 열기 (or cmake --build . 실행)
+start SisyphusRenderer.sln
+```
 
-        } // PBRTextureConstants
-    }
-    ```
-
-- 폴더 구조가 바뀌어도 `ProcessMaterials`에서 `pbrDir` 결정 로직이 자동으로 `textures/` 폴더 존재 여부를 체크
-
-#### Q4. 왜 이렇게 복잡하게 구현했나?
-
-*비동기 + COM + 자동 밉맵 구조를 하다보니..*
-
-- 비동기(`std::async`) : 대용량 FBX와 고해상도 텍스처를 로드할 때 메인 스레드(렌더링)가 멈추는 것을 방지하려
-
-- COM(`CoInitializeEx`) : DirectXTex가 사용하는 WIC(이미지 로더)는 Windows COM 기반, 각 작업 스레드는 독립적인 COM 라이브러리 활성화가 필요하기에
-
-- 자동 밉맵 : `DirectX::GenerateMipMaps`를 CPU 스레드에서 미리 수행하여, GPU의 **Immediate Context 경합 없이도 멀리 있는 물체의 자글거림(Aliasing)을 원천 차단**
-
-## 모델 출처
+### 4. 사용한 에셋
 
 - [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+
+- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+
+- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
+
+</details>
+
+## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>Assimp Loder (병렬 처리)</strong></p>
+</div>
+
+## Atmospheric Scattering
+
+### [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
+
+<div align="center">
+<td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B001_%ED%95%98%EB%8A%9802.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B002_%EC%9A%B0%EC%A3%BC01.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true" width="260"></td>
+  <br>
+  <p><strong>카메라 위치에 따른 동적 베이킹</strong></p>
+</div>
+
+### [LUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
+
+<div align="center">
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT05_new.png?raw=true" width="200"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT06_new.png?raw=true" width="200"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT07_new.png?raw=true" width="200"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT08_new.png?raw=true" width="200"></td>
+  <br>
+  <p><strong>UAV 로 계산 후 LUT</strong></p>
+</div>
+
+## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
+
+<div align="center">
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_06%ED%8F%AC%EC%9D%B8%ED%8A%B8.png?raw=true" width="260"></td>
+  <br>
+  <p><strong>일반 | PCF | Point</strong></p>
+</div>
+
+
+## Volumetric
+
+### [Volumetric Cloud](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
+
+<div align="center">
+ <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/08Volumetric_%EB%A0%8C%EC%A6%88%ED%94%8C%EB%A0%88%EC%96%B401.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="260"></td>
+  <br>
+  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
+</div>
+
+### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
+
+<div align="center">
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
+    <br>
+  <p><strong> Post-Processing Volumetric Scattering</strong></p>
+</div>

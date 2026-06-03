@@ -1,0 +1,46 @@
+#pragma once
+#include <d3d11.h>
+#include <wrl/client.h>
+#include <DirectXMath.h>
+// STL
+#include <memory>
+
+class DisplayInfo;
+class D3D11CoreResources;
+class D3D11State;
+class RenderTexture;
+
+class D3D11Manager {
+public:
+    D3D11Manager();
+    D3D11Manager(const D3D11Manager& other);
+    ~D3D11Manager();
+
+    bool Init(HWND, int, int, bool, bool);
+    
+    void BeginScene(float, float, float, float);
+    void EndScene(bool);
+    void RestoreViewport();
+
+    ID3D11Device*             GetDevice() const;
+    ID3D11DeviceContext*      GetDeviceContext() const;
+    D3D11State*               GetStates() const;
+    ID3D11ShaderResourceView* GetDepthSRV() const;
+    RenderTexture*            GetDepthRT() const;
+    ID3D11RenderTargetView*   GetRTV() const;
+    D3D11_VIEWPORT            GetViewPort() const;
+
+private:
+    bool InitViews(int, int);
+    bool InitRenderTargetView();
+    void InitViewport(int, int);
+
+private:
+    std::unique_ptr<DisplayInfo>        m_displayInfo;
+    std::unique_ptr<D3D11CoreResources> m_core;
+    std::unique_ptr<D3D11State>         m_state;
+    std::unique_ptr<RenderTexture>      m_depthRT;
+    // RenderTarget
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_renderTargetView;
+    D3D11_VIEWPORT                                 m_viewport;
+}; // D3D11Manager

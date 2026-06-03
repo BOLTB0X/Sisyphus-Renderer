@@ -1,13 +1,16 @@
 #include "Pch.h"
 #include "Objects/Stone.h"
+// Components
+#include "Components/TextureManager.h"
+// Resources
 #include "Resources/PBRMesh.h"
 #include "Resources/Texture.h"
-#include "Resources/TextureManager.h"
-#include "Resources/VertexTypes.h"
-#include "Shaders/StoneShader.h"
 // Utils
 #include "SharedConstants/PathConstants.h"
+#include "Helpers/ShaderHelper.h"
+#include "Helpers/DebugHelper.h"
 // define
+#define TRANSFORM_OFFSET       10.0f
 #define ABEDO_TEXTURE_SLOT     0
 #define NORMAL_TEXTURE_SLOT    1
 #define METALLIC_TEXTURE_SLOT  2
@@ -18,7 +21,6 @@ using namespace DirectX;
 using namespace SharedConstants;
 
 Stone::Stone() : AssimpModel() {
-    m_shader = std::make_unique<StoneShader>();
     m_sampler = nullptr;
 	m_transform = Transform();
     m_RenderCount = 0;
@@ -28,32 +30,31 @@ Stone::~Stone() {
     m_sampler = nullptr;
 } // ~Stone
 
-bool Stone::Init(ID3D11Device* device, ID3D11DeviceContext* context, HWND hwnd,
-    std::shared_ptr<TextureManager> textureMgr, const std::string& path) {
-    m_textureMgr = textureMgr;
-    if (!AssimpModel::Init(device, context, m_textureMgr, path)) {
-        return false;
-    }
-;
-    if (!m_shader->Init(device, hwnd, PathConstants::STONE_VS, PathConstants::STONE_PS)) {
+bool Stone::Init(const InitParams& params) {
+    if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
 
+    m_textureMgr = params.textMgr;
+    if (!AssimpModel::Init(params.device, params.context, m_textureMgr, params.path)) {
+        return false;
+    }
+
+    if (!InitShader(params.device, params.hwnd)) {
+        return false;
+    }
+
+	m_sampler = params.linerSampler;
+
+	SetPosition(20.0f, 0.0f, 20.0f);
+	SetScale(TRANSFORM_OFFSET, TRANSFORM_OFFSET, TRANSFORM_OFFSET);
     return true;
 } // Init
 
 void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    StoneShader::RenderParams shaderParams;
-    shaderParams.world      = GetWorldMatrix();
-    shaderParams.view       = params.view;
-    shaderParams.projection = params.projection;
-    shaderParams.camPos     = params.camPos;
-    shaderParams.diffuse    = params.diffuse;
-    shaderParams.lightDir   = params.lightDir;
-
-    if (!m_shader->Render(context, shaderParams)) {
+    if (!RenderShader(context, params)) {
         return;
-    }
+	}
 
     for (const auto& mesh : m_meshes) {
         unsigned int matIndex = mesh->GetMaterialIndex();
@@ -76,6 +77,75 @@ void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     } // for
     m_RenderCount++;
 } // Render
+
+void Stone::DrawIndexed(ID3D11DeviceContext* context) {
+    for (const auto& mesh : m_meshes) {
+        mesh->BindBuffers(context);
+        context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
+    }
+} // DrawIndexed
+
+void Stone::OnGui() {
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+
+    // 모델 정보를 담은 메인 헤더
+    if (ImGui::CollapsingHeader("MODEL INSPECTOR", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PopStyleColor(3);
+
+        ImGui::Indent();
+        ImGui::Spacing();
+
+        ImGui::TextDisabled("Resource Info");
+        ImGui::Text("Total Meshes: "); ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%d", GetMeshCount());
+
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "PBR MATERIALS STATUS");
+        ImGui::Spacing();
+
+        std::vector<AssimpModel::MaterialInfo> materials = GetMaterialInfos();
+
+        for (size_t i = 0; i < materials.size(); ++i) {
+            const auto& mat = materials[i];
+
+            // 각 머테리얼별 트리 노드
+            if (ImGui::TreeNode((void*)(intptr_t)i, "Material [%d]: %s", (int)i, mat.name.c_str())) {
+
+                ImGui::BeginGroup();
+
+                auto ShowStatus = [](const char* type, bool isLoaded) {
+                    ImGui::Text("%-10s:", type);
+                    ImGui::SameLine();
+                    if (isLoaded) {
+                        ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), " [ LOADED ]");
+                    }
+                    else {
+                        ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), " [ MISSING ]");
+                    }
+                    };
+
+                ShowStatus("Albedo", mat.hasAlbedo);
+                ShowStatus("Normal", mat.hasNormal);
+                ShowStatus("Metallic", mat.hasMetallic);
+                ShowStatus("Roughness", mat.hasRoughness);
+                ShowStatus("AO", mat.hasAO);
+
+                ImGui::EndGroup();
+                ImGui::Spacing();
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::Unindent();
+    }
+    else {
+        ImGui::PopStyleColor(3);
+    }
+} // OnGui
 
 void Stone::SetPosition(const XMFLOAT3& pos) {
     m_transform.SetPosition(pos);
@@ -117,9 +187,9 @@ void Stone::Rotate(float x, float y, float z) {
     m_transform.Rotate(x, y, z);
 } // Rotate
 
-void Stone::SetSampler(ID3D11SamplerState* sampler) {
-    m_shader->SetSampler(sampler);
-} // SetSampler
+XMFLOAT3 Stone::GetPosition() const {
+    return m_transform.GetPosition();
+} // GetPosition
 
 XMMATRIX Stone::GetWorldMatrix() {
     return m_transform.GetWorldMatrix();
@@ -128,3 +198,48 @@ XMMATRIX Stone::GetWorldMatrix() {
 unsigned int Stone::GetRenderCount() const {
     return m_RenderCount;
 } // GetRenderCount
+
+bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
+    using namespace ShaderHelper;
+    using namespace ConstantBuffer;
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+    };
+
+    if (!InitVertexShader(device, hwnd, PathConstants::PBR_VS,
+        layoutDesc, ARRAYSIZE(layoutDesc), m_vertexShader.GetAddressOf(), m_layout.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitPixelShader(device, hwnd, PathConstants::STONE_PS, m_pixelShader.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
+		return false;
+    }
+
+    return true;
+} // InitShader
+
+bool Stone::RenderShader(ID3D11DeviceContext* context, const RenderParams& params) {
+	m_worldData.world = XMMatrixTranspose(params.world);
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
+        DebugHelper::DebugPrint("Failed to update world buffer");
+        return false;
+	}
+    context->VSSetConstantBuffers(2, 1, m_worldBuffer.GetAddressOf());
+    context->IASetInputLayout(m_layout.Get());
+    context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+
+    if (m_sampler) {
+        context->PSSetSamplers(0, 1, &m_sampler);
+    }
+    return true;
+} // RenderShader

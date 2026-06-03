@@ -4,7 +4,7 @@
 PBRMesh::PBRMesh()
 : m_indexCount(0),
   m_materialIndex(0),
-  m_stride(sizeof(VertexTypes::FBRVertex)),
+  m_stride(sizeof(FBRVertex)),
   m_offset(0) {
 } // PBRMesh
 
@@ -12,7 +12,7 @@ PBRMesh::~PBRMesh() {
 } // ~PBRMesh
 
 bool PBRMesh::Init(ID3D11Device* device,
-    const std::vector<VertexTypes::FBRVertex>& vertices,
+    const std::vector<FBRVertex>& vertices,
     const std::vector<unsigned int>& indices,
     unsigned int materialIndex) {
     m_indexCount = static_cast<UINT>(indices.size());
@@ -21,7 +21,7 @@ bool PBRMesh::Init(ID3D11Device* device,
     // Vertex Buffer 생성
     D3D11_BUFFER_DESC vbd = {};
     vbd.Usage = D3D11_USAGE_DEFAULT;
-    vbd.ByteWidth = sizeof(VertexTypes::FBRVertex) * static_cast<UINT>(vertices.size());
+    vbd.ByteWidth = sizeof(FBRVertex) * static_cast<UINT>(vertices.size());
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
 
@@ -47,14 +47,14 @@ bool PBRMesh::Init(ID3D11Device* device,
     return true;
 } // Init
 
-void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
-    // 입력 조립기 세팅
+void PBRMesh::BindBuffers(ID3D11DeviceContext* context) {
     context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &m_stride, &m_offset);
     context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-    
-    // 프리미티브 토폴로지 설정
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+} // BindBuffers
 
+void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
+    BindBuffers(context);
     // 드로우 콜
     context->DrawIndexed(m_indexCount, 0, 0);
 } // Render

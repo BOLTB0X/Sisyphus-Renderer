@@ -1,5 +1,7 @@
 #pragma once
 #include <directxmath.h>
+#include "Utils/SharedConstants/BuffersConstants.h"
+#include "Utils/SharedConstants/ScreenConstants.h"
 
 namespace ConstantBuffer {
     struct MatrixBuffer {
@@ -14,43 +16,99 @@ namespace ConstantBuffer {
 		}
     }; // MatrixBuffer
 
-    struct CameraBuffer {
-        // Row 1
+    struct ShadowBuffer {
         DirectX::XMMATRIX world;
-        // Row 2
+
+        float             mapWidth;
+        float             mapHeight;
+        float             bias;
+        float             spread;
+
+        DirectX::XMFLOAT4 padding;
+
+        ShadowBuffer() {
+            world = DirectX::XMMatrixIdentity();
+            mapWidth = 0.0f;
+            mapHeight = 0.0f;
+            bias = 0.0f;
+            spread = 0.0f;
+            padding = { 0.0f, 0.0f, 0.0f, 0.0f };
+        }
+    }; // ShadowBuffer
+
+    struct FrameBuffer {
         DirectX::XMMATRIX view;
-        // Row 3
         DirectX::XMMATRIX projection;
-        // Row 4
+        DirectX::XMMATRIX viewInv;
+        DirectX::XMMATRIX projInv;
         DirectX::XMFLOAT3 cameraPosition;
-        float             padding;
+        float             cameraFov;
+        DirectX::XMFLOAT2 screenResolution;
+        float             time;
+        float             padding2;
 
-		CameraBuffer() 
-            : world(DirectX::XMMatrixIdentity()), view(DirectX::XMMatrixIdentity()),
-              projection(DirectX::XMMatrixIdentity()), 
-              cameraPosition(0.0f, 0.0f, 0.0f), padding(0.0f) {
-        }
-
-        CameraBuffer(DirectX::XMMATRIX w, DirectX::XMMATRIX v, DirectX::XMMATRIX p, DirectX::XMFLOAT3 camPos)
-            : world(w), view(v), projection(p), cameraPosition(camPos), padding(0.0f) {
+        FrameBuffer() :
+            view(DirectX::XMMatrixIdentity()),
+            projection(DirectX::XMMatrixIdentity()),
+            viewInv(DirectX::XMMatrixIdentity()),
+            projInv(DirectX::XMMatrixIdentity()),
+            cameraPosition(0.0f, 0.0f, 0.0f), cameraFov(0.0f),
+            screenResolution((float)SharedConstants::ScreenConstants::WIDTH, (float)SharedConstants::ScreenConstants::HEIGHT),
+            time(0.0f), padding2(0.0f) {
 		}
-    }; // CameraBuffer
+    }; // FrameBuffer
 
-    struct LightBuffer {
-        // Row 1
-        DirectX::XMFLOAT4 diffuseColor;
-        // Row 2
-        DirectX::XMFLOAT3 lightDirection;
-        float padding;
+    struct DirectionalLightBuffer {
+        DirectX::XMFLOAT3 direction;
+        float             padding1;
 
-        LightBuffer() 
-            : diffuseColor(1.0f, 1.0f, 1.0f, 1.0f),
-              lightDirection(0.0f, -1.0f, 0.0f),
-              padding(0.0f) {
-		}
+        DirectX::XMFLOAT4 ambient;
 
-        LightBuffer(DirectX::XMFLOAT4 diffuse, DirectX::XMFLOAT3 dir)
-            : diffuseColor(diffuse), lightDirection(dir), padding(0.0f) {
+        DirectX::XMFLOAT4 diffuse;
+
+        DirectX::XMFLOAT4 sunset;
+
+        DirectX::XMFLOAT4 night;
+
+        DirectX::XMFLOAT3 lookAt;
+        float             padding2;
+
+        DirectX::XMMATRIX lightViewMatrix;
+
+        DirectX::XMMATRIX lightProjectionMatrix;
+
+        DirectX::XMMATRIX objectViewMatrix;
+
+        DirectX::XMMATRIX objectProjectionMatrix;
+
+        float             shadowMapWidth;
+        float             shadowMapHeight;
+        float             shadowBias;
+        float             shadowSpread;
+        DirectX::XMFLOAT4 padding3;
+
+        DirectionalLightBuffer() :
+            direction(0.0f, -1.0f, 0.0f), padding1(0.0f),
+            ambient(0.2f, 0.2f, 0.2f, 1.0f),
+            diffuse(1.0f, 1.0f, 1.0f, 1.0f),
+            sunset(0.0f, 0.0f, 0.0f, 1.0f),
+            night(0.0f, 0.0f, 0.0f, 1.0f),
+            lookAt(0.0f, 0.0f, 0.0f), padding2(0.0f),
+            lightViewMatrix(DirectX::XMMatrixIdentity()),
+            lightProjectionMatrix(DirectX::XMMatrixIdentity()),
+            objectViewMatrix(DirectX::XMMatrixIdentity()),
+            objectProjectionMatrix(DirectX::XMMatrixIdentity()), shadowMapWidth(0.0f),
+            shadowMapHeight(0.0f), shadowBias(0.0f), shadowSpread(0.0f),
+            padding3(0.0f, 0.0f, 0.0f, 0.0f) {
         }
-    }; // LightBuffer
+    }; // DirectionalLightBuffer
+
+    struct ResolutionBuffer {
+        DirectX::XMFLOAT2 resolution;
+        DirectX::XMFLOAT2 padding;
+
+        ResolutionBuffer() : resolution(1024.0f, 512.0f), padding(0.0f, 0.0f) {
+        }
+    }; // ResolutionBuffer
+
 } // ConstantBuffer

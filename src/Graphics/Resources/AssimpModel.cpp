@@ -2,8 +2,8 @@
 #include "AssimpModel.h"
 #include "AssimpLoader.h"
 #include "Texture.h"
-#include "TextureManager.h"
 #include "PBRMesh.h"
+#include "Components/TextureManager.h"
 
 AssimpModel::AssimpModel() {
 } // AssimpModel
@@ -30,13 +30,20 @@ std::vector<AssimpModel::MaterialInfo> AssimpModel::GetMaterialInfos() const {
         info.hasMetallic = (mat.metallic != nullptr);
         info.hasRoughness = (mat.roughness != nullptr);
         info.hasAO = (mat.ao != nullptr);
+		info.hasAlpha = (mat.alpha != nullptr);
+		info.hasSpecular = (mat.specular != nullptr);
+		info.hasEmissive = (mat.emissive != nullptr);
+		info.hasDisplacement = (mat.displacement != nullptr);
+		info.hasLeaf = (mat.leaf != nullptr);
         infos.push_back(info);
     }
     return infos;
 } // GetMaterialInfos
 
 void AssimpModel::AddMesh(std::unique_ptr<PBRMesh> newMesh) {
-    if (newMesh) m_meshes.push_back(std::move(newMesh));
+    if (newMesh) {
+        m_meshes.push_back(std::move(newMesh));
+    }
 } // AddMesh
 
 void AssimpModel::AddMaterial(const Material& material) {
