@@ -11,12 +11,27 @@ public:
     struct InitParams {
         ID3D11Device* device;
         HWND          hwnd;
+
+        InitParams() : device(nullptr), hwnd(nullptr) {
+		}
     }; // InitParams
 
     struct RenderParams {
         DirectX::XMMATRIX worldMatrix;
         DirectX::XMMATRIX viewMatrix;
         DirectX::XMMATRIX projectionMatrix;
+
+        int                       isLeaf;
+        ID3D11ShaderResourceView* albedoSRV;
+        ID3D11SamplerState*       linearSampler;
+
+        RenderParams() : worldMatrix(DirectX::XMMatrixIdentity()),
+            viewMatrix(DirectX::XMMatrixIdentity()),
+            projectionMatrix(DirectX::XMMatrixIdentity()),
+            isLeaf(0),
+            albedoSRV(nullptr),
+            linearSampler(nullptr) {
+        }
     }; // RenderParams
 
 public:
@@ -24,7 +39,8 @@ public:
     ~ShadowMap();
 
     bool Init(const InitParams&);
-    bool Render(ID3D11DeviceContext*, const RenderParams&);
+    bool RenderOpaque(ID3D11DeviceContext*, const RenderParams&);
+    bool RenderTransparent(ID3D11DeviceContext*, const RenderParams&);
     void ClearShadowDepth(ID3D11DeviceContext*);
 
     RenderTexture*            GetShadowRT() const;
@@ -39,8 +55,16 @@ private:
 private:
     std::unique_ptr<RenderTexture>             m_shadowRT;
     D3D11_VIEWPORT                             m_shadowViewport;
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_depthVertexShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_depthLayout;
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_transparentDepthVertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_transparentDepthPixelShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_transparentLayout;
+
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_matrixBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_checkLeafBuffer;
+
     ConstantBuffer::MatrixBuffer               m_prevMatrixBufferData;
 }; // ShadowMap

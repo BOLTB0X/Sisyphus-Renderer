@@ -74,9 +74,6 @@ void Camera::BuildFrustum() {
 } // BuildFrustum
 
 void Camera::OnGui() {
-    ImGui::SetNextWindowPos(ImVec2(10, 150), ImGuiCond_FirstUseEver);
-    ImGui::Begin("CAMERA CONTROL", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -109,8 +106,6 @@ void Camera::OnGui() {
     ImGui::Text("Near: %.2f / Far: %.2f", nearP, farP);
 
     Update();
-
-    ImGui::End();
 } // onGui
 
 void Camera::AddRotation(float pitch, float yaw) {

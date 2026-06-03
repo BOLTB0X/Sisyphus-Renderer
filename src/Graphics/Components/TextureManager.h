@@ -7,10 +7,10 @@
 #include <memory>
 #include <future>
 #include <mutex>
-#include "Data/NoiseGenerator.h"
 
 class Texture;
 class VolumeTexture;
+class NoiseGenerator;
 
 class TextureManager {
 public:
@@ -23,8 +23,11 @@ public:
     void CreateVolumeTexture(ID3D11Device*, const std::string&, UINT, UINT, UINT, DXGI_FORMAT);
     void CreateCloudNoise(ID3D11DeviceContext*, const std::string&);
 
-    std::shared_ptr<Texture>       GetTexture(ID3D11Device*, ID3D11DeviceContext*, const std::string&);
+    std::shared_ptr<Texture>       GetTexture(ID3D11Device*, ID3D11DeviceContext*, const std::string&, bool keepCpuPixels = false);
     std::shared_ptr<VolumeTexture> GetVolumeTexture(const std::string&);
+
+private:
+    void LoadTexture(ID3D11Device*, ID3D11DeviceContext*, const std::string&, bool keepCpuPixels = false);
 
 private:
     std::unordered_map<std::string, std::shared_ptr<Texture>>       m_Textures;

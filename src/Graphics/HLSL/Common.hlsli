@@ -2,10 +2,11 @@
 #ifndef _COMMON_HLSLI_
 #define _COMMON_HLSLI_
 
-#define KM       1000.0f
-#define PI       3.14159265f
-#define MIN_DIST float(1e-4f)
-#define MAX_DIST float(1e7f)
+#define KM              1000.0f
+#define PI              3.14159265f
+#define MIN_DIST        float(1e-4f)
+#define MAX_DIST        float(1e7f)
+#define DEFAULT_AMBIENT float4(0.03f, 0.03f, 0.03f, 1.0f)
 
 cbuffer FrameBuffer : register(b0)
 {
@@ -37,6 +38,15 @@ cbuffer DirectionalLightBuffer : register(b1)
     
     matrix cLightView;
     matrix cLightProj;
+    
+    matrix cObjectView;
+    matrix cObjectProj;
+    
+    float  cMapWidth;
+    float  cMapHeight;
+    float  cBias;
+    float  cSpread;
+    float4 cPadding3;
 }; // DirectionalLightBuffer
 
 #define CAMERA_POSITION   cCameraPosition
@@ -49,14 +59,35 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define VIEW_INV     cViewInv
 #define PROJ_INV     cProjInv
 
-#define LIGHT_DIRECTION normalize(cLightDirection)
-#define LIGHT_COLOR     cLightDiffuse
-#define LIGHT_AMBIENT   cLightAmbient
-#define LIGHT_SUNSET    cSunSetLight
-#define LIGHT_NIGHT     cNightLight
-#define LIGHT_LOOKAT    cLightLookAt
-#define LIGHT_VIEW      cLightView
-#define LIGHT_PROJ      cLightProj
+#define LIGHT_DIRECTION   normalize(cLightDirection)
+#define LIGHT_COLOR       cLightDiffuse
+#define LIGHT_AMBIENT     cLightAmbient
+#define LIGHT_SUNSET      cSunSetLight
+#define LIGHT_NIGHT       cNightLight
+#define LIGHT_LOOKAT      cLightLookAt
+#define LIGHT_VIEW        cLightView
+#define LIGHT_PROJ        cLightProj
+#define LIGHT_OBJECT_VIEW cObjectView
+#define LIGHT_OBJECT_PROJ cObjectProj
+
+#define SHADOW_MAP_SIZE     float2(cMapWidth, cMapHeight)
+#define SHADOW_BIAS         cBias
+#define SHADOW_SPREAD       cSpread
+
+// 쿼드 로컬 버텍스 (인덱스 없이 4개)
+static const float2 quad_vertex_pos[4] =
+{
+    float2(-1, 0), // left down
+    float2(1, 0), // right down
+    float2(-1, 1), // left up
+    float2(1, 1) // right up
+}; // quad_vertex_pos
+
+static const float2 quad_uv[4] =
+{
+    float2(0, 1), float2(1, 1),
+    float2(0, 0), float2(1, 0)
+}; // quad_uv
 
 static float depth_to_meter(float z, matrix proj)
 {

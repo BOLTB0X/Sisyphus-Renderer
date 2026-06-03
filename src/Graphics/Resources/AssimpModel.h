@@ -20,6 +20,11 @@ public:
 		bool hasMetallic;
 		bool hasRoughness;
 		bool hasAO;
+		bool hasAlpha;
+		bool hasSpecular;
+		bool hasEmissive;
+		bool hasDisplacement;
+		bool hasLeaf;
 
         MaterialInfo() {
             name = "";
@@ -28,6 +33,11 @@ public:
 			hasMetallic = false;
 			hasRoughness = false;
 			hasAO = false;
+			hasAlpha = false;
+			hasSpecular = false;
+			hasEmissive = false;
+			hasDisplacement = false;
+			hasLeaf = false;
         }
     };
 
@@ -39,13 +49,20 @@ public:
     
 protected:
     struct Material {
-        std::string name;
+        std::string              name;
         std::shared_ptr<Texture> albedo;
         std::shared_ptr<Texture> normal;
         std::shared_ptr<Texture> metallic;
         std::shared_ptr<Texture> roughness;
         std::shared_ptr<Texture> ao;
+        std::shared_ptr<Texture> alpha;
+        std::shared_ptr<Texture> specular;
+        std::shared_ptr<Texture> emissive;
+		std::shared_ptr<Texture> displacement;
+        std::shared_ptr<Texture> leaf;
+
     };
+
     bool Init(ID3D11Device*, ID3D11DeviceContext*, std::shared_ptr<TextureManager>, const std::string&);
     void AddMesh(std::unique_ptr<PBRMesh>);
     void AddMaterial(const Material&);

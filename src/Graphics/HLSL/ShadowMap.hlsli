@@ -53,6 +53,13 @@ float calculate_poisson_shadow(SamplerComparisonState shadowSampler, Texture2D s
     {
         return 1.0f;
     }
+    
+    if (uv.x < 0.0f || uv.x > 1.0f ||
+        uv.y < 0.0f || uv.y > 1.0f ||
+        currentDepth < 0.0f || currentDepth > 1.0f)
+    {
+        return 1.0f;
+    }
 
     float shadowFactor = 0.0f;
     float2 texelSize = 1.0f / shadowMapSize;

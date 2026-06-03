@@ -10,6 +10,7 @@ public:
 
     bool Init(ID3D11Device*, HWND);
     void Update();
+    void UpdateObjectShadow(const DirectX::XMFLOAT3&);
     void Rotate(float);
     void OnGui();
 
@@ -26,6 +27,8 @@ public:
     DirectX::XMFLOAT3 GetLookAt() const;
     DirectX::XMMATRIX GetViewMatrix() const;
     DirectX::XMMATRIX GetProjection() const;
+    DirectX::XMMATRIX GetObjectViewMatrix() const;
+    DirectX::XMMATRIX GetObjectProjection() const;
     DirectX::XMFLOAT2 GetUV(const DirectX::XMMATRIX&, const DirectX::XMMATRIX&) const;
 
 private:
@@ -37,5 +40,8 @@ private:
     DirectX::XMFLOAT3 m_lookAt;
     DirectX::XMMATRIX m_viewMatrix;
     DirectX::XMMATRIX m_projectionMatrix;
+    DirectX::XMMATRIX m_objectViewMatrix;
+    DirectX::XMMATRIX m_objectProjMatrix;
+
     float             m_rotationSpeed;
 }; // DirectionalLight

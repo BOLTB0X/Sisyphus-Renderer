@@ -57,10 +57,10 @@ private:
     void UpdateProjection(); 
 
 private:
+    std::unique_ptr<Frustum> m_frustum;
     DirectX::XMFLOAT3        m_position;
     DirectX::XMFLOAT3        m_rotation; 
     DirectX::XMFLOAT3        m_up;
-    std::unique_ptr<Frustum> m_frustum;
     DirectX::XMMATRIX        m_viewMatrix;
     DirectX::XMMATRIX        m_projectionMatrix;
     DirectX::XMVECTOR        m_forward;

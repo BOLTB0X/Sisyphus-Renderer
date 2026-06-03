@@ -105,8 +105,8 @@ bool DefaultMesh::InitCube(ID3D11Device* device, UINT scale) {
     if (FAILED(hr)) {
         return false;
     }
-    DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
-        ", Index: " + std::to_string(m_indexCount));
+    //DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
+    //    ", Index: " + std::to_string(m_indexCount));
     return true;
 } // InitCube
 
@@ -152,8 +152,8 @@ bool DefaultMesh::InitQuad(ID3D11Device* device, UINT scale) {
         return false;
     }
 
-    DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
-        ", Index: " + std::to_string(m_indexCount));
+    //DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
+    //    ", Index: " + std::to_string(m_indexCount));
     return true;
 } // InitQuad
 
@@ -204,7 +204,7 @@ bool DefaultMesh::InitBoxGeometry(ID3D11Device* device, UINT scale) {
         return false;
     }
 
-    DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
-        ", Index: " + std::to_string(m_indexCount));
+    //DebugHelper::DebugPrint("DefaultMesh 생성 완료 - Vertex: " + std::to_string(m_vertexCount) +
+    //    ", Index: " + std::to_string(m_indexCount));
     return true;
 } // InitBoxGeometry

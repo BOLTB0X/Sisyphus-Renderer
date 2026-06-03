@@ -3,7 +3,6 @@
 
 using namespace DirectX;
 
-
 Frustum::Frustum()
 	: m_screenDepth(0.0f){
 	m_planes[0][0] = 0.0f;
@@ -235,7 +234,6 @@ bool Frustum::CheckBoundingBox(float xCenter, float yCenter, float zCenter, floa
 
 	return true;
 } // CheckBoundingBox
-
 
 // 최소점(Min)과 최대점(Max) 좌표를 직접 입력
 // Terrain의 Cell이나 버텍스 데이터의 전체 범위를 계산할 때 가장 직관적으로 얻을 수 있는 값(Min/Max)을 그대로 사용할 때 편리하다 함

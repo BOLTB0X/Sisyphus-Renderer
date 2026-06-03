@@ -55,14 +55,15 @@ namespace SharedConstants {
         // Shadow
         static constexpr float             SHADOWMAP_WIDTH = 2048;
         static constexpr float             SHADOWMAP_HEIGHT = 2048;
-        static constexpr float             BIAS = 0.001f;
-        static constexpr float             SPREAD = 2.0f;
+        static constexpr float             BIAS = 0.005f;
+        static constexpr float             SPREAD = 3.0f;
 
         // Cloud
+		static constexpr float             CLOUD_RADIUS = 71000.0f;
         static constexpr float             CLOUD_BOTTOM = 2350.0f;
         static constexpr float             CLOUD_TOP = 3350.0f;
 
-		static constexpr float             CLOUD_COVERAGE = 0.52f;
+		static constexpr float             CLOUD_COVERAGE = 0.552f;
         static constexpr float             CLOUD_BASE_SCALE = 1.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
@@ -87,13 +88,20 @@ namespace SharedConstants {
         static constexpr float  WIND_SPEED = 1.5f;
         static constexpr float  WIND_SCALE = 200.0f;
 
-        static constexpr float HENYEY_GREENSTEIN_SCALE = 2.5f;
-        static constexpr float POWDER_FACTOR = 0.75f;
-        static constexpr float LIGHTING_SCALE = 0.2f;
+        static constexpr float HENYEY_GREENSTEIN_SCALE = 1.5f;
+        static constexpr float POWDER_FACTOR = 0.5f;
+        static constexpr float LIGHTING_SCALE = 0.1f;
         static constexpr float HORIZON_FADE_SCALE = 0.08f;
 
         // lensflare
         static constexpr DirectX::XMFLOAT3 LENSFLARE_RETOUCH_COLOR = { 1.4f, 1.2f, 1.0f };
+
+        // GRASS
+        static constexpr float GRASS_BLADE_WIDTH = 5.0f;
+		static constexpr float GRASS_BLADE_HEIGHT = 7.0f;
+        static constexpr float WIND_STRENGTH = 1.0f;
+        static constexpr float DIST = 500.0f;
+        static constexpr float ALPHA_CUT = 0.3f;
 
     } // BuffersConstants
 }

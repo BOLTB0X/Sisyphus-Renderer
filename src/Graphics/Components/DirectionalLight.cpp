@@ -15,6 +15,8 @@ DirectionalLight::DirectionalLight()
     m_lookAt = { 0.0f, 0.0f, 0.0f };
     m_viewMatrix = XMMatrixIdentity();
     m_projectionMatrix = XMMatrixIdentity();
+	m_objectViewMatrix = XMMatrixIdentity();
+	m_objectProjMatrix = XMMatrixIdentity();
     m_rotationSpeed = 0.5f;
 } // DirectionalLight
 
@@ -27,6 +29,7 @@ bool DirectionalLight::Init(ID3D11Device* device, HWND  hwnd) {
     m_ambient = BuffersConstants::LIGHT_AMBIENT;
     m_sunset = BuffersConstants::SUNSET_LIGHT_COLOR;
     m_night = BuffersConstants::NIGHT_LIGHT_COLOR;
+
     Update();
     return true;
 } // Init
@@ -36,18 +39,38 @@ void DirectionalLight::Update() {
     XMVECTOR upVector = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     dir = XMVector3Normalize(dir);
 
-    float distance = 100.0f;
     XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
-    XMVECTOR lightPos = lookAt - (dir * distance);
+    XMVECTOR lightPos = lookAt - (dir * 2000.0f);
 
     if (abs(XMVectorGetY(dir)) > 0.999f)
-    {
         upVector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-    }
-    m_viewMatrix = XMMatrixLookAtLH(lightPos, lookAt, upVector);
 
-    m_projectionMatrix = XMMatrixOrthographicLH(ShadowConstants::VIEW_WIDTH, ShadowConstants::VIEW_HEIGHT, ShadowConstants::NEAR_Z, ShadowConstants::FAR_Z);
+    m_viewMatrix = XMMatrixLookAtLH(lightPos, lookAt, upVector);
+    m_projectionMatrix = XMMatrixOrthographicLH(ShadowConstants::TERRAIN_VIEW_WIDTH,
+        ShadowConstants::TERRAIN_VIEW_HEIGHT,
+        ShadowConstants::NEAR_Z,
+        ShadowConstants::FAR_Z
+    );
 } // Update
+
+void DirectionalLight::UpdateObjectShadow(const XMFLOAT3& objectPos) {
+    XMVECTOR dir = XMLoadFloat3(&m_direction);
+    dir = XMVector3Normalize(dir);
+
+    XMVECTOR upVector = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    if (abs(XMVectorGetY(dir)) > 0.999f)
+        upVector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+
+    XMVECTOR lookAt = XMLoadFloat3(&objectPos);
+    XMVECTOR lightPos = lookAt - (dir * 100.0f);
+
+    m_objectViewMatrix = XMMatrixLookAtLH(lightPos, lookAt, upVector);
+    m_objectProjMatrix = XMMatrixOrthographicLH(ShadowConstants::OBJECT_VIEW_WIDTH,
+        ShadowConstants::OBJECT_VIEW_HEIGHT,
+        ShadowConstants::NEAR_Z,
+        ShadowConstants::OBJECT_FAR_Z
+    );
+} // UpdateObjectShadow
 
 void DirectionalLight::Rotate(float deltaTime) {
     float angle = m_rotationSpeed * deltaTime;
@@ -120,8 +143,15 @@ void DirectionalLight::OnGui() {
     }
 } // OnGui
 
-void     DirectionalLight::SetLookAt(XMFLOAT3 lookAt) { m_lookAt = XMFLOAT3(lookAt); return; }
-void     DirectionalLight::SetLookAt(float x, float y, float z) { m_lookAt = XMFLOAT3(x, y, z); return; }
+void DirectionalLight::SetLookAt(XMFLOAT3 lookAt) { 
+    m_lookAt = XMFLOAT3(lookAt);
+    return;
+} // DirectionalLight
+
+void DirectionalLight::SetLookAt(float x, float y, float z) { 
+    m_lookAt = XMFLOAT3(x, y, z);
+    return;
+} // SetLookAt
 
 XMFLOAT3 DirectionalLight::GetPosition() const {
     XMVECTOR dir = XMLoadFloat3(&m_direction);
@@ -141,6 +171,8 @@ XMFLOAT4 DirectionalLight::GetLight() const { return m_night; }
 XMFLOAT3 DirectionalLight::GetLookAt() const { return m_lookAt; }
 XMMATRIX DirectionalLight::GetViewMatrix() const { return m_viewMatrix; }
 XMMATRIX DirectionalLight::GetProjection() const { return m_projectionMatrix; }
+XMMATRIX DirectionalLight::GetObjectViewMatrix() const { return m_objectViewMatrix; }
+XMMATRIX DirectionalLight::GetObjectProjection() const { return m_objectProjMatrix; }
 
 XMFLOAT2 DirectionalLight::GetUV(const XMMATRIX& view, const XMMATRIX& proj) const {
     XMVECTOR dir = XMLoadFloat3(&m_direction);

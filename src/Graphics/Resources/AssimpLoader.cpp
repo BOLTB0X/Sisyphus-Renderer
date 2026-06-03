@@ -62,6 +62,7 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
 
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* aiMat = scene->mMaterials[i];
+        std::string matName = aiMat->GetName().C_Str();
 
         futures.push_back(std::async(std::launch::async, [=]() {
             HRESULT hrCo = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -70,6 +71,7 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             device->CreateDeferredContext(0, deferredContext.GetAddressOf());
 
             AssimpModel::Material myMaterial;
+
             myMaterial.name = aiMat->GetName().C_Str();
 
             myMaterial.albedo = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Albedo);
@@ -77,6 +79,11 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Metallic);
             myMaterial.roughness = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Roughness);
             myMaterial.ao = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::AO);
+            myMaterial.alpha = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Alpha);
+			myMaterial.specular = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Specular);
+			myMaterial.emissive = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Emissive);
+			myMaterial.displacement = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Displacement);
+            myMaterial.leaf = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Leaf);
 
             {
                 std::lock_guard<std::mutex> lock(m_cacheMutex);
@@ -86,7 +93,9 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             Microsoft::WRL::ComPtr<ID3D11CommandList> commandList;
             deferredContext->FinishCommandList(FALSE, commandList.GetAddressOf());
 
-            if (SUCCEEDED(hrCo)) CoUninitialize();
+            if (SUCCEEDED(hrCo)) {
+                CoUninitialize();
+            }
 
             return commandList; // 명령 리스트 반환
         })); // futures
@@ -148,7 +157,10 @@ std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device,
             break; 
         }
     }
-    if (!keywords) return nullptr;
+
+    if (!keywords) {
+        return nullptr;
+    }
 
     static const std::vector<std::string> exts = { ".png", ".jpg", ".jpeg", ".tga", ".dds"};
 

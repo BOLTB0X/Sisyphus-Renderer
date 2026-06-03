@@ -33,6 +33,13 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
         return false;
     }
 
+	LoadTexture(device, context, PathConstants::BLUE_NOISE);
+	LoadTexture(device, context, PathConstants::NOISE_2D);
+	LoadTexture(device, context, PathConstants::HEIGHT, true);
+	LoadTexture(device, context, PathConstants::GRASS);
+	LoadTexture(device, context, PathConstants::GROUND);
+	//LoadTexture(device, context, PathConstants::LEAF);
+
     CreateVolumeTexture(device, PathConstants::KEY_WORLEY_NOISE, 32, 32, 32, DXGI_FORMAT_R16G16B16A16_FLOAT);
     CreateCloudNoise(context, PathConstants::KEY_WORLEY_NOISE);
     return true;
@@ -74,10 +81,29 @@ void TextureManager::CreateCloudNoise(ID3D11DeviceContext* context, const std::s
 
 } // CreateNoise
 
+void TextureManager::LoadTexture(
+    ID3D11Device* device,
+    ID3D11DeviceContext* context,
+    const std::string& filename,
+    bool keepCpuPixels) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    auto it = m_Textures.find(filename);
+    if (it != m_Textures.end()) {
+        return;
+    }
+
+    auto newTexture = std::make_shared<Texture>();
+    if (newTexture->Init(device, context, filename, keepCpuPixels)) {
+        m_Textures[filename] = newTexture;
+    }
+} // LoadTexture
+
 std::shared_ptr<Texture> TextureManager::GetTexture(
     ID3D11Device* device,
     ID3D11DeviceContext* context,
-    const std::string& filename) {
+    const std::string& filename,
+    bool keepCpuPixels) {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     auto it = m_Textures.find(filename);
@@ -85,7 +111,7 @@ std::shared_ptr<Texture> TextureManager::GetTexture(
         return it->second;
 
     auto newTexture = std::make_shared<Texture>();
-    if (newTexture->Init(device, context, filename)) {
+    if (newTexture->Init(device, context, filename, keepCpuPixels)) {
         m_Textures[filename] = newTexture;
         return newTexture;
     }

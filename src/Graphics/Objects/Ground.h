@@ -3,30 +3,36 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <memory>
+#include <vector>
 #include "Components/Transform.h"
+#include "Components/QuadTree.h"
 #include "Resources/ConstantBufferType.h"
-#include "Utils/SharedConstants/BuffersConstants.h"
+// Utils
+#include "SharedConstants/BuffersConstants.h"
 
-class DefaultMesh;
+class Frustum;
+class Texture;
 
 class Ground {
 public:
     struct InitParams {
-        ID3D11Device* device;
-        HWND          hwnd;
+        ID3D11Device*             device;
+        HWND                      hwnd;
+        std::shared_ptr<Texture>  heightMapTex;
+		ID3D11ShaderResourceView* groundSRV;
+        ID3D11SamplerState*       linearSampler;
 
-		InitParams() : device(nullptr), hwnd(nullptr) {
+		InitParams() : device(nullptr), hwnd(nullptr), 
+            heightMapTex(nullptr), groundSRV(nullptr), linearSampler(nullptr) {
         }
     }; // InitParams
 
     struct RenderParams {
         DirectX::XMFLOAT3         cameraPosition;
         float                     time;
-		ID3D11ShaderResourceView* shadowSRV;
-		ID3D11SamplerState*       shadowSampler;
+        Frustum*                  frustum;
 
-        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f),
-            shadowSRV(nullptr), shadowSampler(nullptr) {
+        RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f), frustum(nullptr) {
         }
     }; // RenderParams
 
@@ -38,25 +44,26 @@ public:
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void DrawIndexed(ID3D11DeviceContext*);
 
-    void              OnGui();
-    DirectX::XMMATRIX GetWorldMatrix();
+    void                                 OnGui();
+    DirectX::XMMATRIX                    GetWorldMatrix();
+    float                                GetHeightAt(float, float) const;
+    const std::vector<QuadTree::QuadTreeNode*>& GetVisibleNodes() const;
 
 private:
     struct GroundBuffer {
         DirectX::XMFLOAT3 darkSand;
         float             padding1;
         DirectX::XMFLOAT3 lightSand;
-        float             padding2;
+        float             cameraDist;
 
         GroundBuffer() {
             darkSand = SharedConstants::BuffersConstants::DARK_SAND;
             padding1 = 0.0f;
             lightSand = SharedConstants::BuffersConstants::LIGHT_SAND;
-            padding2 = 0.0f;
+            cameraDist = SharedConstants::BuffersConstants::DIST;
         }
     }; // GroundBuffer
 
-private:
     struct WorldBuffer {
         DirectX::XMMATRIX world;
 
@@ -69,21 +76,26 @@ private:
     bool InitShader(ID3D11Device*, HWND);
 
     bool UpdateGroundBuffer(ID3D11DeviceContext*);
-    bool UpdateShadowBuffer(ID3D11DeviceContext*, const DirectX::XMMATRIX&);
+    void GenerateTerrainGrid(int, int, float, std::vector<QuadTree::TerrainVertex>&, std::vector<UINT>&);
 
 private:
-    std::unique_ptr<DefaultMesh>               m_mesh;
+    std::unique_ptr<QuadTree>                  m_quadTree;
+    std::vector<QuadTree::QuadTreeNode*>       m_visibleNodes;
+    std::vector<QuadTree::QuadTreeNode*>       m_allLeafNodes;
+
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_groundBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_shadowBuffer;
 
     WorldBuffer                                m_worldData;
     GroundBuffer                               m_GoundData;
     GroundBuffer                               m_prevGoundData;
-    ConstantBuffer::ShadowBuffer               m_ShadowData;
-    ConstantBuffer::ShadowBuffer               m_prevShadowData;
     Transform                                  m_transform;
+    std::shared_ptr<Texture>                   m_heightMap;
+    ID3D11ShaderResourceView*                  m_groundSRV;
+    ID3D11ShaderResourceView*                  m_objectShadowSRV;
+    ID3D11ShaderResourceView*                  m_terrainShadowSRV;
+    ID3D11SamplerState*                        m_linearSampler;
 }; // Ground

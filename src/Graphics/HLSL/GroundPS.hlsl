@@ -4,13 +4,18 @@
 #include "ShadowMap.hlsli"
 #include "Ground.hlsli"
 
-SamplerComparisonState shadowSampler : register(s5);
-Texture2D shadowMap : register(t10);
+SamplerState           LinearSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s5);
+
+Texture2D ObjectShadowMap : register(t10);
+Texture2D TerrainShadowMap : register(t11);
+Texture2D GroundTex : register(t12);
 
 struct PS_IN
 {
     float4 pos : SV_POSITION;
     float3 worldPos : POSITION;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD;
 }; // PS_IN
 
@@ -26,48 +31,47 @@ cbuffer GroundBuffer : register(b3)
     float  gPadding1;
     // [Row 2]
     float3 gLightSand;
-    float gPadding2;
+    float  gDist;
 }; // GroundBuffer
-
-cbuffer ShadowBuffer : register(b4)
-{
-    // [Row 1 ~ 2]
-    matrix sShadowWorld;
-    // [Row 3]
-    float  sMapWidth;
-    float  sMapHeight;
-    float  sBias;
-    // [Row 4]
-    float  sSpread;
-    float4 sPadding;
-}; // ShadowBuffer
 
 #define WORLD               cWorld
 
 #define COLOR_DARK_SAND     gDarkSand
 #define COLOR_LIGHT_SAND    gLightSand
-
-#define SHADOW_WORLD        sShadowWorld
-#define SHADOW_MAP_SIZE     float2(sMapWidth, sMapHeight)
-#define SHADOW_BIAS         sBias
-#define SHADOW_SPREAD       sSpread
+#define GROUND_DETAIL_DIST  gDist
 
 float4 main(PS_IN input) : SV_TARGET
 {
     float distToCamera = length(input.worldPos - CAMERA_POSITION);
-
-    float sandPattern = get_sand_texture(input.worldPos.xz * 0.1, distToCamera);
+    float2 tiledUV = input.worldPos.xz * 0.02f; // 타일링
+    float4 groundTex = GroundTex.Sample(LinearSampler, tiledUV);
+    float grassBlend = smoothstep(GROUND_DETAIL_DIST * 2.0f, GROUND_DETAIL_DIST * 1.5f, distToCamera);
+    float3 baseColor = lerp(groundTex.rgb, COLOR_DARK_SAND, grassBlend);
     
-    float3 baseColor = lerp(COLOR_DARK_SAND, COLOR_LIGHT_SAND, sandPattern);
-    
-    float3 normal = float3(0, 1, 0);
+    float3 normal = normalize(input.normal);
     float diff = saturate(dot(normal, -LIGHT_DIRECTION));
     
     float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);
     float4 lightClipPos = mul(lightViewPos, LIGHT_PROJ);
     
-    float2 shadowMapSize = SHADOW_MAP_SIZE;
-    float shadowFactor = calculate_poisson_shadow(shadowSampler, shadowMap, lightClipPos, shadowMapSize, SHADOW_SPREAD, SHADOW_BIAS);
+    float4 objLightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_OBJECT_VIEW);
+    float4 objLightClipPos = mul(objLightViewPos, LIGHT_OBJECT_PROJ);
+    
+    float3 ndcPos = lightClipPos.xyz / lightClipPos.w;
+    
+    float terrainShadow = 1.0f;
+    float objectShadow = 1.0f;
 
-    return float4(baseColor * shadowFactor * diff, 1.0f);
+    if (ndcPos.x >= -1.0f && ndcPos.x <= 1.0f &&
+    ndcPos.y >= -1.0f && ndcPos.y <= 1.0f &&
+    ndcPos.z >= 0.0f && ndcPos.z <= 1.0f)
+    {
+        terrainShadow = calculate_poisson_shadow(ShadowSampler, TerrainShadowMap, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+        objectShadow = calculate_poisson_shadow(ShadowSampler, ObjectShadowMap, objLightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+    }
+    
+    float shadowFactor = min(terrainShadow, objectShadow);
+    float lighting = saturate(diff * shadowFactor);
+    
+    return float4(baseColor * lighting, 1.0f);
 } // main

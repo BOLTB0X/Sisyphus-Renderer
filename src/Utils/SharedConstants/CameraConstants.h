@@ -11,8 +11,7 @@ namespace SharedConstants {
         static constexpr float MIN_FOV = 1.0f;
         static constexpr float MAX_FOV = 129.0f;
 
-
-        static constexpr DirectX::XMFLOAT3 DEFAULT_POSITION = { 0.0f, 3.0f, -25.0f };
+        static constexpr DirectX::XMFLOAT3 DEFAULT_POSITION = { 0.0f, 100.0f, -250.0f };
         static constexpr DirectX::XMFLOAT3 DEFAULT_ROTATION = { 0.0f, 0.0f, 0.0f };
         static constexpr float DEFAULT_FOV = 60.0f;
 
