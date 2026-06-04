@@ -71,21 +71,12 @@ bool ShadowMap::RenderTransparent(ID3D11DeviceContext* context, const RenderPara
         return false;
     }
 
-    Tree::CheckLeafBuffer cbData;
-    cbData.isLeaf = params.isLeaf;
-
-    if (!ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), cbData)) {
-        DebugHelper::DebugPrint("리프 buffer 문제");
-        return false;
-    }
-
-    if (params.albedoSRV) {
-        context->PSSetShaderResources(0, 1, &params.albedoSRV);
+    if (params.alphaSRV) {
+        context->PSSetShaderResources(0, 1, &params.alphaSRV);
     }
     context->PSSetSamplers(0, 1, &params.linearSampler);
 
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(1, 1, m_checkLeafBuffer.GetAddressOf());
     context->IASetInputLayout(m_transparentLayout.Get());
 
     context->VSSetShader(m_transparentDepthVertexShader.Get(), nullptr, 0);
@@ -140,10 +131,6 @@ bool ShadowMap::InitShader(ID3D11Device* device, HWND hwnd) {
     if (!InitConstantBuffer<MatrixBuffer>(device, m_matrixBuffer.GetAddressOf())) {
         return false;
     }
-
-    if (!InitConstantBuffer<Tree::CheckLeafBuffer>(device, m_checkLeafBuffer.GetAddressOf())) {
-        return false;
-	}
 
     return true;
 } // InitShader

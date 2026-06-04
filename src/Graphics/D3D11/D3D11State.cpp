@@ -45,6 +45,7 @@ ID3D11SamplerState*      D3D11State::GetLinearClampSamplerState() const { return
 ID3D11SamplerState*      D3D11State::GetShadowSamplerState() const { return m_shadowSamplerState.Get(); }
 ID3D11SamplerState*      D3D11State::GetPointClampSamplerState() const { return m_pointClampSamplerState.Get(); }
 ID3D11BlendState*        D3D11State::GetBlendState() const { return m_blendState.Get(); }
+ID3D11BlendState*        D3D11State::GetNoBlendState() const { return m_noBlendState.Get(); }
 
 bool D3D11State::InitCullBack(ID3D11Device* device) {
     D3D11_RASTERIZER_DESC rasterDesc = {};
@@ -163,7 +164,16 @@ bool D3D11State::InitBlendState(ID3D11Device* device) {
     blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
     blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    //blendDesc.RenderTarget[0].RenderTargetWriteMask = 0x0f;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    return SUCCEEDED(device->CreateBlendState(&blendDesc, &m_blendState));
+    if (!SUCCEEDED(device->CreateBlendState(&blendDesc, &m_blendState))) {
+        return false;
+    }
+
+    D3D11_BLEND_DESC noBlendDesc = {};
+    noBlendDesc.RenderTarget[0].BlendEnable = FALSE;
+    noBlendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    return SUCCEEDED(device->CreateBlendState(&noBlendDesc, &m_noBlendState));
 } // InitBlendState

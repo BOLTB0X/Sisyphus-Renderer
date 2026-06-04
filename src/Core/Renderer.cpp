@@ -312,6 +312,9 @@ void Renderer::Shutdown() {
     if (m_Ground) {
         m_Ground.reset();
     }
+    if (m_Tree) {
+        m_Tree.reset();
+	}
     if (m_Stone) {
         m_Stone.reset();
     }
@@ -327,7 +330,7 @@ void Renderer::Shutdown() {
         m_DirectionalLight.reset();
     }
 
-    // 상수 버퍼]
+    // 상수 버퍼
     if (m_lightBuffer) {
         m_lightBuffer.Reset();
     }
@@ -396,7 +399,7 @@ void Renderer::UpdateObjectTransform() {
 
     pos = m_Tree->GetPosition();
     terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_Tree->SetPosition(pos.x, terrainY, pos.z);
+    m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateObjectTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -417,12 +420,16 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
 
     if (m_Tree) {
+		Tree::RenderShadowParams shadowParams;
+		shadowParams.shadowMap = m_ObjectShadowMap.get();
+
         renderParams.viewMatrix = sharedView;
         renderParams.projectionMatrix = sharedProj;
         renderParams.worldMatrix = m_Tree->GetWorldMatrix();
+		shadowParams.shadowParams = &renderParams;
+		shadowParams.states = states;
 
-        m_ObjectShadowMap->RenderTransparent(context, renderParams);
-        m_Tree->RenderShadow(context, m_ObjectShadowMap.get(), renderParams);
+        m_Tree->RenderShadow(context,shadowParams);
     }
 
     if (m_Stone) {
@@ -547,7 +554,7 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
 void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
+    //context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
 
     if (!m_Stone) {
         return;
@@ -555,6 +562,7 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
 
     Stone::RenderParams stoneParams;
     stoneParams.world = m_Stone->GetWorldMatrix();
+    context->OMSetBlendState(states->GetNoBlendState(), m_blendFactor, 0xffffffff);
     m_Stone->Render(context, stoneParams);
 
     if (!m_Tree) {
@@ -563,6 +571,7 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
 
     Tree::RenderParams treeParams;
     treeParams.world = m_Tree->GetWorldMatrix();
+    treeParams.states = states;
     m_Tree->Render(context, treeParams);
 
 } // DrawModel
@@ -582,7 +591,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 	skyParams.skyLUT = m_AtmosphereLUT->GetLUT();
 
     m_SkyBox->Render(context, skyParams);
-    context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+    context->OMSetBlendState(states->GetNoBlendState(), m_blendFactor, 0xffffffff);
 } // DrawSkyBox
 
 void Renderer::DrawGrass(ID3D11DeviceContext* context, D3D11State* states) {

@@ -9,6 +9,8 @@ SamplerComparisonState ShadowSampler : register(s5);
 Texture2D AlbedoTex : register(t0);
 Texture2D NormalTex : register(t1);
 Texture2D RoughnessTex : register(t2);
+Texture2D AlphaTex : register(t3);
+Texture2D SubsurfaceTex : register(t4);
 Texture2D ObjectShadowMap : register(t10);
 Texture2D TerrainShadowMap : register(t11);
 
@@ -22,58 +24,56 @@ struct PS_INPUT
     float3 binormal : BINORMAL;
 }; // PS_INPUT
 
-cbuffer CheckLeafBuffer : register(b3)
+cbuffer CheckTransparentBuffer : register(b3)
 {
-    int   isLeaf;
+    int    isLeaf;
     float3 padding;
-}; // CheckLeafBuffer
+}; // CheckTransparentBuffer
 
 #define IS_LEAF isLeaf
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
     float4 albedo = AlbedoTex.Sample(LinearSampler, input.texCoord);
+    float4 alphaSample = AlphaTex.Sample(LinearSampler, input.texCoord);
     
-    float3 N = normalize(input.normal);
-    float3 L = normalize(-LIGHT_DIRECTION);
+    float leafAlpha = (any(alphaSample)) ? alphaSample.r : albedo.a;
+
+    float3 normalMap = NormalTex.Sample(LinearSampler, input.texCoord).rgb;
+    float roughness = RoughnessTex.Sample(LinearSampler, input.texCoord).r;
+    float sssMask = SubsurfaceTex.Sample(LinearSampler, input.texCoord).r;
+
+    float3 normalSample = normalMap * 2.0f - 1.0f;
+    float3x3 TBN = float3x3(normalize(input.tangent), normalize(input.binormal), normalize(input.normal));
+    float3 N = normalize(mul(normalSample, TBN));
+    
     float3 V = normalize(CAMERA_POSITION - input.worldPos);
+    float3 L = normalize(-LIGHT_DIRECTION);
+    float3 H = normalize(V + L);
     float3 lightColor = get_dynamic_light_color(LIGHT_DIRECTION.y).rgb;
+
+    float NdotV = saturate(dot(N, V));
+    float NdotL = saturate(dot(N, L));
+
+    float3 F0 = float3(0.04f, 0.04f, 0.04f);
+    float NDF = distribution_GGX(N, H, roughness);
+    float G = geometry_smith(N, V, L, roughness);
+    float3 F = fresnel_schlick(saturate(dot(H, V)), F0);
+
+    float3 numerator = NDF * G * F;
+    float denominator = 4.0f * max(NdotV, 0.001f) * max(NdotL, 0.001f);
+    float3 specular = numerator / denominator;
+
+    float3 kS = F;
+    float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
+
+    float3 finalColor = (kD * albedo.rgb / PI + specular) * lightColor * NdotL;
     
-    float3 finalColor = float3(0, 0, 0);
-
-    if (IS_LEAF == 1)
+    if (IS_LEAF)
     {
-        clip(albedo.a - 0.1f);
-        
-        float NdotL = saturate(dot(N, L));
-        finalColor = albedo.rgb * lightColor * NdotL;
-    }
-    else
-    {
-        float3 normalMap = NormalTex.Sample(LinearSampler, input.texCoord).rgb;
-        float roughness = RoughnessTex.Sample(LinearSampler, input.texCoord).r;
-
-        float3 normalSample = normalMap * 2.0f - 1.0f;
-        float3x3 TBN = float3x3(normalize(input.tangent), normalize(input.binormal), normalize(input.normal));
-        N = normalize(mul(normalSample, TBN));
-
-        float NdotL = saturate(dot(N, L));
-        float NdotV = saturate(dot(N, V));
-        float3 H = normalize(V + L);
-
-        float3 F0 = float3(0.04f, 0.04f, 0.04f);
-        float NDF = distribution_GGX(N, H, roughness);
-        float G = geometry_smith(N, V, L, roughness);
-        float3 F = fresnel_schlick(saturate(dot(H, V)), F0);
-
-        float3 numerator = NDF * G * F;
-        float denominator = 4.0f * max(NdotV, 0.001f) * max(NdotL, 0.001f);
-        float3 specular = numerator / denominator;
-
-        float3 kS = F;
-        float3 kD = float3(1.0f, 1.0f, 1.0f) - kS;
-
-        finalColor = (kD * albedo.rgb / PI + specular) * lightColor * NdotL;
+        clip(leafAlpha - 0.3f);
+        float3 sss = albedo.rgb * sssMask * saturate(dot(V, -L)) * lightColor * 2.0f;
+        finalColor += sss;
     }
 
     float4 lightViewPos = mul(float4(input.worldPos, 1.0f), LIGHT_VIEW);

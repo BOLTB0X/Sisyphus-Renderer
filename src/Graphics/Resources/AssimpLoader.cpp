@@ -3,6 +3,8 @@
 #include "PBRMesh.h"
 #include "Texture.h"
 #include "Components/TextureManager.h"
+// Utils
+#include "Helpers/DebugHelper.h"
 // STL
 #include <filesystem>
 #include <objbase.h>
@@ -58,7 +60,7 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
     std::string pbrDir = (std::filesystem::exists(directory + "/textures/")) ? directory + "/textures/" : directory + "/";
     std::string modelName = std::filesystem::path(directory).stem().string();
 
-    std::vector<std::future<Microsoft::WRL::ComPtr<ID3D11CommandList>>> futures;
+    std::vector<std::future<AsyncMatResult>> futures;
 
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* aiMat = scene->mMaterials[i];
@@ -71,24 +73,19 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             device->CreateDeferredContext(0, deferredContext.GetAddressOf());
 
             AssimpModel::Material myMaterial;
-
             myMaterial.name = aiMat->GetName().C_Str();
 
-            myMaterial.albedo = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Albedo);
-            myMaterial.normal = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Normal);
-            myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Metallic);
-            myMaterial.roughness = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Roughness);
-            myMaterial.ao = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::AO);
-            myMaterial.alpha = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Alpha);
-			myMaterial.specular = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Specular);
-			myMaterial.emissive = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Emissive);
-			myMaterial.displacement = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Displacement);
-            myMaterial.leaf = LoadMaterialElement(device, deferredContext.Get(), pbrDir, modelName, PBRTextureType::Leaf);
-
-            {
-                std::lock_guard<std::mutex> lock(m_cacheMutex);
-                outModel->AddMaterial(myMaterial);
-            }
+            // 지연 컨텍스트(deferredContext)를 사용하여 안전하게 텍스처 로드
+            myMaterial.albedo = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Albedo);
+            myMaterial.normal = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Normal);
+            myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Metallic);
+            myMaterial.roughness = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Roughness);
+            myMaterial.ao = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::AO);
+            myMaterial.alpha = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Alpha);
+            myMaterial.specular = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Specular);
+            myMaterial.emissive = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Emissive);
+            myMaterial.displacement = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Displacement);
+            myMaterial.subsurface = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Subsurface);
 
             Microsoft::WRL::ComPtr<ID3D11CommandList> commandList;
             deferredContext->FinishCommandList(FALSE, commandList.GetAddressOf());
@@ -97,13 +94,24 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
                 CoUninitialize();
             }
 
-            return commandList; // 명령 리스트 반환
-        })); // futures
-	} // for - material
+            // 로드된 머테리얼 데이터와 커맨드 리스트를 구조체로 묶어서 반환
+            AsyncMatResult result;
+            result.material = myMaterial;
+            result.commandList = commandList;
+
+            return result;
+            })); // futures
+    } // for - material
+
 
     for (auto& f : futures) {
-        auto cmdList = f.get();
-        if (cmdList) { context->ExecuteCommandList(cmdList.Get(), FALSE); }
+        AsyncMatResult result = f.get(); // 해당 인덱스 스레드가 끝날 때까지 동기 대기
+
+        // 메인 스레드에서 순서대로 집어넣으므로 뮤텍스 락도 필요 없어짐
+        outModel->AddMaterial(result.material);
+        if (result.commandList) {
+            context->ExecuteCommandList(result.commandList.Get(), FALSE);
+        }
     }
 } // ProcessMaterials
 
@@ -148,31 +156,62 @@ std::unique_ptr<PBRMesh> AssimpLoader::ProcessMesh(aiMesh* mesh,  const aiScene*
 } // ProcessMesh
 
 std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device, ID3D11DeviceContext* context,
-    const std::string& pbrDir, const std::string& modelName, PBRTextureType type) {
+    aiMaterial* aiMat, const std::string& pbrDir, const std::string& modelName, const std::string& matName, PBRTextureType type) {
+
+    // FBX 파일 내부에 텍스처 경로가 저장되어 있는지 확인
+    aiTextureType aiType = aiTextureType_NONE;
+    if (type == PBRTextureType::Albedo) aiType = aiTextureType_DIFFUSE;
+    else if (type == PBRTextureType::Normal) aiType = aiTextureType_NORMALS;
+    else if (type == PBRTextureType::Metallic) aiType = aiTextureType_METALNESS;
+    else if (type == PBRTextureType::Roughness) aiType = aiTextureType_DIFFUSE_ROUGHNESS;
+    else if (type == PBRTextureType::Alpha) aiType = aiTextureType_OPACITY;
+    else if (type == PBRTextureType::AO) aiType = aiTextureType_LIGHTMAP;
+    else if (type == PBRTextureType::Emissive) aiType = aiTextureType_EMISSIVE;
+    else if (type == PBRTextureType::Displacement) aiType = aiTextureType_DISPLACEMENT;
+	else if (type == PBRTextureType::Specular) aiType = aiTextureType_SPECULAR;
+	else if (type == PBRTextureType::Subsurface) aiType = aiTextureType_NONE;
+
+    if (aiType != aiTextureType_NONE && aiMat->GetTextureCount(aiType) > 0) {
+        aiString str;
+        aiMat->GetTexture(aiType, 0, &str);
+        std::string texPath = pbrDir + str.C_Str();
     
-    const std::vector<std::string>* keywords = nullptr;
-    for (const auto& entry : PBRTEXTURE_KEYWORD_MAP) {
-        if (entry.type == type) { 
-            keywords = &entry.keywords;
-            break; 
+        if (std::filesystem::exists(texPath)) {
+            auto tex = m_TextureMgr->GetTexture(device, context, texPath);
+            if (tex) return tex;
         }
     }
 
+    // FBX에 경로가 없거나 끊어졌다면 기존의 "키워드" 검색
+    const std::vector<std::string>* keywords = nullptr;
+    for (const auto& entry : PBRTEXTURE_KEYWORD_MAP) {
+        if (entry.type == type) {
+            keywords = &entry.keywords;
+            break;
+        }
+    }
     if (!keywords) {
         return nullptr;
     }
 
-    static const std::vector<std::string> exts = { ".png", ".jpg", ".jpeg", ".tga", ".dds"};
+    static const std::vector<std::string> exts = { ".png", ".jpg", ".jpeg", ".tga", ".dds" };
 
-    for (const auto& key : *keywords) {
-        for (const auto& ext : exts) {
-            std::string fullPath = pbrDir + modelName + key + ext;
-            if (std::filesystem::exists(fullPath)) {
-                auto tex = m_TextureMgr->GetTexture(device, context, fullPath);
-                if (tex) { return tex; }
-            }
-        } // for - ext
-    } // for - key
+    std::vector<std::string> prefixes = { matName, modelName };
+
+    for (const auto& prefix : prefixes) {
+        for (const auto& key : *keywords) {
+            for (const auto& ext : exts) {
+                std::string fullPath = pbrDir + prefix + key + ext;
+                if (std::filesystem::exists(fullPath)) {
+                    auto tex = m_TextureMgr->GetTexture(device, context, fullPath);
+                    if (tex) {
+                        //DebugHelper::DebugPrint("Loaded Texture: " + fullPath + " for Material: " + matName);
+                        return tex;
+                    }
+                }
+            } // for - ext
+        } // for - key
+    } // for - prefix
 
     return nullptr;
 } // LoadMaterialElement

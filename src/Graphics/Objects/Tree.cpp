@@ -1,5 +1,7 @@
 #include "Pch.h"
 #include "Objects/Tree.h"
+// D3D11
+#include "D3D11/D3D11State.h"
 // Components
 #include "Components/TextureManager.h"
 // Resources
@@ -10,15 +12,14 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
 // define
-#define TRANSFORM_OFFSET       10.0f
-#define KEYWORD_LEAF           "ascht"
+#define TRANSFORM_OFFSET       20.0f
 #define WORLD_BUFFER_SLOT      2
 #define CHECK_LEAF_BUFFER_SLOT 3
 #define ABEDO_TEXTURE_SLOT     0
 #define NORMAL_TEXTURE_SLOT    1
 #define ROUGHNESS_TEXTURE_SLOT 2
 #define OPACITY_TEXTURE_SLOT   3
-#define LEAF_TEXTURE_SLOT      4
+#define SSS_TEXTURE_SLOT       4
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -27,11 +28,13 @@ Tree::Tree() : AssimpModel() {
     m_linerSampler = nullptr;
     m_transform = Transform();
     m_RenderCount = 0;
+	m_checkTranspData = CheckTransparentBuffer();
+    m_leafKeywords = { "ClusterB", "ClusterB2" };
 } // Tree
 
 Tree::~Tree() {
     m_linerSampler = nullptr;
-} // ~Stone
+} // ~Tree
 
 bool Tree::Init(const InitParams& params) {
     if (params.device == nullptr || params.context == nullptr) {
@@ -55,6 +58,20 @@ bool Tree::Init(const InitParams& params) {
 } // Init
 
 void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+    auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
+        if (srv) {
+            context->PSSetShaderResources(slot, 1, &srv);
+        }
+        else {
+            ID3D11ShaderResourceView* nullSRV = nullptr;
+            context->PSSetShaderResources(slot, 1, &nullSRV);
+        }
+    };
+
+    if (!context || !params.states) {
+        return;
+	}
+
     m_worldData.world = XMMatrixTranspose(params.world);
     if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
         DebugHelper::DebugPrint("world buffer 문제");
@@ -72,62 +89,68 @@ void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     for (const auto& mesh : m_meshes) {
         unsigned int matIndex = mesh->GetMaterialIndex();
 
-        if (matIndex < m_materials.size()) {
-            const auto& mat = m_materials[matIndex];
-
-            context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
-
-            m_checkLeafData.isLeaf = (mat.name.find(KEYWORD_LEAF) != std::string::npos);
-            if (!ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), m_checkLeafData)) {
-                DebugHelper::DebugPrint("리프 buffer 문제");
-                return;
-            }
-            context->PSSetConstantBuffers(CHECK_LEAF_BUFFER_SLOT, 1, m_checkLeafBuffer.GetAddressOf());
-
-            auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
-                if (srv) {
-                    context->PSSetShaderResources(slot, 1, &srv);
-                }
-                else {
-                    ID3D11ShaderResourceView* nullSRV = nullptr;
-                    context->PSSetShaderResources(slot, 1, &nullSRV);
-                }
-            };
-
-            if (m_checkLeafData.isLeaf) {
-                BindTexture(mat.leaf ? mat.leaf->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
-            }
-            else {
-                BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
-			}
-            BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
-            BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
+        if (matIndex >= m_materials.size()) {
+            continue;
+        }
+        
+        const auto& mat = m_materials[matIndex];
+        context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+        
+        m_checkTranspData.isLeaf = IsTransparentMaterial(mat.name) ? 1 : 0;
+        if (!ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), m_checkTranspData)) {
+            //DebugHelper::DebugPrint("투과 buffer 문제");
+            return;
+        }
+        
+        context->PSSetConstantBuffers(CHECK_LEAF_BUFFER_SLOT, 1, m_checkLeafBuffer.GetAddressOf());
+        
+        if (m_checkTranspData.isLeaf) {
+            context->RSSetState(params.states->GetCullNone());
+            context->OMSetBlendState(params.states->GetBlendState(), nullptr, 0xFFFFFFFF);
+        }
+        else {
+            context->RSSetState(params.states->GetCullBackState());
+            context->OMSetBlendState(params.states->GetNoBlendState(), nullptr, 0xFFFFFFFF);
         }
 
+        BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
+        BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
+        BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
+        BindTexture(mat.alpha ? mat.alpha->GetSRV() : nullptr, OPACITY_TEXTURE_SLOT);
+        BindTexture(mat.subsurface ? mat.subsurface->GetSRV() : nullptr, SSS_TEXTURE_SLOT);
         mesh->RenderBuffer(context);
+
     } // for
     m_RenderCount++;
 } // Render
 
-void Tree::RenderShadow(ID3D11DeviceContext* context, ShadowMap* shadowMap, ShadowMap::RenderParams& params) {
+void Tree::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
+    if (!context || !params.shadowMap || !params.shadowParams || !params.states) {
+        return;
+    }
+
     for (const auto& mesh : m_meshes) {
         unsigned int matIndex = mesh->GetMaterialIndex();
+        if (matIndex >= m_materials.size()) continue;
 
-        if (matIndex < m_materials.size()) {
-            const auto& mat = m_materials[matIndex];
+        const auto& mat = m_materials[matIndex];
+        bool isLeafMesh = IsTransparentMaterial(mat.name);
 
-            bool isLeafMesh = (mat.name.find(KEYWORD_LEAF) != std::string::npos);
-            params.isLeaf = isLeafMesh ? 1 : 0;
+        params.shadowParams->alphaSRV = mat.alpha ? mat.alpha->GetSRV() : nullptr;
 
-            if (isLeafMesh) {
-                params.albedoSRV = mat.leaf ? mat.leaf->GetSRV() : nullptr;
-                shadowMap->RenderTransparent(context, params);
-            }
-            else {
-                params.albedoSRV = mat.albedo ? mat.albedo->GetSRV() : nullptr;
-                shadowMap->RenderOpaque(context, params);
-            }
+        if (isLeafMesh) {
+            context->RSSetState(params.states->GetCullNone());
+            context->OMSetBlendState(params.states->GetBlendState(), nullptr, 0xFFFFFFFF);
+
+            params.shadowMap->RenderTransparent(context, *params.shadowParams);
         }
+        else {
+            context->RSSetState(params.states->GetCullBackState());
+            context->OMSetBlendState(params.states->GetNoBlendState(), nullptr, 0xFFFFFFFF);
+
+            params.shadowMap->RenderOpaque(context, *params.shadowParams);
+        }
+
         mesh->RenderBuffer(context);
     }
 } // RenderShadow
@@ -137,7 +160,6 @@ void Tree::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
 
-    // 모델 정보를 담은 메인 헤더
     if (ImGui::CollapsingHeader("MODEL INSPECTOR", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PopStyleColor(3);
 
@@ -159,7 +181,6 @@ void Tree::OnGui() {
         for (size_t i = 0; i < materials.size(); ++i) {
             const auto& mat = materials[i];
 
-            // 각 머테리얼별 트리 노드 오픈
             if (ImGui::TreeNode((void*)(intptr_t)i, "Material [%d]: %s", (int)i, mat.name.c_str())) {
 
                 ImGui::BeginGroup();
@@ -178,7 +199,8 @@ void Tree::OnGui() {
                 ShowStatus("Albedo", mat.hasAlbedo);
                 ShowStatus("Normal", mat.hasNormal);
                 ShowStatus("Roughness", mat.hasRoughness);
-                ShowStatus("Leaf", mat.hasLeaf);
+                ShowStatus("Alpha", mat.hasAlpha);
+                ShowStatus("hasSubsurface", mat.hasSubsurface);
 
                 ImGui::EndGroup();
                 ImGui::TreePop();
@@ -270,10 +292,19 @@ bool Tree::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitConstantBuffer<CheckLeafBuffer>(device, m_checkLeafBuffer.GetAddressOf())) {
-        DebugHelper::DebugPrint("CheckLeafBuffer 문제");
+    if (!InitConstantBuffer<CheckTransparentBuffer>(device, m_checkLeafBuffer.GetAddressOf())) {
+        //DebugHelper::DebugPrint("CheckTransparentBuffer 문제");
         return false;
     }
 
     return true;
 } // InitShader
+
+bool Tree::IsTransparentMaterial(const std::string& materialName) const {
+    for (const auto& keyword : m_leafKeywords) {
+        if (materialName.find(keyword) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+} // IsTransparentMaterial

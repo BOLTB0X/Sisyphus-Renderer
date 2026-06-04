@@ -24,9 +24,13 @@ bool PBRMesh::Init(ID3D11Device* device,
     vbd.ByteWidth = sizeof(FBRVertex) * static_cast<UINT>(vertices.size());
     vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     vbd.CPUAccessFlags = 0;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
 
     D3D11_SUBRESOURCE_DATA vinitData = {};
     vinitData.pSysMem = vertices.data();
+	vinitData.SysMemPitch = 0;
+	vinitData.SysMemSlicePitch = 0;
 
     HRESULT hr = device->CreateBuffer(&vbd, &vinitData, m_vertexBuffer.GetAddressOf());
     if (FAILED(hr)) return false;
@@ -37,9 +41,13 @@ bool PBRMesh::Init(ID3D11Device* device,
     ibd.ByteWidth = sizeof(unsigned int) * m_indexCount;
     ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
     ibd.CPUAccessFlags = 0;
+	ibd.MiscFlags = 0;
+	ibd.StructureByteStride = 0;
 
     D3D11_SUBRESOURCE_DATA iinitData = {};
     iinitData.pSysMem = indices.data();
+	iinitData.SysMemPitch = 0;
+	iinitData.SysMemSlicePitch = 0;
 
     hr = device->CreateBuffer(&ibd, &iinitData, m_indexBuffer.GetAddressOf());
     if (FAILED(hr)) return false;

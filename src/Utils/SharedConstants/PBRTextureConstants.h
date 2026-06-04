@@ -10,7 +10,7 @@ namespace SharedConstants {
             Albedo, Normal, Metallic,
             Roughness, AO, Alpha, 
             Displacement, Emissive,
-            Specular, Leaf,
+            Specular, Subsurface,
             Unknown
         };
 
@@ -20,14 +20,14 @@ namespace SharedConstants {
         };
 
         inline const std::vector<PBRTextureKeyword> PBRTEXTURE_KEYWORD_MAP = {
-            { PBRTextureType::Albedo,     { "_basecolor", "_albedo", "_alb", "_diffuse", "_col", "_diff", "_BaseColor"}},
-            { PBRTextureType::Normal,     { "_normal", "_nrm", "_norm", "_n" , "_Normal"}},
+            { PBRTextureType::Albedo,     { "_basecolor", "_albedo", "_alb", "_diffuse", "_col", "_Col", "_diff", "_BaseColor"}},
+            { PBRTextureType::Normal,     { "_normal", "_nrm", "_norm", "_n", "_Normal", "_Nor"}},
             { PBRTextureType::Metallic,   { "_metallic", "_metal", "_m" } },
-            { PBRTextureType::Roughness,  { "_roughness", "_rough", "_r", "_Roughness"}},
+            { PBRTextureType::Roughness,  { "_roughness", "_rough", "_r", "_Roughness", "_Rgh", "_Rgn"}},
             { PBRTextureType::AO,         { "_ao", "_occlusion" } },
             { PBRTextureType::Alpha,      { "_alpha", "_opacity" , "_Opacity_Map" } },
             { PBRTextureType::Specular,   { "_Specular", "_specular", "_spec" } },
-			{ PBRTextureType::Leaf,       { "_leaf", "_Leaf", "_leaves"}}
+            { PBRTextureType::Subsurface, { "_ssss", "_SSSS", "_sss", "_Subsurface" }}
         }; // PBRTEXTURE_KEYWORD_MAP
 
     } // PBRTextureConstants
