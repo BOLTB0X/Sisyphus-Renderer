@@ -12,7 +12,7 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
 // define
-#define TRANSFORM_OFFSET       20.0f
+#define TRANSFORM_OFFSET       10.0f
 #define WORLD_BUFFER_SLOT      2
 #define CHECK_LEAF_BUFFER_SLOT 3
 #define ABEDO_TEXTURE_SLOT     0
@@ -24,10 +24,8 @@
 using namespace DirectX;
 using namespace SharedConstants;
 
-Tree::Tree() : AssimpModel() {
+Tree::Tree() : AssimpModel(), ActorObject() {
     m_linerSampler = nullptr;
-    m_transform = Transform();
-    m_RenderCount = 0;
 	m_checkTranspData = CheckTransparentBuffer();
     m_leafKeywords = { "ClusterB", "ClusterB2" };
 } // Tree
@@ -46,13 +44,12 @@ bool Tree::Init(const InitParams& params) {
         return false;
     }
 
-    if (!InitShader(params.device, params.hwnd)) {
+    if (!InitShader(params.device, params.hwnd, params.VSPath, params.PSPath)) {
         return false;
     }
 
     m_linerSampler = params.linerSampler;
 
-    SetPosition(70.0f, 0.0f, 50.0f);
     SetScale(TRANSFORM_OFFSET, TRANSFORM_OFFSET, TRANSFORM_OFFSET);
     return true;
 } // Init
@@ -66,7 +63,7 @@ void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
             ID3D11ShaderResourceView* nullSRV = nullptr;
             context->PSSetShaderResources(slot, 1, &nullSRV);
         }
-    };
+    }; // BindTexture
 
     if (!context || !params.states) {
         return;
@@ -98,7 +95,6 @@ void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
         
         m_checkTranspData.isLeaf = IsTransparentMaterial(mat.name) ? 1 : 0;
         if (!ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), m_checkTranspData)) {
-            //DebugHelper::DebugPrint("투과 buffer 문제");
             return;
         }
         
@@ -214,62 +210,13 @@ void Tree::OnGui() {
     }
 } // OnGui
 
-void Tree::SetPosition(const XMFLOAT3& pos) {
-    m_transform.SetPosition(pos);
-} // SetPosition
-
-void Tree::SetPosition(float x, float y, float z) {
-    m_transform.SetPosition(x, y, z);
-} // SetPosition
-
-void Tree::SetRotation(const XMFLOAT3& rot) {
-    m_transform.SetRotation(rot);
-} // SetRotation
-
-void Tree::SetRotation(float x, float y, float z) {
-    m_transform.SetRotation(x, y, z);
-} // SetRotation
-
-void Tree::SetScale(const XMFLOAT3& scale) {
-    m_transform.SetScale(scale);
-} // SetScale
-
-void Tree::SetScale(float x, float y, float z) {
-    m_transform.SetScale(x, y, z);
-} // SetScale
-
-void Tree::Translate(const XMFLOAT3& delta) {
-    m_transform.Translate(delta);
-} // Translate
-
-void Tree::Translate(float x, float y, float z) {
-    m_transform.Translate(x, y, z);
-} // Translate
-
-void Tree::Rotate(const XMFLOAT3& delta) {
-    m_transform.Rotate(delta);
-} // Rotate
-
-void Tree::Rotate(float x, float y, float z) {
-    m_transform.Rotate(x, y, z);
-} // Rotate
-
-XMFLOAT3 Tree::GetPosition() const {
-    return m_transform.GetPosition();
-} // GetPosition
-
 XMMATRIX Tree::GetWorldMatrix() {
     XMMATRIX correction = XMMatrixRotationX(XMConvertToRadians(90.0f));
     return correction * m_transform.GetWorldMatrix();
 } // GetWorldMatrix
 
-unsigned int Tree::GetRenderCount() const {
-    return m_RenderCount;
-} // GetRenderCount
-
-bool Tree::InitShader(ID3D11Device* device, HWND hwnd) {
+bool Tree::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
     using namespace ShaderHelper;
-    using namespace ConstantBuffer;
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -279,12 +226,12 @@ bool Tree::InitShader(ID3D11Device* device, HWND hwnd) {
         { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    if (!InitVertexShader(device, hwnd, PathConstants::PBR_VS,
+    if (!InitVertexShader(device, hwnd, vsPath,
         layoutDesc, ARRAYSIZE(layoutDesc), m_vertexShader.GetAddressOf(), m_layout.GetAddressOf())) {
         return false;
     }
 
-    if (!InitPixelShader(device, hwnd, PathConstants::TREE_PS, m_pixelShader.GetAddressOf())) {
+    if (!InitPixelShader(device, hwnd, psPath, m_pixelShader.GetAddressOf())) {
         return false;
     }
 

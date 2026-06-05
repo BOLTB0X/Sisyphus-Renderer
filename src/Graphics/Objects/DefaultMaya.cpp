@@ -1,5 +1,5 @@
 #include "Pch.h"
-#include "Objects/Stone.h"
+#include "DefaultMaya.h"
 // Components
 #include "Components/TextureManager.h"
 // Resources
@@ -10,7 +10,6 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
 // define
-#define TRANSFORM_OFFSET       10.0f
 #define ABEDO_TEXTURE_SLOT     0
 #define NORMAL_TEXTURE_SLOT    1
 #define METALLIC_TEXTURE_SLOT  2
@@ -20,17 +19,16 @@
 using namespace DirectX;
 using namespace SharedConstants;
 
-Stone::Stone() : AssimpModel() {
-    m_sampler = nullptr;
-	m_transform = Transform();
+DefaultMaya::DefaultMaya() : AssimpModel(), ActorObject() {
+    m_wrapSampler = nullptr;
     m_RenderCount = 0;
-} // Stone
+} // DefaultMaya
 
-Stone::~Stone() {
-    m_sampler = nullptr;
-} // ~Stone
+DefaultMaya::~DefaultMaya() {
+    m_wrapSampler = nullptr;
+} // ~DefaultMaya
 
-bool Stone::Init(const InitParams& params) {
+bool DefaultMaya::Init(const InitParams& params) {
     if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
@@ -40,52 +38,67 @@ bool Stone::Init(const InitParams& params) {
         return false;
     }
 
-    if (!InitShader(params.device, params.hwnd)) {
+    if (!InitShader(params.device, params.hwnd, params.VSPath, params.PSPath)) {
         return false;
     }
 
-	m_sampler = params.linerSampler;
+    m_wrapSampler = params.linerSampler;
 
-	SetPosition(20.0f, 0.0f, 20.0f);
-	SetScale(TRANSFORM_OFFSET, TRANSFORM_OFFSET, TRANSFORM_OFFSET);
     return true;
 } // Init
 
-void Stone::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    if (!RenderShader(context, params)) {
+void DefaultMaya::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+    m_worldData.world = XMMatrixTranspose(params.world);
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
         return;
-	}
+    }
+
+    context->VSSetConstantBuffers(2, 1, m_worldBuffer.GetAddressOf());
+    context->IASetInputLayout(m_layout.Get());
+    context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+
+    if (m_wrapSampler) {
+        context->PSSetSamplers(0, 1, &m_wrapSampler);
+    }
 
     for (const auto& mesh : m_meshes) {
+        auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
+            if (srv) {
+                context->PSSetShaderResources(slot, 1, &srv);
+            }
+            else {
+                ID3D11ShaderResourceView* nullSRV = nullptr;
+                context->PSSetShaderResources(slot, 1, &nullSRV);
+            }
+            }; // BindTexture
+
         unsigned int matIndex = mesh->GetMaterialIndex();
-
-        if (matIndex < m_materials.size()) {
-            const auto& mat = m_materials[matIndex];
-
-            auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
-                if (srv) context->PSSetShaderResources(slot, 1, &srv);
-            };
-
-            BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
-            BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
-            BindTexture(mat.metallic ? mat.metallic->GetSRV() : nullptr, METALLIC_TEXTURE_SLOT);
-            BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
-            BindTexture(mat.ao ? mat.ao->GetSRV() : nullptr, AO_TEXTURE_SLOT);
+        if (matIndex >= m_materials.size()) {
+            continue;
         }
+
+        const auto& mat = m_materials[matIndex];
+
+        BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
+        BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
+        BindTexture(mat.metallic ? mat.metallic->GetSRV() : nullptr, METALLIC_TEXTURE_SLOT);
+        BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
+        BindTexture(mat.ao ? mat.ao->GetSRV() : nullptr, AO_TEXTURE_SLOT);
 
         mesh->RenderBuffer(context);
     } // for
     m_RenderCount++;
 } // Render
 
-void Stone::DrawIndexed(ID3D11DeviceContext* context) {
+void DefaultMaya::DrawIndexed(ID3D11DeviceContext* context) {
     for (const auto& mesh : m_meshes) {
         mesh->BindBuffers(context);
         context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
     }
 } // DrawIndexed
 
-void Stone::OnGui() {
+void DefaultMaya::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
@@ -147,59 +160,12 @@ void Stone::OnGui() {
     }
 } // OnGui
 
-void Stone::SetPosition(const XMFLOAT3& pos) {
-    m_transform.SetPosition(pos);
-} // SetPosition
+XMMATRIX DefaultMaya::GetScalingWorldMatrix() {
+    XMMATRIX correction = XMMatrixRotationX(XMConvertToRadians(90.0f));
+    return correction * m_transform.GetWorldMatrix();
+} // GetScalingWorldMatrix
 
-void Stone::SetPosition(float x, float y, float z) {
-    m_transform.SetPosition(x, y, z);
-} // SetPosition
-
-void Stone::SetRotation(const XMFLOAT3& rot) {
-    m_transform.SetRotation(rot);
-} // SetRotation
-
-void Stone::SetRotation(float x, float y, float z) {
-    m_transform.SetRotation(x, y, z);
-} // SetRotation
-
-void Stone::SetScale(const XMFLOAT3& scale) {
-    m_transform.SetScale(scale);
-} // SetScale
-
-void Stone::SetScale(float x, float y, float z) {
-    m_transform.SetScale(x, y, z);
-} // SetScale
-
-void Stone::Translate(const XMFLOAT3& delta) {
-    m_transform.Translate(delta);
-} // Translate
-
-void Stone::Translate(float x, float y, float z) {
-    m_transform.Translate(x, y, z);
-} // Translate
-
-void Stone::Rotate(const XMFLOAT3& delta) {
-    m_transform.Rotate(delta);
-} // Rotate
-
-void Stone::Rotate(float x, float y, float z) {
-    m_transform.Rotate(x, y, z);
-} // Rotate
-
-XMFLOAT3 Stone::GetPosition() const {
-    return m_transform.GetPosition();
-} // GetPosition
-
-XMMATRIX Stone::GetWorldMatrix() {
-    return m_transform.GetWorldMatrix();
-} // GetWorldMatrix
-
-unsigned int Stone::GetRenderCount() const {
-    return m_RenderCount;
-} // GetRenderCount
-
-bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
+bool DefaultMaya::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
     using namespace ShaderHelper;
     using namespace ConstantBuffer;
 
@@ -211,35 +177,18 @@ bool Stone::InitShader(ID3D11Device* device, HWND hwnd) {
         { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
-    if (!InitVertexShader(device, hwnd, PathConstants::PBR_VS,
+    if (!InitVertexShader(device, hwnd, vsPath,
         layoutDesc, ARRAYSIZE(layoutDesc), m_vertexShader.GetAddressOf(), m_layout.GetAddressOf())) {
         return false;
     }
 
-    if (!InitPixelShader(device, hwnd, PathConstants::STONE_PS, m_pixelShader.GetAddressOf())) {
+    if (!InitPixelShader(device, hwnd, psPath, m_pixelShader.GetAddressOf())) {
         return false;
     }
 
     if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
-		return false;
+        return false;
     }
 
     return true;
 } // InitShader
-
-bool Stone::RenderShader(ID3D11DeviceContext* context, const RenderParams& params) {
-	m_worldData.world = XMMatrixTranspose(params.world);
-    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
-        DebugHelper::DebugPrint("Failed to update world buffer");
-        return false;
-	}
-    context->VSSetConstantBuffers(2, 1, m_worldBuffer.GetAddressOf());
-    context->IASetInputLayout(m_layout.Get());
-    context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
-    context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
-
-    if (m_sampler) {
-        context->PSSetSamplers(0, 1, &m_sampler);
-    }
-    return true;
-} // RenderShader

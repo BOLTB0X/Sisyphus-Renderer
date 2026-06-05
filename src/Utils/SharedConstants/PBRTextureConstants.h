@@ -24,7 +24,7 @@ namespace SharedConstants {
             { PBRTextureType::Normal,     { "_normal", "_nrm", "_norm", "_n", "_Normal", "_Nor"}},
             { PBRTextureType::Metallic,   { "_metallic", "_metal", "_m" } },
             { PBRTextureType::Roughness,  { "_roughness", "_rough", "_r", "_Roughness", "_Rgh", "_Rgn"}},
-            { PBRTextureType::AO,         { "_ao", "_occlusion" } },
+            { PBRTextureType::AO,         { "_ao", "_occlusion", "_Occlusion"}},
             { PBRTextureType::Alpha,      { "_alpha", "_opacity" , "_Opacity_Map" } },
             { PBRTextureType::Specular,   { "_Specular", "_specular", "_spec" } },
             { PBRTextureType::Subsurface, { "_ssss", "_SSSS", "_sss", "_Subsurface" }}

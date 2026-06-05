@@ -12,7 +12,6 @@ class D3D11Manager;
 class ImGuiManager;
 class TextureManager;
 class Camera;
-class Stone;
 class D3D11State;
 class SkyBox;
 class DirectionalLight;
@@ -27,6 +26,7 @@ class TAA;
 class PostEffects;
 class Grass;
 class Tree;
+class DefaultMaya;
 
 class Renderer {
 public:
@@ -45,7 +45,7 @@ public:
 
 private:
     bool Render();
-	void UpdateObjectTransform();
+	void UpdateModelTransform();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessing(ID3D11DeviceContext*, D3D11State*);
@@ -61,7 +61,8 @@ private:
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
 
-    void UpadteWidgets();
+    void InitDefaultMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
+    void InitWidgets();
 
 private:
     static RendererState                  m_RendererState;
@@ -72,7 +73,6 @@ private:
 
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
     std::unique_ptr<Camera>               m_Camera;
-    std::unique_ptr<Stone>                m_Stone;
 	std::unique_ptr<SkyBox>               m_SkyBox;
     std::unique_ptr<Ground>               m_Ground;
     std::unique_ptr<DirectionalLight>     m_DirectionalLight;
@@ -86,6 +86,9 @@ private:
     std::unique_ptr<TAA>                  m_TAA;
     std::unique_ptr<Grass>                m_Grass;
     std::unique_ptr<Tree>                 m_Tree;
+	std::unique_ptr<DefaultMaya>          m_Stone;
+	std::unique_ptr<DefaultMaya>          m_StonePillar;
+    std::unique_ptr<DefaultMaya>          m_Arca;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
@@ -94,5 +97,4 @@ private:
     ID3D11RenderTargetView*               m_nullRTV;
     ID3D11ShaderResourceView*             m_nullSRV;
     float                                 m_renderingTime;
-    float                                 m_blendFactor[4];
 }; // Renderer

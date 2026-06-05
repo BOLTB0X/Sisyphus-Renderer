@@ -13,9 +13,10 @@ struct PS_IN
 
 float4 main(PS_IN input) : SV_TARGET
 {
-    float alpha = AlphaTex.Sample(LinearSampler, input.tex).r;
-    
-    clip(alpha - 0.1f);
-    
-    return float4(0, 0, 0, 1);
+    float4 textureColor = AlphaTex.Sample(LinearSampler, input.tex);
+
+    clip(textureColor.a - 0.1f);
+
+    float depthValue = input.depthPosition.z / input.depthPosition.w;
+    return float4(depthValue, depthValue, depthValue, 1.0f);
 } // main

@@ -61,16 +61,18 @@ namespace SharedConstants {
         // Cloud
 		static constexpr float             CLOUD_RADIUS = 71000.0f;
         static constexpr float             CLOUD_BOTTOM = 2350.0f;
-        static constexpr float             CLOUD_TOP = 3350.0f;
+        static constexpr float             CLOUD_TOP = 4350.0f;
 
 		static constexpr float             CLOUD_COVERAGE = 0.552f;
         static constexpr float             CLOUD_BASE_SCALE = 1.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
-        static constexpr float             CLOUD_DENSITY = 0.03f;
+        static constexpr float             CLOUD_DENSITY = 0.01f;
         static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
-        static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
-        static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
+        static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.75f;
+        //static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
+        static constexpr float             CLOUD_DETAIL_STRENGTH = 0.125f;
+        //static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
 
         static constexpr float             CLOUD_FORWARD_SCATTERING_G = 0.8f;
         static constexpr float             CLOUD_BACKWARD_SCATTERING_G = -0.2f;
@@ -89,7 +91,7 @@ namespace SharedConstants {
         static constexpr float  WIND_SCALE = 200.0f;
 
         static constexpr float HENYEY_GREENSTEIN_SCALE = 1.5f;
-        static constexpr float POWDER_FACTOR = 0.5f;
+        static constexpr float POWDER_FACTOR = 1.0f;
         static constexpr float LIGHTING_SCALE = 0.1f;
         static constexpr float HORIZON_FADE_SCALE = 0.08f;
 

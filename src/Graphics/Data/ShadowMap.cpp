@@ -74,6 +74,7 @@ bool ShadowMap::RenderTransparent(ID3D11DeviceContext* context, const RenderPara
     if (params.alphaSRV) {
         context->PSSetShaderResources(0, 1, &params.alphaSRV);
     }
+
     context->PSSetSamplers(0, 1, &params.linearSampler);
 
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());

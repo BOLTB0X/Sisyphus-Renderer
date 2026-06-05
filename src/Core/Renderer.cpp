@@ -2,11 +2,11 @@
 #include "Renderer.h"
 #include "RendererState.h"
 // Objects
-#include "Objects/Stone.h"
 #include "Objects/SkyBox.h"
 #include "Objects/Ground.h"
 #include "Objects/Grass.h"
 #include "Objects/Tree.h"
+#include "Objects/DefaultMaya.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -59,7 +59,6 @@ using namespace ShaderHelper;
 Renderer::Renderer() {
     m_D3D11Mgr = std::make_unique<D3D11Manager>();
     m_Camera = std::make_unique<Camera>();
-    m_Stone = std::make_unique<Stone>();
 	m_SkyBox = std::make_unique<SkyBox>();
     m_Ground = std::make_unique<Ground>();
     m_DirectionalLight = std::make_unique<DirectionalLight>();
@@ -73,14 +72,13 @@ Renderer::Renderer() {
     m_TAA = std::make_unique<TAA>();
 	m_Grass = std::make_unique<Grass>();
     m_Tree = std::make_unique<Tree>();
+	m_Stone = std::make_unique<DefaultMaya>();
+	m_StonePillar = std::make_unique<DefaultMaya>();
+	m_Arca = std::make_unique<DefaultMaya>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRT = std::make_unique<RenderTexture>();
     m_nullRTV = nullptr;
     m_nullSRV = nullptr;
-    m_blendFactor[0] = 0.0f;
-    m_blendFactor[1] = 0.0f;
-    m_blendFactor[2] = 0.0f;
-    m_blendFactor[3] = 0.0f;
     m_renderingTime = 0.0f;
 } // Renderer
 
@@ -121,17 +119,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    Stone::InitParams stoneInitParams;
-    stoneInitParams.device = device;
-    stoneInitParams.context = context;
-    stoneInitParams.hwnd = hwnd;
-    stoneInitParams.textMgr = m_TextureMgr;
-    stoneInitParams.path = STONE;
-	stoneInitParams.linerSampler = linerWrapSampler;
-
-    if (!m_Stone->Init(stoneInitParams)) {
-        return false;
-    }
+	InitDefaultMaya(hwnd, device, context, linerWrapSampler);
 
     Tree::InitParams treeInitParam;
     treeInitParam.device = device;
@@ -139,9 +127,14 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     treeInitParam.hwnd = hwnd;
     treeInitParam.textMgr = m_TextureMgr;
     treeInitParam.path = TREE;
+	treeInitParam.VSPath = PBR_VS;
+	treeInitParam.PSPath = TREE_PS;
     treeInitParam.linerSampler = linerWrapSampler;
     if (!m_Tree->Init(treeInitParam)) {
         return false;
+    }
+    else {
+        m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
     }
 
     CloudMap::InitParams cloudMapParams;
@@ -260,7 +253,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    UpadteWidgets();
+    InitWidgets();
     return true;
 } // Init
 
@@ -349,7 +342,7 @@ bool Renderer::Frame(float deltaTime) {
     m_Camera->Update();
     m_DirectionalLight->Update();
 
-    UpdateObjectTransform();
+    UpdateModelTransform();
     return Render();
 } // Frame
 
@@ -388,7 +381,7 @@ bool Renderer::Render() {
     return true;
 } // Render
 
-void Renderer::UpdateObjectTransform() {
+void Renderer::UpdateModelTransform() {
     if (!m_Stone || !m_Ground) {
         return;
     }
@@ -397,10 +390,18 @@ void Renderer::UpdateObjectTransform() {
     float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 
+	pos = m_StonePillar->GetPosition();
+	terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+	m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+
+	pos = m_Arca->GetPosition();
+	terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+	m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+
     pos = m_Tree->GetPosition();
     terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
-} // UpdateObjectTransform
+} // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetRenderTargets(1, &m_nullRTV, m_ObjectShadowMap->GetDSV());
@@ -412,7 +413,8 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
     DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
     DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
-    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * 0.5f);
+	DirectX::XMVECTOR p3 = DirectX::XMLoadFloat3(&m_Arca->GetPosition());
+    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2 + p3) * (1.0f / 3.0f));
 
     m_DirectionalLight->UpdateObjectShadow(shadowFocus);
 
@@ -432,6 +434,14 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         m_Tree->RenderShadow(context,shadowParams);
     }
 
+    if (m_Arca) {
+        renderParams.viewMatrix = sharedView;
+        renderParams.projectionMatrix = sharedProj;
+        renderParams.worldMatrix = m_Arca->GetWorldMatrix();
+        m_ObjectShadowMap->RenderOpaque(context, renderParams);
+        m_Arca->DrawIndexed(context);
+    }
+
     if (m_Stone) {
         renderParams.viewMatrix = sharedView;
         renderParams.projectionMatrix = sharedProj;
@@ -444,6 +454,14 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
+
+    if (m_StonePillar) {
+        renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+        renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+        renderParams.worldMatrix = m_StonePillar->GetScalingWorldMatrix();
+        m_TerrainShadowMap->RenderOpaque(context, renderParams);
+        m_StonePillar->DrawIndexed(context);
+    }
 
     if (m_Ground) {
         renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
@@ -541,7 +559,7 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
 
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
+    context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
 
     Ground::RenderParams groundParams;
     groundParams.cameraPosition = m_Camera->GetPosition();
@@ -554,16 +572,15 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
 void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    //context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
+    context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
 
-    if (!m_Stone) {
-        return;
-    }
-
-    Stone::RenderParams stoneParams;
-    stoneParams.world = m_Stone->GetWorldMatrix();
-    context->OMSetBlendState(states->GetNoBlendState(), m_blendFactor, 0xffffffff);
-    m_Stone->Render(context, stoneParams);
+    DefaultMaya::RenderParams mayaParams;
+    mayaParams.world = m_Stone->GetWorldMatrix();
+    m_Stone->Render(context, mayaParams);
+	mayaParams.world = m_StonePillar->GetScalingWorldMatrix();
+	m_StonePillar->Render(context, mayaParams);
+	mayaParams.world = m_Arca->GetWorldMatrix();
+	m_Arca->Render(context, mayaParams);
 
     if (!m_Tree) {
         return;
@@ -583,7 +600,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 
     context->RSSetState(states->GetCullNone());
     context->OMSetDepthStencilState(states->GetDepthLessEqual(), 1);
-    context->OMSetBlendState(states->GetBlendState(), m_blendFactor, 0xffffffff);
+    context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
 
     SkyBox::RenderParams skyParams;
 	skyParams.camPos = m_Camera->GetPosition();
@@ -591,7 +608,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 	skyParams.skyLUT = m_AtmosphereLUT->GetLUT();
 
     m_SkyBox->Render(context, skyParams);
-    context->OMSetBlendState(states->GetNoBlendState(), m_blendFactor, 0xffffffff);
+    context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
 } // DrawSkyBox
 
 void Renderer::DrawGrass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -679,7 +696,54 @@ void Renderer::ApplyTAA(ID3D11DeviceContext* context, D3D11State* states) {
     m_TAA->CopyResource(context, m_Post->GetTexture());
 } // ApplyTAA
 
-void Renderer::UpadteWidgets() {
+void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
+    if (!m_Stone || !m_StonePillar || !m_Arca) {
+        return;
+    }
+
+    DefaultMaya::InitParams initParams;
+    initParams.device = device;
+    initParams.context = context;
+    initParams.hwnd = hwnd;
+    initParams.textMgr = m_TextureMgr;
+    initParams.VSPath = PBR_VS;
+    initParams.linerSampler = linerWrapSampler;
+
+    initParams.path = STONE;
+    initParams.PSPath = STONE_PS;
+    if (!m_Stone->Init(initParams)) {
+		DebugHelper::DebugPrint("m_Stone->Init 문제");
+        return;
+    }
+    else {
+        m_Stone->SetPosition(20.0f, 0.0f, 20.0f);
+		m_Stone->SetScale(10.0f, 10.0f, 10.0f);
+    }
+
+	initParams.path = STONE_PILLAR;
+	initParams.PSPath = STONE_PILLAR_PS;
+
+    if (!m_StonePillar->Init(initParams)) {
+        return;
+    }
+    else {
+        m_StonePillar->SetPosition(300.0f, 0.0f, -500.0f);
+        m_StonePillar->SetScale(300.0f, 500.0f, 300.0f);
+    }
+
+	initParams.path = ARCA;
+	initParams.PSPath = ARCA_PS;
+    if (!m_Arca->Init(initParams)) {
+        return;
+    }
+    else {
+        m_Arca->SetPosition(70.0f, 0.0f, -50.0f);
+		m_Arca->SetScale(30.0f, 30.0f, 30.0f);
+    }
+
+} // InitDefaultMaya
+
+void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Camera Control",
@@ -691,34 +755,34 @@ void Renderer::UpadteWidgets() {
             [this]() { m_DirectionalLight->OnGui(); }
         ));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Ground Control",
-            [this]() { m_Ground->OnGui(); }
-        ));
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Ground Control",
+        //    [this]() { m_Ground->OnGui(); }
+        //));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Grass Control",
             [this]() { m_Grass->OnGui(); }
 		));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Tree Control",
-            [this]() { m_Tree->OnGui(); }
-        ));
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Tree Control",
+        //    [this]() { m_Tree->OnGui(); }
+        //));
 
-        /*m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Atmosphere Control",
-            [this]() { m_AtmosphereLUT->OnGui(); }
-        ));
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Atmosphere Control",
+        //    [this]() { m_AtmosphereLUT->OnGui(); }
+        //));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Volumetric Cloud Control",
             [this]() { m_VolumetricCloud->OnGui(); }
         ));
 
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Post",
-            [this]() { m_Post->OnGui(); }
-        ));*/
+        //m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //    "Post",
+        //    [this]() { m_Post->OnGui(); }
+        //));
     }
-} // UpadteWidgets
+} // InitWidgets
