@@ -390,13 +390,13 @@ void Renderer::UpdateModelTransform() {
     float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 
-	pos = m_StonePillar->GetPosition();
-	terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-	m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+	//pos = m_StonePillar->GetPosition();
+	//terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+	//m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
 
-	pos = m_Arca->GetPosition();
-	terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-	m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+	//pos = m_Arca->GetPosition();
+	//terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+	//m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
 
     pos = m_Tree->GetPosition();
     terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
@@ -413,8 +413,9 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
     DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
     DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
-	DirectX::XMVECTOR p3 = DirectX::XMLoadFloat3(&m_Arca->GetPosition());
-    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2 + p3) * (1.0f / 3.0f));
+	//DirectX::XMVECTOR p3 = DirectX::XMLoadFloat3(&m_Arca->GetPosition());
+    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * (1.0f / 2.0f));
+    //DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2 + p3) * (1.0f / 3.0f));
 
     m_DirectionalLight->UpdateObjectShadow(shadowFocus);
 
@@ -434,13 +435,13 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         m_Tree->RenderShadow(context,shadowParams);
     }
 
-    if (m_Arca) {
-        renderParams.viewMatrix = sharedView;
-        renderParams.projectionMatrix = sharedProj;
-        renderParams.worldMatrix = m_Arca->GetWorldMatrix();
-        m_ObjectShadowMap->RenderOpaque(context, renderParams);
-        m_Arca->DrawIndexed(context);
-    }
+    //if (m_Arca) {
+    //    renderParams.viewMatrix = sharedView;
+    //    renderParams.projectionMatrix = sharedProj;
+    //    renderParams.worldMatrix = m_Arca->GetWorldMatrix();
+    //    m_ObjectShadowMap->RenderOpaque(context, renderParams);
+    //    m_Arca->DrawIndexed(context);
+    //}
 
     if (m_Stone) {
         renderParams.viewMatrix = sharedView;
@@ -455,13 +456,13 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
 
-    if (m_StonePillar) {
-        renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-        renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
-        renderParams.worldMatrix = m_StonePillar->GetScalingWorldMatrix();
-        m_TerrainShadowMap->RenderOpaque(context, renderParams);
-        m_StonePillar->DrawIndexed(context);
-    }
+    //if (m_StonePillar) {
+    //    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    //    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+    //    renderParams.worldMatrix = m_StonePillar->GetScalingWorldMatrix();
+    //    m_TerrainShadowMap->RenderOpaque(context, renderParams);
+    //    m_StonePillar->DrawIndexed(context);
+    //}
 
     if (m_Ground) {
         renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
@@ -577,10 +578,10 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     DefaultMaya::RenderParams mayaParams;
     mayaParams.world = m_Stone->GetWorldMatrix();
     m_Stone->Render(context, mayaParams);
-	mayaParams.world = m_StonePillar->GetScalingWorldMatrix();
-	m_StonePillar->Render(context, mayaParams);
-	mayaParams.world = m_Arca->GetWorldMatrix();
-	m_Arca->Render(context, mayaParams);
+	//mayaParams.world = m_StonePillar->GetScalingWorldMatrix();
+	//m_StonePillar->Render(context, mayaParams);
+	//mayaParams.world = m_Arca->GetWorldMatrix();
+	//m_Arca->Render(context, mayaParams);
 
     if (!m_Tree) {
         return;
@@ -720,7 +721,7 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
 		m_Stone->SetScale(10.0f, 10.0f, 10.0f);
     }
 
-	initParams.path = STONE_PILLAR;
+	/*initParams.path = STONE_PILLAR;
 	initParams.PSPath = STONE_PILLAR_PS;
 
     if (!m_StonePillar->Init(initParams)) {
@@ -739,7 +740,7 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
     else {
         m_Arca->SetPosition(70.0f, 0.0f, -50.0f);
 		m_Arca->SetScale(30.0f, 30.0f, 30.0f);
-    }
+    }*/
 
 } // InitDefaultMaya
 
