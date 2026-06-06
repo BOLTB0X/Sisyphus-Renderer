@@ -18,7 +18,6 @@
 #define LINEAR_SAMPLER_SLOT 0
 #define BUFFER_SLOT_WORLD   2
 #define BUFFER_SLOT_GROUND  3
-//#define BUFFER_SLOT_SHADOW  4
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -28,7 +27,6 @@ using namespace ConstantBuffer;
 Ground::Ground() {
 	m_quadTree = std::make_unique<QuadTree>();
 	m_heightMap = nullptr;
-	m_transform = Transform();
 	m_prevGoundData.padding1 = -1.0f;
 	m_groundSRV = nullptr;
 	m_objectShadowSRV = nullptr;
@@ -138,18 +136,6 @@ void Ground::OnGui() {
 	if (ImGui::Button("Reset Colors")) {
 		m_GoundData = GroundBuffer();
 	}
-
-	//ImGui::Spacing();
-
-	//if (m_objectShadowSRV) {
-	//	ImGui::Text("Object Shadow Preview");
-	//	ImGui::Image((ImTextureID)m_objectShadowSRV, ImVec2(256, 256));
-	//}
-
-	//if (m_terrainShadowSRV) {
-	//	ImGui::Text("Terrain Shadow Preview");
-	//	ImGui::Image((ImTextureID)m_terrainShadowSRV, ImVec2(256, 256));
-	//}
 
 	ImGui::End();
 } // OnGui

@@ -24,7 +24,7 @@ public:
 		bool hasSpecular;
 		bool hasEmissive;
 		bool hasDisplacement;
-		bool hasLeaf;
+		bool hasSubsurface;
 
         MaterialInfo() {
             name = "";
@@ -37,7 +37,7 @@ public:
 			hasSpecular = false;
 			hasEmissive = false;
 			hasDisplacement = false;
-			hasLeaf = false;
+			hasSubsurface = false;
         }
     };
 
@@ -59,7 +59,7 @@ protected:
         std::shared_ptr<Texture> specular;
         std::shared_ptr<Texture> emissive;
 		std::shared_ptr<Texture> displacement;
-        std::shared_ptr<Texture> leaf;
+        std::shared_ptr<Texture> subsurface;
 
     };
 

@@ -11,6 +11,9 @@ namespace SharedConstants {
         static const std::wstring PBR_VS = L"HLSL/PBRModelVS.hlsl";
         static const std::wstring STONE_PS = L"HLSL/StonePS.hlsl";
         static const std::wstring TREE_PS = L"HLSL/TreePS.hlsl";
+        static const std::wstring STONE_PILLAR_PS = L"HLSL/StonePillarPS.hlsl";
+        static const std::wstring ARCA_PS = L"HLSL/ArcaPS.hlsl";
+        static const std::wstring IDOL_PS = L"HLSL/IdolPS.hlsl";
 
         static const std::wstring NOISEGEN_CS = L"HLSL/NoiseGeneratorCS.hlsl";
         static const std::wstring CLOUD_MAP_CS = L"HLSL/CloudMapCS.hlsl";
@@ -44,13 +47,17 @@ namespace SharedConstants {
         static const std::wstring TRANSPARENT_DEPTH_PS = L"HLSL/TransparentDepthPS.hlsl";
 
         static const std::string STONE = "assets/Stone/Stone.fbx";
-        static const std::string TREE = "assets/Tree/tree.fbx";
+        static const std::string TREE = "assets/Tree/TreeGen.fbx";
+        static const std::string STONE_PILLAR = "assets/StonePillar/StonePillar_low.fbx";
+        static const std::string IDOL = "assets/Idol/Idol.fbx";
+        static const std::string ARCA = "assets/Arca/Arca.fbx";
+
         static const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";
         static const std::string NOISE_2D = "assets/Noise/noise.png";
         static const std::string HEIGHT = "assets/Map/heightmap.png";
         static const std::string GRASS = "assets/Grass/grass.dds";
-        static const std::string GROUND = "assets/Ground/ground.png";
-        static const std::string LEAF = "assets/Tree/Tree_Leaf.png";
+        static const std::string GROUND = "assets/Ground/ground.tga";
+        static const std::string GROUND_AO = "assets/Ground/internal_ground_ao_texture.jpeg";
 
         static const std::string KEY_CLOUD_VOL = "CloudNoise";
         static const std::string KEY_WORLEY_NOISE = "WorleyNoise";

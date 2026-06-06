@@ -17,19 +17,17 @@ public:
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMMATRIX worldMatrix;
-        DirectX::XMMATRIX viewMatrix;
-        DirectX::XMMATRIX projectionMatrix;
+        DirectX::XMMATRIX         worldMatrix;
+        DirectX::XMMATRIX         viewMatrix;
+        DirectX::XMMATRIX         projectionMatrix;
 
-        int                       isLeaf;
-        ID3D11ShaderResourceView* albedoSRV;
+        ID3D11ShaderResourceView* alphaSRV;
         ID3D11SamplerState*       linearSampler;
 
         RenderParams() : worldMatrix(DirectX::XMMatrixIdentity()),
             viewMatrix(DirectX::XMMatrixIdentity()),
             projectionMatrix(DirectX::XMMatrixIdentity()),
-            isLeaf(0),
-            albedoSRV(nullptr),
+            alphaSRV(nullptr),
             linearSampler(nullptr) {
         }
     }; // RenderParams

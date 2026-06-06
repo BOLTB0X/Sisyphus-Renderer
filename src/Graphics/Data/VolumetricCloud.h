@@ -51,26 +51,26 @@ private:
     struct VolumetricCloudBuffer {
         // Row 1
         DirectX::XMFLOAT3 planetCenter;
-        float             planetRadius;        // 6371000.0f
+        float             planetRadius;
         // Row 2
-        float             cloudBottom;         // 1350.0f
-        float             cloudTop;            // 2350.0f
+        float             cloudBottom;
+        float             cloudTop;
         DirectX::XMFLOAT2 padding1;
         // Row 3
-        float             cloudCoverage;       // 0.52f
-		float             cloudBaseScale;      // 1.51f
-		float             cloudDetailScale;    // 20.0f
+        float             cloudCoverage;
+		float             cloudBaseScale;
+		float             cloudDetailScale;
         float             padding2;
         // Row 4
-        float             cloudDensity;        // 0.03f
-        float             baseEdgeSoftness;    // 0.1f
-        float             bottomSoftness;      // 0.25f
-        float             detailStrength;      // 0.225f
+        float             cloudDensity;
+        float             baseEdgeSoftness;
+        float             bottomSoftness;
+        float             detailStrength;
         // Row 5
-        float             forwardScatteringG;   // 0.8f
-        float             backwardScatteringG;  // -0.2f
-        float             scatteringLerp;       // 0.5f
-        float             minTransmittance;     // 0.1f
+        float             forwardScatteringG;
+        float             backwardScatteringG;
+        float             scatteringLerp;
+        float             minTransmittance;
         // Row 6
         DirectX::XMFLOAT3 ambientBottom;
         float             padding3;
@@ -90,8 +90,8 @@ private:
         DirectX::XMFLOAT3 nightAmbientTop;
         float             padding8;
         // Row 12
-		DirectX::XMFLOAT2 windDirection;       // (0.5f, 0.5f)
-		float             windSpeed;           // 1.0f
+		DirectX::XMFLOAT2 windDirection;
+		float             windSpeed;
 		float 		      windScale;
         // Row 13
         float             hgScale;
@@ -101,8 +101,8 @@ private:
 
         VolumetricCloudBuffer() {
             using namespace SharedConstants::BuffersConstants;
-            planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
-            planetRadius = PLANET_RADIUS;
+            planetCenter = { 0.0f, -CLOUD_RADIUS, 0.0f };
+            planetRadius = CLOUD_RADIUS;
 
             cloudBottom = CLOUD_BOTTOM; 
             cloudTop = CLOUD_TOP;

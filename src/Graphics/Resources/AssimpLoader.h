@@ -20,6 +20,12 @@ class TextureManager;
 
 class AssimpLoader {
 public:
+    struct AsyncMatResult {
+        AssimpModel::Material material;
+        Microsoft::WRL::ComPtr<ID3D11CommandList> commandList;
+    }; // AsyncMatResult
+
+public:
     AssimpLoader(std::shared_ptr<TextureManager>);
     AssimpLoader(const AssimpLoader& other) = delete;
     ~AssimpLoader();
@@ -31,7 +37,7 @@ private:
     std::unique_ptr<PBRMesh>  ProcessMesh(aiMesh*, const aiScene*, ID3D11Device*, ID3D11DeviceContext*);
     void                      ProcessMaterials(const aiScene*, ID3D11Device*, ID3D11DeviceContext*, const std::string&, AssimpModel*);
 
-    std::shared_ptr<Texture>  LoadMaterialElement(ID3D11Device*, ID3D11DeviceContext*, const std::string&, const std::string&, SharedConstants::PBRTextureConstants::PBRTextureType);
+    std::shared_ptr<Texture>  LoadMaterialElement(ID3D11Device*, ID3D11DeviceContext*, aiMaterial*, const std::string&, const std::string&, const std::string&, SharedConstants::PBRTextureConstants::PBRTextureType);
 
 private:
     std::shared_ptr<TextureManager> m_TextureMgr;

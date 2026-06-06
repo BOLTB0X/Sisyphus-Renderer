@@ -34,7 +34,7 @@ std::vector<AssimpModel::MaterialInfo> AssimpModel::GetMaterialInfos() const {
 		info.hasSpecular = (mat.specular != nullptr);
 		info.hasEmissive = (mat.emissive != nullptr);
 		info.hasDisplacement = (mat.displacement != nullptr);
-		info.hasLeaf = (mat.leaf != nullptr);
+		info.hasSubsurface = (mat.subsurface != nullptr);
         infos.push_back(info);
     }
     return infos;

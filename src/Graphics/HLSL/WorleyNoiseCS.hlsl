@@ -25,5 +25,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float c = max(0.0f, 1.0f - (r + g * 0.5f + b * 0.25f) / 1.75f);
 
     // 3D 텍스처(UAV)에 기록
-    OutNoise[DTid] = float4(c, c, c, c);
+    OutNoise[DTid] = float4(c, -c, c, c);
+    //OutNoise[DTid] = float4(c, c, c, c);
 } // main
