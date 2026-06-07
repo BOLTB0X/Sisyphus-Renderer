@@ -1,173 +1,135 @@
-# Sisyphus-Renderer
+# Sisyphus-Renderer - Terrain & Grass LOD System
+![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow08.gif?raw=true)
 
-![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
+<table>
+  <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain01_heightmap01.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain01_heightmap02.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B501.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B503.png?raw=true" width="320"></td>
+  </tr>
+  <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass02_%EC%A1%B0%EB%AA%85.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8402.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="320"></td>
+  </tr>
+</table>
 
-## Self Introduce
+<p align="center">
+  <strong> QuadTree Terrain && 3단계 거리 비례 LOD </strong>
+</p>
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>시지프스의 돌</strong></p>
-</div>
+## [파이프라인 구조도]
 
-> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  | 상황 | FPS |
-  |---|---|
-  | 일반 구름 뷰 | 50 ~ 59 |
-  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
-
-</div>
-
-
-Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>시지프스의 돌</strong></p>
-</div>
-
-단순히 빠른 것이 아니라 **품질을 유지하면서** 빠른 것이 핵심
-
-- **Assimp** 로더
-- **Sky LUT**: 대기 산란 Raymarching
-- **Shadow mapping** : Poisson Disk Sampling
-- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
-- **동적 Ambient 전환** : 노을, 낮, 밤
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **Bloom + Lens Flare** 후처리
-- **God Rays**: 후처리 Volumetric Scattering
-- **YCoCg Variance Clipping**
-- **TAA**
-
-
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Volumetric/real)
-
----
-
-## Quick Start
-
-<details>
-<summary> open / close </summary>
-
-### 1. 필수 요구 사항
-
-- **OS** : Windows 10/11
-
-- **IDE** : [Visual Studio Community 2022](https://visualstudio.microsoft.com/ko/vs/community/) (C++를 사용한 데스크톱 개발 워크로드 포함)
-
-- **Build** : [CMake 3.21](https://cmake.org/cmake/help/latest/release/3.21.html) 이상
-
-- **Package Manager** : [vcpkg](https://vcpkg.io/en/)
-
-### 2. 라이브러리 설치 (`vcpkg`)
-
-```bash
-# 터미널/파워쉘에서 다음 라이브러리들을 설치
-vcpkg install imgui[directx11-binding,win32-binding]
-vcpkg install directxtk
-vcpkg install directxtex
-vcpkg install spdlog
-vcpkg install assimp
+```cpp
+[매 프레임 렌더 단계 - Opaque & Alpha Cutout]
+Renderer::MainPass()
+  │
+  ├─ 1. DrawGround (지형 렌더링)
+  │  └─ GroundPS.hlsl 실행
+  │     ├─ [입력] GroundTex (t12), Terrain/Object ShadowMap
+  │     ├─ HeightMap 기반 정점 높이 및 노말(중앙 차분법) 계산
+  │     └─ 원경 처리: smoothstep을 이용해 거리가 멀어질수록 
+  │                   Ground 텍스처를 COLOR_DARK_SAND로 부드럽게 블렌딩 (잔디 그림자 효과 대체)
+  │
+  ├─ 2. DrawGrass - Near (Geometry Shader 동적 빌보드)
+  │  └─ GrassGS.hlsl & GrassPS.hlsl 실행 (0 ~ LIMIT_DIST 구간)
+  │     ├─ [입력] GrassTex (t0), GrassBuffer (WIND_SPEED 등)
+  │     ├─ Point Topology를 입력받아 GS에서 교차된 사각형(Quad) 최대 3개 증식
+  │     ├─ GS 내부 2차 LOD: 거리에 따라 생성하는 Quad 개수 조절 (3개 -> 2개 -> 1개)
+  │     └─ Sin/Cos 함수를 이용해 Y축 상단부 위주의 자연스러운 바람(Wind) 애니메이션 적용
+  │
+  └─ 3. DrawGrass - Far (Hardware Instancing 빌보드)
+     └─ GrassFarVS.hlsl & GrassFarPS.hlsl 실행 (LIMIT_DIST ~ LIMIT_DIST * 2 구간)
+        ├─ [입력] GrassTex (t0), Instance Data (Position, Scale, UV)
+        ├─ Y축을 고정한 상태로 항상 카메라를 바라보게 회전 (Fixed Y-Axis Billboard)
+        └─ 수작업 MipMap 샘플링: log2(dist/100)를 통해 거리에 따른 알베도 텍스처 밉레벨 조절
 ```
 
-### 3. 클론 및 빌드
+- [`Ground.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/Objects/Ground.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/Objects/Ground.cpp)
 
-```bash
-# 저장소 클론
-git clone https://github.com/BOLTB0X/Sisyphus-Renderer.git
-cd Sisyphus-Renderer
+- [`Grass.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/Objects/Grass.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/Objects/Grass.cpp)
 
-# 빌드 디렉토리 생성
-mkdir build
-cd build
+- [`GroundPS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GroundPS.hlsl)
 
-# CMake 구성 (vcpkg 경로 설정 필수)
-cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg.cmake
+- [`GrassVS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GrassVS.hlsl) / [`GrassGS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GrassGS.hlsl) / [`GrassPS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GrassPS.hlsl)
 
-# 프로젝트 열기 (or cmake --build . 실행)
-start SisyphusRenderer.sln
+- [`GrassFarVS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GrassFarVS.hlsl) / [`GrassFarPS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Grass/src/Graphics/HLSL/GrassFarPS.hlsl)
+
+
+## [알면 좋은 것들]
+
+### (1) 3단계 거리 비례 LOD (Level of Detail) 최적화
+
+https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass05_mixGrass02.gif?raw=true
+
+수만 개의 잔디를 모두 3D 폴리곤으로 그리면 심각한 프레임 드랍이 발생
+
+풀과 같은 식생(Vegetation) 렌더링 시 발생하는 **막대한 정점 처리 병목(Vertex Bottleneck)** 을 막기 위해, 카메라와의 거리를 3구간으로 나누어 각기 다른 렌더링 전략을 택함
+
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass05_mixGrass01.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass05_mixGrass02.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>지오매트리 - Instanced </strong></p>
+</div>
+
+
+| 거리 구분 | 렌더링 방식 | 특징 |
+| :--- | :--- | :--- |
+| 0 ~ D | Geometry Shader (Near) | 1~3방향 교차 빌보드 동적 생성, 풍성한 입체감 및 바람 효과 |
+| D ~ D×2 | Hardware Instancing (Far) | 정점 생성 없이 인스턴스 버퍼 활용, Y축 고정 카메라 바라보기, MipMap 적용 |
+| D×2 ~ | Ground 텍스처 블렌딩 | 폴리곤 렌더링 생략, 바닥 텍스처를 어두운 색상으로 혼합해 잔디밭의 밀도감만 유지 |
+
+### (2) Geometry Shader 내부의 동적 Quad 최적화
+
+CPU에서 무거운 메쉬 데이터를 넘기지 않고, 잔디의 뿌리점(Point) 하나만 입력받아 GPU에서 실시간으로 폴리곤을 만듬
+
+특히 GS 내부에서도 거리에 따라 생성하는 폴리곤 개수를 한 번 더 최적화
+
+```cpp
+// GrassGS.hlsl 중거리/근거리 세부 LOD 로직
+int billboardCount = 3; 
+
+if (dist > LIMIT_DIST / 2)
+    billboardCount = 1; // 꽤 멀면 1장만 (카메라 마주보기)
+else if (dist > LIMIT_DIST / 4)
+    billboardCount = 2; // 중간 거리면 2장 교차 (X 형태)
+
+[unroll]
+for (int d = 0; d < billboardCount; ++d) {
+    // 60도(1.0472 rad)씩 회전하며 쿼드 생성
+}
 ```
 
-### 4. 사용한 에셋
+### (3) Hardware Instancing & 수동 MipMap 샘플링 (Far Grass)
 
-- [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+먼 거리의 잔디를 픽셀 셰이더에서 렌더링할 때 발생하는 심각한 외곽선 자글거림(Aliasing)을 방지하기 위해, 픽셀 셰이더 내에서 거리에 비례한 밉맵(MipMap) 레벨을 직접 계산하여 샘플링
 
-- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+```cpp
+// GrassFarPS.hlsl
+// 거리에 비례하여 0.0 ~ 6.0 사이의 Mip Level 도출
+float mipLevel = clamp(log2(input.dist / 100.0f), 0.0f, 6.0f);
+float4 col = GrassTex.SampleLevel(LinearSampler, input.uv, mipLevel);
 
-- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
+clip(col.a - ALPHA_CUT); // 알파 컷아웃
+```
 
-</details>
+### (4) Ground Shader의 눈속임(Fake) 블렌딩
 
-## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+인스턴싱 잔디조차 사라지는 가장 먼 거리(LIMIT_DIST * 2.0f 이상)에서는 지형 셰이더(`GroundPS.hlsl`)가 그 역할을 대체
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Assimp Loder (병렬 처리)</strong></p>
-</div>
+```cpp
+// GroundPS.hlsl
+// LIMIT_DIST의 1.5배 ~ 2.0배 구간에서 서서히 1.0(어두운 흙색)으로 블렌딩
+float grassBlend = smoothstep(GROUND_DETAIL_DIST * 2.0f, GROUND_DETAIL_DIST * 1.5f, distToCamera);
+float3 baseColor = lerp(groundTex.rgb, COLOR_DARK_SAND, grassBlend);
+```
 
-## Atmospheric Scattering
+## 참고
 
-### [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
+- [Rastertek: Terrain Rendering Tutorials](https://rastertek.com/tutterr.html)
 
-<div align="center">
-<td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B001_%ED%95%98%EB%8A%9802.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B002_%EC%9A%B0%EC%A3%BC01.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true" width="260"></td>
-  <br>
-  <p><strong>카메라 위치에 따른 동적 베이킹</strong></p>
-</div>
-
-### [LUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT05_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT06_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT07_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT08_new.png?raw=true" width="200"></td>
-  <br>
-  <p><strong>UAV 로 계산 후 LUT</strong></p>
-</div>
-
-## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_06%ED%8F%AC%EC%9D%B8%ED%8A%B8.png?raw=true" width="260"></td>
-  <br>
-  <p><strong>일반 | PCF | Point</strong></p>
-</div>
-
-
-## Volumetric
-
-### [Volumetric Cloud](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
-
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/08Volumetric_%EB%A0%8C%EC%A6%88%ED%94%8C%EB%A0%88%EC%96%B401.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
-
-### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Post-Processing Volumetric Scattering</strong></p>
-</div>
+- [GPU Gems: Chapter 7. Rendering Countless Blades of Waving Grass](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-7-rendering-countless-blades-waving-grass)
