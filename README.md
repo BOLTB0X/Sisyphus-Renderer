@@ -1,6 +1,4 @@
-# Sisyphus-Renderer
-
-# Sisyphus-Renderer - Assim
+# Sisyphus-Renderer - Assimp
 
 ![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp03_arca.png?raw=true)
 
