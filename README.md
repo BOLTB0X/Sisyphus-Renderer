@@ -5,10 +5,39 @@
 ## Self Introduce
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC4.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>시지프스의 돌</strong></p>
+  <p><strong>시지프스 렌더러</strong></p>
 </div>
+
+- **Assimp** 로더
+- **FBR**
+- **Sky LUT**: 대기 산란 Raymarching
+- **Shadow mapping** : Poisson Disk Sampling
+- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
+- **동적 Ambient 전환** : 노을, 낮, 밤
+- **3중 Beer's Law** Shadow
+- **Depth Probability** (구름 하단 그림자)
+- **Bloom + Lens Flare** 후처리
+- **God Rays**: 후처리 Volumetric Scattering
+- **YCoCg Variance Clipping**
+- **TAA**
+- **Quad Tree**
+- **Grass LOD(Level of Detail)** : Geometry + Instancing, Billboard
+
+
+이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
+
+<br/>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>Volumetric Cloud & God Rays</strong></p>
+</div>
+
+<details>
+<summary> About Volumetric </summary>
 
 > 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
 
@@ -27,28 +56,42 @@
 
 Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
 
+</details>
+
+<br/>
+
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master05_%EC%97%AC%EB%AA%852.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC2.gif?raw=true)" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>시지프스의 돌</strong></p>
+  <p><strong>Terrain & LOD Grass</strong></p>
 </div>
 
-단순히 빠른 것이 아니라 **품질을 유지하면서** 빠른 것이 핵심
+<details>
+<summary> About LOD Grass </summary>
 
-- **Assimp** 로더
-- **Sky LUT**: 대기 산란 Raymarching
-- **Shadow mapping** : Poisson Disk Sampling
-- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
-- **동적 Ambient 전환** : 노을, 낮, 밤
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **Bloom + Lens Flare** 후처리
-- **God Rays**: 후처리 Volumetric Scattering
-- **YCoCg Variance Clipping**
-- **TAA**
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC3.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+
+  <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
+
+  - Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
+  - 이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
+  - Poisson Disk Sampling PCF 소프트 섀도우
+
+  | 거리 구분 | 렌더링 방식 | 특징 |
+  | :--- | :--- | :--- |
+  | 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
+  | D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
+  | D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
 
 
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
+</div>
+
+</details>
+
+<br/>
 
 *cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Volumetric/real)
 
@@ -113,7 +156,9 @@ start SisyphusRenderer.sln
 ## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Assimp Loder (병렬 처리)</strong></p>
 </div>
@@ -144,9 +189,9 @@ start SisyphusRenderer.sln
 ## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
 
 <div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_06%ED%8F%AC%EC%9D%B8%ED%8A%B8.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow07.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping03_03%ED%88%AC%EA%B3%BC.png?raw=true" width="260"></td>
   <br>
   <p><strong>일반 | PCF | Point</strong></p>
 </div>
@@ -172,4 +217,14 @@ start SisyphusRenderer.sln
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
     <br>
   <p><strong> Post-Processing Volumetric Scattering</strong></p>
+</div>
+
+### [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
+
+<div align="center">
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8401.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="260"></td>
+    <br>
+  <p><strong> Level of Detail(Geometry + Instancing, Billboard) </strong></p>
 </div>
