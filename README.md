@@ -1,7 +1,7 @@
 # Sisyphus Renderer - ShadowMapping
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping.png?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B504.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>ShadowMapping</strong></p>
 </div>
