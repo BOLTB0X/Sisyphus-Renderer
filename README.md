@@ -149,7 +149,15 @@ start SisyphusRenderer.sln
 
 - [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
 
-- [unity.com: discussions - Import PNG Heightmaps To Unity](https://discussions.unity.com/t/import-png-heightmaps-to-unity/932728)
+- [Learn OpenGL: Tessellation Chapter I: Rendering Terrain using Height Maps](https://learnopengl.com/Guest-Articles/2021/Tessellation/Height-map)
+
+- [sketchfab: Tree GN](https://sketchfab.com/3d-models/tree-gn-40da979cb23f492583ec89c4196cff4e)
+
+- [sketchfab: Stone Pillar](https://sketchfab.com/3d-models/stone-pillar-4b74c340d1bf47ccad35b57deb78b58a)
+
+- [sketchfab: Arca Dwarapala](https://sketchfab.com/3d-models/arca-dwarapala-fe8803efbc0043d7bc3114387c4c1545)
+
+- [rastertek: grass.dds](https://www.rastertek.com/tertut19.html)
 
 </details>
 
