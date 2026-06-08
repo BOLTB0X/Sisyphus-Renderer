@@ -22,7 +22,8 @@
 - **God Rays**: 후처리 Volumetric Scattering
 - **YCoCg Variance Clipping**
 - **TAA**
-- **Quad Tree**
+- **Lensflare**
+- **Terrain** : HeightMap, Quad Tree
 - **Grass LOD(Level of Detail)** : Geometry + Instancing, Billboard
 
 
@@ -76,9 +77,9 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 
   <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
 
-  - Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
-  - 이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
-  - Poisson Disk Sampling PCF 소프트 섀도우
+  -Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
+  -이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
+  -Poisson Disk Sampling PCF 소프트 섀도우
 
   | 거리 구분 | 렌더링 방식 | 특징 |
   | :--- | :--- | :--- |
@@ -201,7 +202,7 @@ start SisyphusRenderer.sln
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B502.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow07.png?raw=true" width="260"></td>
   <br>
-  <p><strong>일반 | PCF | Point</strong></p>
+  <p><strong>Point | Terrain | mix</strong></p>
 </div>
 
 
@@ -227,7 +228,7 @@ start SisyphusRenderer.sln
   <p><strong> Post-Processing Volumetric Scattering</strong></p>
 </div>
 
-### [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
+## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
 
 <div align="center">
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8401.png?raw=true" width="260"></td>
