@@ -6,9 +6,13 @@
 #include "Components/TextureManager.h"
 
 AssimpModel::AssimpModel() {
+    m_modelType = ModelType::Static;
+    m_boneCounter = 0;
+	m_rootNode = nullptr;
 } // AssimpModel
 
 AssimpModel::~AssimpModel() {
+    m_rootNode = nullptr;
 } // ~AssimpModel
 
 bool AssimpModel::Init(ID3D11Device* device, ID3D11DeviceContext* context, std::shared_ptr<TextureManager> texMgr,const std::string& path) {
@@ -49,3 +53,31 @@ void AssimpModel::AddMesh(std::unique_ptr<PBRMesh> newMesh) {
 void AssimpModel::AddMaterial(const Material& material) {
     m_materials.push_back(material);
 } // AddMaterial
+
+AssimpModel::ModelType AssimpModel::GetModelType() const {
+    return m_modelType;
+} // GetModelType
+
+const AssimpModel::ModelNode* AssimpModel::GetRootNode() const {
+    return m_rootNode.get();
+} // GetRootNode
+
+const AssimpModel::AnimationClip* AssimpModel::GetClip(const std::string& name) const {
+    for (const auto& clip : m_clips)
+        if (clip.name == name) {
+            return &clip;
+        }
+    return nullptr;
+} // GetClip
+
+const std::unordered_map<std::string, AssimpModel::BoneInfo>& AssimpModel::GetBoneInfoMap() const {
+    return m_boneInfoMap;
+} // GetBoneInfoMap
+
+int AssimpModel::GetBoneCount() const {
+    return m_boneCounter;
+} // GetBoneCount
+
+const AssimpModel::ModelNode* AssimpModel::GetRootNode() const {
+    return m_rootNode.get();
+} // GetRootNode

@@ -4,6 +4,7 @@
 #include "Frustum.h"
 // Utils
 #include "Helpers/DebugHelper.h"
+#include "SharedConstants/BuffersConstants.h"
 // STL
 #include <algorithm>
 #include <cfloat>
@@ -11,9 +12,9 @@
 #define  MAX_TRIANGLES_PER_NODE 10000
 #define  GRASS_SEED_STEP        3
 #define  GRASS_PER_TRIANGLE     6
-#define  HEIGHT_SCALE           250.0f
 
 using namespace DirectX;
+using namespace SharedConstants;
 
 QuadTree::QuadTree()
 	: m_maxTriangles(MAX_TRIANGLES_PER_NODE) {
@@ -21,6 +22,7 @@ QuadTree::QuadTree()
     m_maxHeight = -FLT_MAX;
 	m_minHeight = FLT_MAX;
 	m_grassSeedStep = GRASS_SEED_STEP;
+	m_heightScale = BuffersConstants::HEIGHT_SCALE;
 } // QuadTree
 
 QuadTree::~QuadTree() {
@@ -66,7 +68,7 @@ bool QuadTree::Init(ID3D11Device* device, const std::vector<TerrainVertex>& vert
         return false;
     }
 
-    BuildTree(device, m_rootNode.get(), vertices, indices, HEIGHT_SCALE);
+    BuildTree(device, m_rootNode.get(), vertices, indices, m_heightScale);
 
     float realMinY = FLT_MAX, realMaxY = -FLT_MAX;
     for (const auto& v : vertices) {

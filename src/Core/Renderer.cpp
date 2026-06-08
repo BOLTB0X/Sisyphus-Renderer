@@ -121,21 +121,21 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 
 	InitDefaultMaya(hwnd, device, context, linerWrapSampler);
 
-    Tree::InitParams treeInitParam;
-    treeInitParam.device = device;
-    treeInitParam.context = context;
-    treeInitParam.hwnd = hwnd;
-    treeInitParam.textMgr = m_TextureMgr;
-    treeInitParam.path = TREE;
-	treeInitParam.VSPath = PBR_VS;
-	treeInitParam.PSPath = TREE_PS;
-    treeInitParam.linerSampler = linerWrapSampler;
-    if (!m_Tree->Init(treeInitParam)) {
-        return false;
-    }
-    else {
-        m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
-    }
+ //   Tree::InitParams treeInitParam;
+ //   treeInitParam.device = device;
+ //   treeInitParam.context = context;
+ //   treeInitParam.hwnd = hwnd;
+ //   treeInitParam.textMgr = m_TextureMgr;
+ //   treeInitParam.path = TREE;
+	//treeInitParam.VSPath = PBR_VS;
+	//treeInitParam.PSPath = TREE_PS;
+ //   treeInitParam.linerSampler = linerWrapSampler;
+ //   if (!m_Tree->Init(treeInitParam)) {
+ //       return false;
+ //   }
+ //   else {
+ //       m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
+ //   }
 
     CloudMap::InitParams cloudMapParams;
     cloudMapParams.device = device;
@@ -172,22 +172,27 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     groundInitParams.device = device;
     groundInitParams.hwnd = hwnd;
 	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
-	groundInitParams.groundSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND)->GetSRV();
+	groundInitParams.farawayGrassSRV = m_TextureMgr->GetTexture(device, context, PathConstants::FARAWAY_GRASS)->GetSRV();
+	groundInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_COL)->GetSRV();
+	groundInitParams.ambSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_AMB)->GetSRV();
+	groundInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_NOR)->GetSRV();
+	groundInitParams.rouSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_ROU)->GetSRV();
+	groundInitParams.disSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_DIS)->GetSRV();
 	groundInitParams.linearSampler = linerWrapSampler;
 
     if (!m_Ground->Init(groundInitParams)) {
         return false;
     }
 
-    Grass::InitParams grassInitParams;
-    grassInitParams.device = device;
-    grassInitParams.hwnd = hwnd;
-	grassInitParams.grass = m_TextureMgr->GetTexture(device, context, PathConstants::GRASS)->GetSRV();
-	grassInitParams.linearSampler = linerWrapSampler;
+ //   Grass::InitParams grassInitParams;
+ //   grassInitParams.device = device;
+ //   grassInitParams.hwnd = hwnd;
+	//grassInitParams.grass = m_TextureMgr->GetTexture(device, context, PathConstants::GRASS)->GetSRV();
+	//grassInitParams.linearSampler = linerWrapSampler;
 
-    if (!m_Grass->Init(grassInitParams)) {
-        return false;
-    }
+ //   if (!m_Grass->Init(grassInitParams)) {
+ //       return false;
+ //   }
 
 	VolumetricCloud::InitParams cloudInitParams;
 	cloudInitParams.device = device;
@@ -299,15 +304,15 @@ void Renderer::Shutdown() {
     }
 
     // 일반 지오메트리 렌더링 객체
-    if (m_Grass) {
-        m_Grass.reset();
-    }
+    //if (m_Grass) {
+    //    m_Grass.reset();
+    //}
     if (m_Ground) {
         m_Ground.reset();
     }
-    if (m_Tree) {
-        m_Tree.reset();
-	}
+ //   if (m_Tree) {
+ //       m_Tree.reset();
+	//}
     if (m_Stone) {
         m_Stone.reset();
     }
@@ -398,9 +403,9 @@ void Renderer::UpdateModelTransform() {
 	//terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
 	//m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
 
-    pos = m_Tree->GetPosition();
-    terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
+    //pos = m_Tree->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -411,10 +416,11 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
 	ShadowMap::RenderParams renderParams;
 
     DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
+    //DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
     DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
 	//DirectX::XMVECTOR p3 = DirectX::XMLoadFloat3(&m_Arca->GetPosition());
-    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * (1.0f / 2.0f));
+    DirectX::XMStoreFloat3(&shadowFocus, p2);
+    //DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * (1.0f / 2.0f));
     //DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2 + p3) * (1.0f / 3.0f));
 
     m_DirectionalLight->UpdateObjectShadow(shadowFocus);
@@ -422,18 +428,18 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMMATRIX sharedView = m_DirectionalLight->GetObjectViewMatrix();
     DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
 
-    if (m_Tree) {
-		Tree::RenderShadowParams shadowParams;
-		shadowParams.shadowMap = m_ObjectShadowMap.get();
+  //  if (m_Tree) {
+		//Tree::RenderShadowParams shadowParams;
+		//shadowParams.shadowMap = m_ObjectShadowMap.get();
 
-        renderParams.viewMatrix = sharedView;
-        renderParams.projectionMatrix = sharedProj;
-        renderParams.worldMatrix = m_Tree->GetWorldMatrix();
-		shadowParams.shadowParams = &renderParams;
-		shadowParams.states = states;
+  //      renderParams.viewMatrix = sharedView;
+  //      renderParams.projectionMatrix = sharedProj;
+  //      renderParams.worldMatrix = m_Tree->GetWorldMatrix();
+		//shadowParams.shadowParams = &renderParams;
+		//shadowParams.states = states;
 
-        m_Tree->RenderShadow(context,shadowParams);
-    }
+  //      m_Tree->RenderShadow(context,shadowParams);
+  //  }
 
     //if (m_Arca) {
     //    renderParams.viewMatrix = sharedView;
@@ -491,7 +497,7 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     DrawGround(context, states);
     DrawModel(context, states);
     DrawSkyBox(context, states);
-	DrawGrass(context, states);
+	//DrawGrass(context, states);
 	ComputeShaderData(context, states);
 } // MainPass
 
@@ -583,14 +589,14 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
 	//mayaParams.world = m_Arca->GetWorldMatrix();
 	//m_Arca->Render(context, mayaParams);
 
-    if (!m_Tree) {
-        return;
-    }
+    //if (!m_Tree) {
+    //    return;
+    //}
 
-    Tree::RenderParams treeParams;
-    treeParams.world = m_Tree->GetWorldMatrix();
-    treeParams.states = states;
-    m_Tree->Render(context, treeParams);
+    //Tree::RenderParams treeParams;
+    //treeParams.world = m_Tree->GetWorldMatrix();
+    //treeParams.states = states;
+    //m_Tree->Render(context, treeParams);
 
 } // DrawModel
 

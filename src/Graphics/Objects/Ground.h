@@ -18,11 +18,18 @@ public:
         ID3D11Device*             device;
         HWND                      hwnd;
         std::shared_ptr<Texture>  heightMapTex;
-		ID3D11ShaderResourceView* groundSRV;
+		ID3D11ShaderResourceView* farawayGrassSRV;
+		ID3D11ShaderResourceView* colSRV;
+		ID3D11ShaderResourceView* ambSRV;
+		ID3D11ShaderResourceView* norSRV;
+		ID3D11ShaderResourceView* rouSRV;
+		ID3D11ShaderResourceView* disSRV;
         ID3D11SamplerState*       linearSampler;
 
-		InitParams() : device(nullptr), hwnd(nullptr), 
-            heightMapTex(nullptr), groundSRV(nullptr), linearSampler(nullptr) {
+		InitParams() : device(nullptr), hwnd(nullptr), heightMapTex(nullptr),
+            farawayGrassSRV(nullptr), colSRV(nullptr), ambSRV(nullptr),
+            norSRV(nullptr), rouSRV(nullptr), disSRV(nullptr),
+            linearSampler(nullptr) {
         }
     }; // InitParams
 
@@ -92,8 +99,17 @@ private:
     GroundBuffer                               m_GoundData;
     GroundBuffer                               m_prevGoundData;
     std::shared_ptr<Texture>                   m_heightMap;
-    ID3D11ShaderResourceView*                  m_groundSRV;
+    ID3D11ShaderResourceView*                  m_farawayGrassSRV;
+    ID3D11ShaderResourceView*                  m_colSRV;
+    ID3D11ShaderResourceView*                  m_ambSRV;
+    ID3D11ShaderResourceView*                  m_norSRV;
+    ID3D11ShaderResourceView*                  m_rouSRV;
+    ID3D11ShaderResourceView*                  m_disSRV;
     ID3D11ShaderResourceView*                  m_objectShadowSRV;
     ID3D11ShaderResourceView*                  m_terrainShadowSRV;
     ID3D11SamplerState*                        m_linearSampler;
+
+	float                                      m_quadMaxLeng;
+	float                                      m_quadScale;
+    float                                      m_heightScale;
 }; // Ground

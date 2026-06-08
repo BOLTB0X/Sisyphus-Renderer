@@ -20,7 +20,7 @@ namespace SharedConstants {
         };
 
         inline const std::vector<PBRTextureKeyword> PBRTEXTURE_KEYWORD_MAP = {
-            { PBRTextureType::Albedo,     { "_basecolor", "_albedo", "_alb", "_diffuse", "_col", "_Col", "_diff", "_BaseColor"}},
+            { PBRTextureType::Albedo,     { "_basecolor", "_albedo", "_alb", "_diffuse", "_col", "_Col", "_diff", "_BaseColor", "_d"}},
             { PBRTextureType::Normal,     { "_normal", "_nrm", "_norm", "_n", "_Normal", "_Nor"}},
             { PBRTextureType::Metallic,   { "_metallic", "_metal", "_m" } },
             { PBRTextureType::Roughness,  { "_roughness", "_rough", "_r", "_Roughness", "_Rgh", "_Rgn"}},
