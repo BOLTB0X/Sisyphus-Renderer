@@ -3,7 +3,7 @@
 #include <wrl/client.h>
 #include <memory>
 #include <DirectXMath.h>
-#include "Resources/ConstantBufferType.h"
+#include "Resources/ConstantBuffer.h"
 
 class RenderTexture;
 

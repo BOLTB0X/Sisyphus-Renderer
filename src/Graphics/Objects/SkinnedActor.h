@@ -1,17 +1,18 @@
 #pragma once
-#pragma once
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <memory>
 #include <wrl/client.h>
-#include "Components/ActorObject.h"
-#include "Components/Animator.h"
-#include "Resources/AssimpModel.h"
 #include "Data/ShadowMap.h"
+#include "Components/Animator.h"
+#include "Resources/ActorObject.h"
+#include "Resources/AssimpModel.h"
+#include "Resources/ConstantBuffer.h"
 
 class TextureManager;
+class D3D11State;
 
-class Rakshasa : public AssimpModel, public ActorObject {
+class SkinnedActor : public AssimpModel, public ActorObject {
 public:
     struct RenderParams {
         DirectX::XMMATRIX world;
@@ -21,32 +22,32 @@ public:
 
     }; // RenderParams
 
+    struct RenderShadowParams {
+        ShadowMap* shadowMap = nullptr;
+        ShadowMap::RenderParams* shadowParams = nullptr;
+        D3D11State* states = nullptr;
+
+        RenderShadowParams() = default;
+    }; // RenderShadowParams
+
 public:
-    Rakshasa();
-    virtual ~Rakshasa();
+    SkinnedActor();
+    virtual ~SkinnedActor();
 
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
-    void DrawIndexed(ID3D11DeviceContext*);
-    void Update(float);
+    void RenderShadow(ID3D11DeviceContext*, const RenderShadowParams&);
+    void Animate(float);
     void OnGui();
 
     DirectX::XMMATRIX GetWorldMatrix() override;
 
 private:
-    struct WorldBuffer {
-        DirectX::XMMATRIX world;
-
-        WorldBuffer() {
-            world = DirectX::XMMatrixIdentity();
-        }
-    }; // WorldBuffer;
-
     struct BoneBuffer {
         DirectX::XMMATRIX boneMatrices[256];
 
         BoneBuffer() {
-            for (int i = 0; i < 100; ++i) {
+            for (int i = 0; i < 256; ++i) {
                 boneMatrices[i] = DirectX::XMMatrixIdentity();
             }
         }
@@ -58,13 +59,14 @@ private:
 private:
     std::shared_ptr<TextureManager>            m_textureMgr;
     ID3D11SamplerState*                        m_linerSampler;
-    Animator                                   m_animator;
+    Animator                                   m_Animator;
 
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_skinnedVertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_boneBuffer;
 
-    WorldBuffer                                m_worldData;
-}; // Rakshasa
+    ConstantBuffer::WorldBuffer                m_worldData;
+    BoneBuffer                                 m_boneData;
+}; // SkinnedActor

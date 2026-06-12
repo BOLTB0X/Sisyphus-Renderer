@@ -5,7 +5,7 @@
 #include <directxmath.h>
 #include <memory>
 #include "Utils/SharedConstants/PathConstants.h"
-#include "Resources/ConstantBufferType.h"
+#include "Resources/ConstantBuffer.h"
 
 class RenderTexture;
 

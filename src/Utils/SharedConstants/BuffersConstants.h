@@ -108,9 +108,9 @@ namespace SharedConstants {
         static constexpr float ALPHA_CUT = 0.3f;
 
         // 일반 상수
-		static float QUAD_MAX_LENG = 800.0f;
-		static float HEIGHT_SCALE = 250.0f;
-		static float QUAD_SCALE = 10.0f;
+		//static float QUAD_MAX_LENG = 800.0f;
+		//static float HEIGHT_SCALE = 250.0f;
+		//static float QUAD_SCALE = 10.0f;
 
     } // BuffersConstants
 }

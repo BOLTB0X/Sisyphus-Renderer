@@ -23,24 +23,36 @@ AssimpLoader::AssimpLoader(std::shared_ptr<TextureManager> texMgr)
 AssimpLoader::~AssimpLoader() {
 } // ~AssimpLoader
 
-bool AssimpLoader::LoadMeshModel(ID3D11Device* device, ID3D11DeviceContext* context, const std::string& path, AssimpModel* outModel) {
+bool AssimpLoader::LoadMeshModel(ID3D11Device* device, ID3D11DeviceContext* context,
+    const std::string& path, AssimpModel* outModel) {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path,
-        aiProcess_Triangulate | aiProcess_CalcTangentSpace |
-        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
-        aiProcess_ConvertToLeftHanded | aiProcess_LimitBoneWeights);
+
+    const aiScene* preScene = importer.ReadFile(path, aiProcess_Triangulate);
+    bool hasBones = false;
+    if (preScene) {
+        for (unsigned int i = 0; i < preScene->mNumMeshes; ++i) {
+            if (preScene->mMeshes[i]->HasBones()) { hasBones = true; break; }
+        }
+    }
+
+    unsigned int flags = aiProcess_Triangulate
+        | aiProcess_CalcTangentSpace
+        | aiProcess_GenSmoothNormals
+        | aiProcess_JoinIdenticalVertices
+        | aiProcess_LimitBoneWeights
+        | aiProcess_ConvertToLeftHanded;
+
+    const aiScene* scene = importer.ReadFile(path, flags);
 
     if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
         return false;
     }
 
-	ProcessAnimations(scene, outModel);
+    ProcessAnimations(scene, outModel);
 
     std::string directory = std::filesystem::path(path).parent_path().string();
-
     ProcessMaterials(scene, device, context, directory, outModel);
     ProcessNode(scene->mRootNode, scene, device, context, outModel);
-
     outModel->m_rootNode = ParseNodeHierarchy(scene->mRootNode);
 
     return true;
@@ -49,10 +61,20 @@ bool AssimpLoader::LoadMeshModel(ID3D11Device* device, ID3D11DeviceContext* cont
 void AssimpLoader::ProcessNode(aiNode* node, const aiScene* scene,
     ID3D11Device* device, ID3D11DeviceContext* context, AssimpModel* outModel)
 {
-    // 현재 노드의 모든 메쉬 처리
+    if (!node) return;
+
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+        DebugHelper::DebugPrint("Mesh: [" + std::string(mesh->mName.C_Str()) + "]"
+            + " verts=" + std::to_string(mesh->mNumVertices)
+            + " bones=" + std::to_string(mesh->mNumBones));
+
+        if (outModel->GetModelType() == AssimpModel::ModelType::Skinned && !mesh->HasBones()) {
+            //DebugHelper::DebugPrint("Skip bone shape mesh: " + std::string(mesh->mName.C_Str()));
+            continue;
+        }
+
         outModel->AddMesh(ProcessMesh(mesh, scene, device, context, outModel));
     }
 
@@ -84,7 +106,6 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             AssimpModel::Material myMaterial;
             myMaterial.name = aiMat->GetName().C_Str();
 
-            // 지연 컨텍스트(deferredContext)를 사용하여 안전하게 텍스처 로드
             myMaterial.albedo = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Albedo);
             myMaterial.normal = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Normal);
             myMaterial.metallic = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Metallic);
@@ -95,6 +116,7 @@ void AssimpLoader::ProcessMaterials(const aiScene* scene, ID3D11Device* device, 
             myMaterial.emissive = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Emissive);
             myMaterial.displacement = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Displacement);
             myMaterial.subsurface = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Subsurface);
+            myMaterial.smoothness = LoadMaterialElement(device, deferredContext.Get(), aiMat, pbrDir, modelName, myMaterial.name, PBRTextureType::Smoothnes);
 
             Microsoft::WRL::ComPtr<ID3D11CommandList> commandList;
             deferredContext->FinishCommandList(FALSE, commandList.GetAddressOf());
@@ -172,7 +194,6 @@ void AssimpLoader::ProcessAnimations(const aiScene* scene, AssimpModel* outModel
     bool hasAnimation = scene->HasAnimations();
     bool hasBones = false;
 
-    // 씬에 있는 모든 메쉬를 검사해서 하나라도 Bone를 가지고 있는지 확인
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
         if (scene->mMeshes[i]->HasBones()) {
             hasBones = true;
@@ -249,24 +270,23 @@ void AssimpLoader::ProcessAnimations(const aiScene* scene, AssimpModel* outModel
 std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device, ID3D11DeviceContext* context,
     aiMaterial* aiMat, const std::string& pbrDir, const std::string& modelName, const std::string& matName, PBRTextureType type) {
 
-    // FBX 파일 내부에 텍스처 경로가 저장되어 있는지 확인
     aiTextureType aiType = aiTextureType_NONE;
-    if (type == PBRTextureType::Albedo) aiType = aiTextureType_DIFFUSE;
-    else if (type == PBRTextureType::Normal) aiType = aiTextureType_NORMALS;
-    else if (type == PBRTextureType::Metallic) aiType = aiTextureType_METALNESS;
-    else if (type == PBRTextureType::Roughness) aiType = aiTextureType_DIFFUSE_ROUGHNESS;
-    else if (type == PBRTextureType::Alpha) aiType = aiTextureType_OPACITY;
-    else if (type == PBRTextureType::AO) aiType = aiTextureType_LIGHTMAP;
-    else if (type == PBRTextureType::Emissive) aiType = aiTextureType_EMISSIVE;
-    else if (type == PBRTextureType::Displacement) aiType = aiTextureType_DISPLACEMENT;
-	else if (type == PBRTextureType::Specular) aiType = aiTextureType_SPECULAR;
-	else if (type == PBRTextureType::Subsurface) aiType = aiTextureType_NONE;
+    if (type == PBRTextureType::Albedo)             aiType = aiTextureType_DIFFUSE;
+    else if (type == PBRTextureType::Normal)        aiType = aiTextureType_NORMALS;
+    else if (type == PBRTextureType::Metallic)      aiType = aiTextureType_METALNESS;
+    else if (type == PBRTextureType::Roughness)     aiType = aiTextureType_DIFFUSE_ROUGHNESS;
+    else if (type == PBRTextureType::Alpha)         aiType = aiTextureType_OPACITY;
+    else if (type == PBRTextureType::AO)            aiType = aiTextureType_LIGHTMAP;
+    else if (type == PBRTextureType::Emissive)      aiType = aiTextureType_EMISSIVE;
+    else if (type == PBRTextureType::Displacement)  aiType = aiTextureType_DISPLACEMENT;
+    else if (type == PBRTextureType::Specular)      aiType = aiTextureType_SPECULAR;
+    else if (type == PBRTextureType::Subsurface)    aiType = aiTextureType_NONE;
+    else if (type == PBRTextureType::Smoothnes)     aiType = aiTextureType_NONE;
 
     if (aiType != aiTextureType_NONE && aiMat->GetTextureCount(aiType) > 0) {
         aiString str;
         aiMat->GetTexture(aiType, 0, &str);
         std::string texPath = pbrDir + str.C_Str();
-    
         if (std::filesystem::exists(texPath)) {
             auto tex = m_TextureMgr->GetTexture(device, context, texPath);
             if (tex) return tex;
@@ -280,14 +300,54 @@ std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device,
             break;
         }
     }
-    if (!keywords) {
-        return nullptr;
-    }
+    if (!keywords) return nullptr;
 
     static const std::vector<std::string> exts = { ".png", ".jpg", ".jpeg", ".tga", ".dds" };
+    std::string coreName = matName;
+
+    if (coreName.size() > 2 && coreName.substr(0, 2) == "M_") {
+        coreName = coreName.substr(2);
+    }
+
+    static const std::vector<std::string> matSuffixes = { "_layers", "_mat", "_material" };
+    for (const auto& suffix : matSuffixes) {
+        if (coreName.size() > suffix.size() &&
+            coreName.compare(coreName.size() - suffix.size(), suffix.size(), suffix) == 0) {
+            coreName = coreName.substr(0, coreName.size() - suffix.size());
+            break;
+        }
+    }
+
+    if (std::filesystem::exists(pbrDir)) {
+        for (const auto& entry : std::filesystem::directory_iterator(pbrDir)) {
+            if (!entry.is_regular_file()) continue;
+
+            std::string filename = entry.path().stem().string();
+            std::string ext = entry.path().extension().string();
+
+            bool validExt = false;
+            for (const auto& e : exts)
+                if (ext == e) { validExt = true; break; }
+            if (!validExt) continue;
+
+            if (filename.find(coreName) == std::string::npos) continue;
+
+            for (const auto& key : *keywords) {
+                if (filename.size() >= key.size() &&
+                    filename.compare(filename.size() - key.size(), key.size(), key) == 0)
+                {
+                    std::string fullPath = entry.path().string();
+                    auto tex = m_TextureMgr->GetTexture(device, context, fullPath);
+                    if (tex) {
+                        DebugHelper::DebugPrint("Loaded: " + fullPath + " for: " + matName);
+                        return tex;
+                    }
+                }
+            } // for (const auto& key : *keywords)
+        } // for (const auto& entry : std::filesystem::directory_iterator(pbrDir))
+    }
 
     std::vector<std::string> prefixes = { matName, modelName };
-
     for (const auto& prefix : prefixes) {
         for (const auto& key : *keywords) {
             for (const auto& ext : exts) {
@@ -295,13 +355,13 @@ std::shared_ptr<Texture> AssimpLoader::LoadMaterialElement(ID3D11Device* device,
                 if (std::filesystem::exists(fullPath)) {
                     auto tex = m_TextureMgr->GetTexture(device, context, fullPath);
                     if (tex) {
-                        //DebugHelper::DebugPrint("Loaded Texture: " + fullPath + " for Material: " + matName);
+                        DebugHelper::DebugPrint("Loaded(fallback): " + fullPath + " for: " + matName);
                         return tex;
                     }
                 }
-            } // for - ext
-        } // for - key
-    } // for - prefix
+            } // for (const auto& ext : exts)
+        } // for (const auto& key : *keywords)
+    } // for (const auto& prefix : prefixes)
 
     return nullptr;
 } // LoadMaterialElement
@@ -313,7 +373,6 @@ void AssimpLoader::ExtractBoneWeights(std::vector<PBRMesh::FBRVertex>& vertices,
 
         int boneID = -1;
         if (outModel->m_boneInfoMap.find(boneName) == outModel->m_boneInfoMap.end()) {
-            // 처음 보는 뼈라면 새 ID 부여
             boneID = outModel->m_boneCounter++;
 
             AssimpModel::BoneInfo newBoneInfo;
@@ -352,14 +411,12 @@ void AssimpLoader::SetVertexBoneData(PBRMesh::FBRVertex& vertex, int boneID, flo
 
 DirectX::XMMATRIX AssimpLoader::ConvertMatrixToDirectX(const aiMatrix4x4& from)
 {
-    DirectX::XMMATRIX to;
-
-    to.r[0] = DirectX::XMVectorSet(from.a1, from.a2, from.a3, from.a4);
-    to.r[1] = DirectX::XMVectorSet(from.b1, from.b2, from.b3, from.b4);
-    to.r[2] = DirectX::XMVectorSet(from.c1, from.c2, from.c3, from.c4);
-    to.r[3] = DirectX::XMVectorSet(from.d1, from.d2, from.d3, from.d4);
-
-    return to;
+    return DirectX::XMMATRIX(
+        from.a1, from.b1, from.c1, from.d1,
+        from.a2, from.b2, from.c2, from.d2,
+        from.a3, from.b3, from.c3, from.d3,
+        from.a4, from.b4, from.c4, from.d4
+    );
 } // ConvertMatrixToDirectX
 
 std::unique_ptr<AssimpModel::ModelNode> AssimpLoader::ParseNodeHierarchy(aiNode* aiNode)
@@ -371,8 +428,10 @@ std::unique_ptr<AssimpModel::ModelNode> AssimpLoader::ParseNodeHierarchy(aiNode*
 
     newNode->transformation = ConvertMatrixToDirectX(aiNode->mTransformation);
 
-    // 자식 노드가 있다면 메모리를 미리 예약하고 재귀적으로 파싱하여 추가
-    newNode->children.reserve(aiNode->mNumChildren);
+    for (unsigned int i = 0; i < aiNode->mNumMeshes; ++i) {
+        newNode->meshIndices.push_back(aiNode->mMeshes[i]);
+    }
+
     for (unsigned int i = 0; i < aiNode->mNumChildren; ++i)
     {
         auto childNode = ParseNodeHierarchy(aiNode->mChildren[i]);

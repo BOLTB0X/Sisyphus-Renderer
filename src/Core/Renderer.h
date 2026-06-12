@@ -26,7 +26,9 @@ class TAA;
 class PostEffects;
 class Grass;
 class Tree;
-class DefaultMaya;
+class MayaActor;
+class SkinnedActor;
+class RigidActor;
 
 class Renderer {
 public:
@@ -44,7 +46,7 @@ public:
 	void UpdateCameraUpDown(float);
 
 private:
-    bool Render();
+    bool Render(float);
 	void UpdateModelTransform();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
@@ -86,9 +88,11 @@ private:
     std::unique_ptr<TAA>                  m_TAA;
     std::unique_ptr<Grass>                m_Grass;
     std::unique_ptr<Tree>                 m_Tree;
-	std::unique_ptr<DefaultMaya>          m_Stone;
-	std::unique_ptr<DefaultMaya>          m_StonePillar;
-    std::unique_ptr<DefaultMaya>          m_Arca;
+	std::unique_ptr<MayaActor>            m_Stone;
+	std::unique_ptr<MayaActor>            m_StonePillar;
+    std::unique_ptr<MayaActor>            m_Arca;
+	std::unique_ptr<SkinnedActor>         m_Rakshasa;
+	std::unique_ptr<RigidActor>           m_LowpolyPlayer;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;

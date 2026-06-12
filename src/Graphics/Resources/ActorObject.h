@@ -5,7 +5,7 @@
 #include <wrl/client.h>
 #include <string>
 // Components
-#include "Transform.h"
+#include "Components/Transform.h"
 
 class TextureManager;
 
@@ -20,9 +20,11 @@ public:
 		std::wstring                    VSPath;
 		std::wstring                    PSPath;
         ID3D11SamplerState*             linerSampler;
+        ID3D11SamplerState*             pointSampler;
 
         InitParams() : device(nullptr), context(nullptr), hwnd(nullptr),
-            textMgr(nullptr), path(""), VSPath(L""), PSPath(L""), linerSampler(nullptr) {
+            textMgr(nullptr), path(""), VSPath(L""), PSPath(L""),
+            linerSampler(nullptr), pointSampler(nullptr) {
         }
     }; // InitParams
 
@@ -53,6 +55,8 @@ public:
     unsigned int GetRenderCount() const;
 
 protected:
+    void DrawTransformGui();
+
     Transform    m_transform;
     unsigned int m_RenderCount;
 }; // ActorObject

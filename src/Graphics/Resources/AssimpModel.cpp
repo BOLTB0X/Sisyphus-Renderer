@@ -16,6 +16,13 @@ AssimpModel::~AssimpModel() {
 } // ~AssimpModel
 
 bool AssimpModel::Init(ID3D11Device* device, ID3D11DeviceContext* context, std::shared_ptr<TextureManager> texMgr,const std::string& path) {
+    m_meshes.clear();
+    m_materials.clear();
+    m_clips.clear();
+    m_boneInfoMap.clear();
+    m_boneCounter = 0;
+    m_rootNode = nullptr;
+
     m_AssimpLoader = std::make_unique<AssimpLoader>(texMgr);
     return m_AssimpLoader->LoadMeshModel(device, context, path, this);
 } // Init
@@ -77,7 +84,3 @@ const std::unordered_map<std::string, AssimpModel::BoneInfo>& AssimpModel::GetBo
 int AssimpModel::GetBoneCount() const {
     return m_boneCounter;
 } // GetBoneCount
-
-const AssimpModel::ModelNode* AssimpModel::GetRootNode() const {
-    return m_rootNode.get();
-} // GetRootNode

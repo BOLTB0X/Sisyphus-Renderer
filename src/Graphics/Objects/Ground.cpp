@@ -6,17 +6,14 @@
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
 #include "SharedConstants/BuffersConstants.h"
+#include "SharedConstants/CommonConstants.h"
 #include "Helpers/DebugHelper.h"
 #include "Helpers/ShaderHelper.h"
 // DX11
 #include <DirectXMath.h>
 // define
-#define FARWAY_GRASS_SLOT   12
-#define GROUND_COL_SLOT     13
-#define GROUND_AMB_SLOT     14
-#define GROUND_NOR_SLOT     15
-#define GROUND_ROU_SLOT     16
-#define GROUND_DIS_SLOT     17
+#define TEX_COL_SLOT        2
+#define TEX_NOR_SLOT        3
 #define LINEAR_SAMPLER_SLOT 0
 #define BUFFER_SLOT_WORLD   2
 #define BUFFER_SLOT_GROUND  3
@@ -29,29 +26,20 @@ using namespace ConstantBuffer;
 Ground::Ground() {
 	m_quadTree = std::make_unique<QuadTree>();
 	m_heightMap = nullptr;
-	m_prevGoundData.padding1 = -1.0f;
-	m_farawayGrassSRV = nullptr;
 	m_colSRV = nullptr;
-	m_ambSRV = nullptr;
 	m_norSRV = nullptr;
-	m_rouSRV = nullptr;
-	m_disSRV = nullptr;
 	m_objectShadowSRV = nullptr;
 	m_terrainShadowSRV = nullptr;
 	m_linearSampler = nullptr;
-	m_quadMaxLeng = BuffersConstants::QUAD_MAX_LENG;
-	m_quadScale = BuffersConstants::QUAD_SCALE;
-	m_heightScale = BuffersConstants::HEIGHT_SCALE;
+	m_quadMaxLeng = CommonConstants::QUAD_MAX_LENG;
+	m_quadScale = CommonConstants::QUAD_SCALE;
+	m_heightScale = CommonConstants::HEIGHT_SCALE;
 } // Ground
 
 Ground::~Ground() {
 	m_heightMap = nullptr;
-	m_farawayGrassSRV = nullptr;
 	m_colSRV = nullptr;
-	m_ambSRV = nullptr;
 	m_norSRV = nullptr;
-	m_rouSRV = nullptr;
-	m_disSRV = nullptr;
 	m_objectShadowSRV = nullptr;
 	m_terrainShadowSRV = nullptr;
 	m_linearSampler = nullptr;
@@ -65,12 +53,8 @@ bool Ground::Init(const InitParams& params) {
 	std::vector<QuadTree::TerrainVertex> vertices;
 	std::vector<UINT> indices;
 	m_heightMap = params.heightMapTex;
-	m_farawayGrassSRV = params.farawayGrassSRV;
 	m_colSRV = params.colSRV;
-	m_ambSRV = params.ambSRV;
 	m_norSRV = params.norSRV;
-	m_rouSRV = params.rouSRV;
-	m_disSRV = params.disSRV;
 
 	GenerateTerrainGrid(m_quadMaxLeng, m_quadMaxLeng, m_quadScale, vertices, indices);
 
@@ -95,12 +79,8 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 	context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-	context->PSSetShaderResources(FARWAY_GRASS_SLOT, 1, &m_farawayGrassSRV);
-	context->PSSetShaderResources(GROUND_COL_SLOT, 1, &m_colSRV);
-	context->PSSetShaderResources(GROUND_AMB_SLOT, 1, &m_ambSRV);
-	context->PSSetShaderResources(GROUND_NOR_SLOT, 1, &m_norSRV);
-	context->PSSetShaderResources(GROUND_ROU_SLOT, 1, &m_rouSRV);
-	context->PSSetShaderResources(GROUND_DIS_SLOT, 1, &m_disSRV);
+	context->PSSetShaderResources(TEX_COL_SLOT, 1, &m_colSRV);
+	context->PSSetShaderResources(TEX_NOR_SLOT, 1, &m_norSRV);
 	context->PSSetSamplers(LINEAR_SAMPLER_SLOT, 1, &m_linearSampler);
 
 	XMMATRIX world = XMMatrixIdentity();
@@ -113,9 +93,6 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
 	context->PSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
 
-	if (UpdateGroundBuffer(context)) {
-		context->PSSetConstantBuffers(BUFFER_SLOT_GROUND, 1, m_groundBuffer.GetAddressOf());
-	}
 
 	m_visibleNodes.clear();
 	m_quadTree->GetVisibleNodes(params.frustum, m_visibleNodes);
@@ -134,12 +111,8 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	}
 
 	ID3D11ShaderResourceView* nullSRV = nullptr;
-	context->PSSetShaderResources(FARWAY_GRASS_SLOT, 1, &nullSRV);
-	context->PSSetShaderResources(GROUND_COL_SLOT, 1, &nullSRV);
-	context->PSSetShaderResources(GROUND_AMB_SLOT, 1, &nullSRV);
-	context->PSSetShaderResources(GROUND_NOR_SLOT, 1, &nullSRV);
-	context->PSSetShaderResources(GROUND_ROU_SLOT, 1, &nullSRV);
-	context->PSSetShaderResources(GROUND_DIS_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(TEX_COL_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(TEX_NOR_SLOT, 1, &nullSRV);
 } // Render
 
 void Ground::DrawIndexed(ID3D11DeviceContext* context) {
@@ -157,16 +130,13 @@ void Ground::DrawIndexed(ID3D11DeviceContext* context) {
 	}
 } // DrawIndexed
 
-void Ground::OnGui() {
+void Ground::OnGui(ID3D11ShaderResourceView* srv) {
 	ImGui::Begin("Ground Control");
 
-	ImGui::ColorEdit3("Dark Sand", (float*)&m_GoundData.darkSand);
-	ImGui::ColorEdit3("Light Sand", (float*)&m_GoundData.lightSand);
-
-	if (ImGui::Button("Reset Colors")) {
-		m_GoundData = GroundBuffer();
+	if (srv) {
+		ImGui::Text("Shadow Preview");
+		ImGui::Image((ImTextureID)srv, ImVec2(256, 256));
 	}
-
 	ImGui::End();
 } // OnGui
 
@@ -223,28 +193,12 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
 		return false;
 	}
 
-	if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf()) ||
-		!InitConstantBuffer<GroundBuffer>(device, m_groundBuffer.GetAddressOf())) {
+	if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
 		return false;
 	}
 
 	return true;
 } // InitShader
-
-bool Ground::UpdateGroundBuffer(ID3D11DeviceContext* context) {
-	using namespace ShaderHelper;
-
-	if (memcmp(&m_prevGoundData, &m_GoundData, sizeof(GroundBuffer)) == 0) {
-		return true;
-	}
-
-	if (!UpdateConstantBuffer(context, m_groundBuffer.Get(), m_GoundData)) {
-		return false;
-	}
-
-	m_prevGoundData = m_GoundData;
-	return true;
-} // UpdateGroundBuffer
 
 void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<QuadTree::TerrainVertex>& outVertices, std::vector<UINT>& outIndices) {
 	outVertices.clear();

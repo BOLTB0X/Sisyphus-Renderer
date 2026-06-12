@@ -53,10 +53,18 @@ bool ShadowMap::RenderOpaque(ID3D11DeviceContext* context, const RenderParams& p
     if (!UpdateMatrixBuffer(context, params.worldMatrix, params.viewMatrix, params.projectionMatrix)) {
         return false;
     }
-
+    
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());
-    context->IASetInputLayout(m_depthLayout.Get());
-    context->VSSetShader(m_depthVertexShader.Get(), nullptr, 0);
+
+    if (params.isSkinned) {
+        context->IASetInputLayout(m_skinnedDepthLayout.Get());
+        context->VSSetShader(m_skinnedDepthVertexShader.Get(), nullptr, 0);
+    }
+    else {
+        context->IASetInputLayout(m_depthLayout.Get());
+        context->VSSetShader(m_depthVertexShader.Get(), nullptr, 0);
+    }
+
     context->PSSetShader(nullptr, nullptr, 0);
 
     return true;
@@ -78,10 +86,17 @@ bool ShadowMap::RenderTransparent(ID3D11DeviceContext* context, const RenderPara
     context->PSSetSamplers(0, 1, &params.linearSampler);
 
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());
-    context->IASetInputLayout(m_transparentLayout.Get());
 
-    context->VSSetShader(m_transparentDepthVertexShader.Get(), nullptr, 0);
-    context->PSSetShader(m_transparentDepthPixelShader.Get(), nullptr, 0);
+    if (params.isSkinned) {
+        context->IASetInputLayout(m_skinnedDepthLayout.Get());
+        context->VSSetShader(m_skinnedDepthVertexShader.Get(), nullptr, 0);
+        context->PSSetShader(m_transparentDepthPixelShader.Get(), nullptr, 0);
+    }
+    else {
+        context->IASetInputLayout(m_transparentLayout.Get());
+        context->VSSetShader(m_transparentDepthVertexShader.Get(), nullptr, 0);
+        context->PSSetShader(m_transparentDepthPixelShader.Get(), nullptr, 0);
+    }
 
     return true;
 } // RenderTransparent
@@ -126,6 +141,22 @@ bool ShadowMap::InitShader(ID3D11Device* device, HWND hwnd) {
     }
 
     if (!InitPixelShader(device, hwnd, PathConstants::TRANSPARENT_DEPTH_PS, m_transparentDepthPixelShader.GetAddressOf())) {
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC layoutDesc3[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_UINT,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BLENDWEIGHT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    if (!InitVertexShader(device, hwnd,
+        PathConstants::SKINNED_DEPTH_VS,
+        layoutDesc3, ARRAYSIZE(layoutDesc3), m_skinnedDepthVertexShader.GetAddressOf(), m_skinnedDepthLayout.GetAddressOf())) {
         return false;
     }
 

@@ -1,7 +1,7 @@
 #include "Pch.h"
 #include "TAA.h"
 #include "Data/RenderTexture.h"
-#include "Resources/ConstantBufferType.h"
+#include "Resources/ConstantBuffer.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "SharedConstants/PathConstants.h"

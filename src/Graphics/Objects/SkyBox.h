@@ -3,6 +3,7 @@
 #include <wrl/client.h>
 #include <memory>
 #include <DirectXMath.h>
+#include "Resources/ConstantBuffer.h"
 #include "Utils/SharedConstants/BuffersConstants.h"
 
 class DefaultMesh;
@@ -41,16 +42,6 @@ public:
     void OnGui(); // Imgui 용
 
 private:
-    struct WolrdBuffer {
-        DirectX::XMMATRIX world;
-        
-        WolrdBuffer() {
-            world = DirectX::XMMatrixIdentity();
-		}
-	}; // WorldBuffer;
-
-
-private:
     bool InitShader(ID3D11Device*, HWND);
 
 private:
@@ -61,7 +52,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     // buffers
-    WolrdBuffer                                m_WolrdData;
+    ConstantBuffer::WorldBuffer                m_WorldData;
     // textures
     ID3D11SamplerState*                        m_linerWrapSampler;
     ID3D11ShaderResourceView*                  m_depthSRV;

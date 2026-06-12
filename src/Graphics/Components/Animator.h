@@ -13,7 +13,8 @@ public:
     void  Play(const std::string&);
     void  Update(float);
 
-    const std::vector<DirectX::XMMATRIX>& GetBoneMatrices() const;
+    const std::vector<DirectX::XMMATRIX>&                     GetBoneMatrices() const;
+    const std::unordered_map<std::string, DirectX::XMMATRIX>& GetNodeTransforms() const;
 
 private:
     void UpdateNode(const AssimpModel::ModelNode*, const DirectX::XMMATRIX&);
@@ -25,8 +26,9 @@ private:
     DirectX::XMMATRIX InterpolateScale(const AssimpModel::AnimationClip::NodeAnim&, float);
 
 private:
-    const AssimpModel*                m_model;
-    const AssimpModel::AnimationClip* m_currentClip;
-    float                             m_currentTime;
-    std::vector<DirectX::XMMATRIX>    m_finalBoneMatrices;
+    const AssimpModel*                                 m_model;
+    const AssimpModel::AnimationClip*                  m_currentClip;
+    float                                              m_currentTime;
+    std::vector<DirectX::XMMATRIX>                     m_boneMatrices;
+    std::unordered_map<std::string, DirectX::XMMATRIX> m_nodeTransforms;
 }; // Animator

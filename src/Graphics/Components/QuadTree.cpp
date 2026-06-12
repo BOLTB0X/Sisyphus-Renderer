@@ -5,24 +5,25 @@
 // Utils
 #include "Helpers/DebugHelper.h"
 #include "SharedConstants/BuffersConstants.h"
+#include "SharedConstants/CommonConstants.h"
 // STL
 #include <algorithm>
 #include <cfloat>
 // define
-#define  MAX_TRIANGLES_PER_NODE 10000
-#define  GRASS_SEED_STEP        3
-#define  GRASS_PER_TRIANGLE     6
+//#define  MAX_TRIANGLES_PER_NODE 10000
+//#define  GRASS_SEED_STEP        3
+//#define  GRASS_PER_TRIANGLE     6
 
 using namespace DirectX;
 using namespace SharedConstants;
 
 QuadTree::QuadTree()
-	: m_maxTriangles(MAX_TRIANGLES_PER_NODE) {
+	: m_maxTriangles(CommonConstants::MAX_TRIANGLES_PER_NODE) {
     m_rootNode = std::make_unique<QuadTreeNode>();
     m_maxHeight = -FLT_MAX;
 	m_minHeight = FLT_MAX;
-	m_grassSeedStep = GRASS_SEED_STEP;
-	m_heightScale = BuffersConstants::HEIGHT_SCALE;
+	m_grassSeedStep = CommonConstants::GRASS_SEED_STEP;
+	m_heightScale = CommonConstants::HEIGHT_SCALE;
 } // QuadTree
 
 QuadTree::~QuadTree() {
@@ -229,7 +230,7 @@ void QuadTree::BuildGrassSeeds(ID3D11Device* device, QuadTreeNode* node,
         const TerrainVertex& v1 = vertices[indices[i + 1]];
         const TerrainVertex& v2 = vertices[indices[i + 2]];
 
-        for (int j = 0; j < GRASS_PER_TRIANGLE; ++j) {
+        for (int j = 0; j < CommonConstants::GRASS_PER_TRIANGLE; ++j) {
             // 무게중심 좌표계를 위한 난수 생성
             float r1 = static_cast<float>(rand()) / RAND_MAX;
             float r2 = static_cast<float>(rand()) / RAND_MAX;

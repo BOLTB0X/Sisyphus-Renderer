@@ -7,7 +7,7 @@ void Animator::Init(const AssimpModel* model) {
     m_model = model;
 	m_currentClip = nullptr;
 	m_currentTime = 0.0f;
-    m_finalBoneMatrices.assign(256, XMMatrixIdentity());
+    m_boneMatrices.assign(256, XMMatrixIdentity());
 } // Init
 
 void Animator::Play(const std::string& clipName) {
@@ -25,18 +25,22 @@ void Animator::Update(float deltaTime) {
     m_currentTime = fmodf(m_currentTime, m_currentClip->duration);
 
     UpdateNode(m_model->GetRootNode(), XMMatrixIdentity());
-} // Update
+} // Animate
 
-const std::vector<DirectX::XMMATRIX>& Animator::GetBoneMatrices() const {
-    return m_finalBoneMatrices;
+const std::vector<XMMATRIX>& Animator::GetBoneMatrices() const {
+    return m_boneMatrices;
 } // GetBoneMatrices
+
+const std::unordered_map<std::string, XMMATRIX>& Animator::GetNodeTransforms() const { 
+    return m_nodeTransforms; 
+} // GetNodeTransforms
 
 void Animator::UpdateNode(const AssimpModel::ModelNode* node, const XMMATRIX& parentTransform) {
     if (!node) {
         return;
     }
 
-    // 노드 기본 트랜스폼 (애니메이션 없는 뼈 대비)
+    // 노드 기본 트랜스폼
     XMMATRIX localTransform = node->transformation;
 
     const AssimpModel::AnimationClip::NodeAnim* ch = FindNodeAnim(node->name);
@@ -44,7 +48,7 @@ void Animator::UpdateNode(const AssimpModel::ModelNode* node, const XMMATRIX& pa
         XMMATRIX T = InterpolatePosition(*ch, m_currentTime);
         XMMATRIX R = InterpolateRotation(*ch, m_currentTime);
         XMMATRIX S = InterpolateScale(*ch, m_currentTime);
-        localTransform = S * R * T; // 순서 중요
+        localTransform = S * R * T;
     }
 
     XMMATRIX globalTransform = localTransform * parentTransform;
@@ -53,8 +57,10 @@ void Animator::UpdateNode(const AssimpModel::ModelNode* node, const XMMATRIX& pa
     auto it = boneMap.find(node->name);
     if (it != boneMap.end()) {
         int id = it->second.id;
-        m_finalBoneMatrices[id] = it->second.offsetMatrix * globalTransform;
+        m_boneMatrices[id] = it->second.offsetMatrix * globalTransform;
     }
+
+    m_nodeTransforms[node->name] = globalTransform;
 
     for (const auto& child : node->children) {
         UpdateNode(child.get(), globalTransform);

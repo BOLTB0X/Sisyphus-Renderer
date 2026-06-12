@@ -26,6 +26,7 @@ public:
 		bool hasEmissive;
 		bool hasDisplacement;
 		bool hasSubsurface;
+        bool hasSmoothness;
 
         MaterialInfo() {
             name = "";
@@ -39,6 +40,7 @@ public:
 			hasEmissive = false;
 			hasDisplacement = false;
 			hasSubsurface = false;
+            hasSmoothness = false;
         }
     }; // MaterialInfo
 
@@ -64,9 +66,11 @@ protected:
     struct ModelNode {
         std::string                             name;
         DirectX::XMMATRIX                       transformation;
+        std::vector<int>                        meshIndices;
         std::vector<std::unique_ptr<ModelNode>> children;
 
         ModelNode() : name(""), transformation(DirectX::XMMatrixIdentity()) {
+            meshIndices = std::vector<int>();
             children = std::vector<std::unique_ptr<ModelNode>>();
         } // ModelNode
     }; // ModelNode
@@ -83,6 +87,7 @@ protected:
         std::shared_ptr<Texture> emissive;
 		std::shared_ptr<Texture> displacement;
         std::shared_ptr<Texture> subsurface;
+        std::shared_ptr<Texture> smoothness;
 
     }; // Material
 
@@ -96,8 +101,15 @@ protected:
             std::vector<std::pair<float, DirectX::XMFLOAT3>>    positionKeys;
             std::vector<std::pair<float, DirectX::XMFLOAT4>>    rotationKeys;
             std::vector<std::pair<float, DirectX::XMFLOAT3>>    scaleKeys;
+
+            NodeAnim() : name(""), positionKeys({}), rotationKeys({}), scaleKeys({}) {
+            } // NodeAnim
         };
         std::vector<NodeAnim> channels;
+
+        AnimationClip() : name(""), duration(0.0f), ticksPerSecond(0.0f) {
+            channels = std::vector<NodeAnim>();
+        }
     }; // AnimationClip
 
 protected:
@@ -111,7 +123,6 @@ protected:
 
     const std::unordered_map<std::string, BoneInfo>& GetBoneInfoMap() const;
     int                                              GetBoneCount()   const;
-    const ModelNode*                                 GetRootNode()    const;
 
 protected:
     std::unique_ptr<AssimpLoader>             m_AssimpLoader;
