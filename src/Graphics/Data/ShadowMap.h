@@ -2,7 +2,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <directxmath.h>
-#include "Resources/ConstantBufferType.h"
+#include "Resources/ConstantBuffer.h"
 
 class RenderTexture;
 
@@ -23,12 +23,14 @@ public:
 
         ID3D11ShaderResourceView* alphaSRV;
         ID3D11SamplerState*       linearSampler;
+        bool                      isSkinned;
 
         RenderParams() : worldMatrix(DirectX::XMMatrixIdentity()),
             viewMatrix(DirectX::XMMatrixIdentity()),
             projectionMatrix(DirectX::XMMatrixIdentity()),
             alphaSRV(nullptr),
-            linearSampler(nullptr) {
+            linearSampler(nullptr),
+            isSkinned(false) {
         }
     }; // RenderParams
 
@@ -60,6 +62,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_transparentDepthVertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_transparentDepthPixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_transparentLayout;
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_skinnedDepthVertexShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_skinnedDepthLayout;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_matrixBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_checkLeafBuffer;

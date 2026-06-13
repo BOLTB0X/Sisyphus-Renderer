@@ -37,8 +37,9 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	LoadTexture(device, context, PathConstants::NOISE_2D);
 	LoadTexture(device, context, PathConstants::HEIGHT, true);
 	LoadTexture(device, context, PathConstants::GRASS);
-	LoadTexture(device, context, PathConstants::GROUND);
-	//LoadTexture(device, context, PathConstants::LEAF);
+	//LoadTexture(device, context, PathConstants::FARAWAY_GRASS);
+	LoadTexture(device, context, PathConstants::GROUND_COL);
+	LoadTexture(device, context, PathConstants::GROUND_NOR);
 
     CreateVolumeTexture(device, PathConstants::KEY_WORLEY_NOISE, 32, 32, 32, DXGI_FORMAT_R16G16B16A16_FLOAT);
     CreateCloudNoise(context, PathConstants::KEY_WORLEY_NOISE);

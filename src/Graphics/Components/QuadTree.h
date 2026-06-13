@@ -14,6 +14,8 @@ public:
         DirectX::XMFLOAT3 position;
         DirectX::XMFLOAT3 normal;
         DirectX::XMFLOAT2 texcoord;
+        DirectX::XMFLOAT3 tangent;
+        DirectX::XMFLOAT3 binormal;
     }; // TerrainVertex
 
     struct QuadTreeNode {
@@ -100,6 +102,7 @@ private:
     float                                m_maxHeight;
 	float                                m_minHeight;
     int                                  m_grassSeedStep;
+	float                                m_heightScale;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_globalVertexBuffer;
 }; // QuadTree

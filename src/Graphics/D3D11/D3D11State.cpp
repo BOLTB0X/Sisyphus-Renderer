@@ -141,7 +141,6 @@ bool D3D11State::InitShadowSampler(ID3D11Device* device) {
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
     samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-    // Border Color를 흰색(1.0f)으로 설정하여 깊이 비교 시 항상 '가장 먼 곳'으로 판정되게
     samplerDesc.BorderColor[0] = 1.0f;
     samplerDesc.BorderColor[1] = 1.0f;
     samplerDesc.BorderColor[2] = 1.0f;

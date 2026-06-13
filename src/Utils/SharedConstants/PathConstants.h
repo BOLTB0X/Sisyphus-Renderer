@@ -46,18 +46,25 @@ namespace SharedConstants {
         static const std::wstring TRANSPARENT_DEPTH_VS = L"HLSL/TransparentDepthVS.hlsl";
         static const std::wstring TRANSPARENT_DEPTH_PS = L"HLSL/TransparentDepthPS.hlsl";
 
+        static const std::wstring SKINNED_VS = L"HLSL/SkinnedVS.hlsl";
+        static const std::wstring SKINNED_DEPTH_VS = L"HLSL/SkinnedDepthVS.hlsl";
+        static const std::wstring RAKSHASA_PS = L"HLSL/RakshasaPS.hlsl";
+        static const std::wstring RIGID_SAMPLE_PS = L"HLSL/RigidSampePS.hlsl";
+
         static const std::string STONE = "assets/Stone/Stone.fbx";
         static const std::string TREE = "assets/Tree/TreeGen.fbx";
         static const std::string STONE_PILLAR = "assets/StonePillar/StonePillar_low.fbx";
-        static const std::string IDOL = "assets/Idol/Idol.fbx";
         static const std::string ARCA = "assets/Arca/Arca.fbx";
+        static const std::string RAKSHASA = "assets/Rakshasa/Rakshasa.fbx";
+        static const std::string STEVE = "assets/RigidSample/RigidSample.fbx";
 
         static const std::string BLUE_NOISE = "assets/Noise/LDR_LLL1_0.png";
         static const std::string NOISE_2D = "assets/Noise/noise.png";
         static const std::string HEIGHT = "assets/Map/heightmap.png";
         static const std::string GRASS = "assets/Grass/grass.dds";
-        static const std::string GROUND = "assets/Ground/ground.tga";
-        static const std::string GROUND_AO = "assets/Ground/internal_ground_ao_texture.jpeg";
+        //static const std::string FARAWAY_GRASS = "assets/Ground/farawayGrass.tga";
+        static const std::string GROUND_COL = "assets/Ground/Ground_baseColor.tga";
+        static const std::string GROUND_NOR = "assets/Ground/Ground_normal.tga";
 
         static const std::string KEY_CLOUD_VOL = "CloudNoise";
         static const std::string KEY_WORLEY_NOISE = "WorleyNoise";

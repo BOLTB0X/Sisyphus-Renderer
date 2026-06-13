@@ -6,15 +6,14 @@
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
 #include "SharedConstants/BuffersConstants.h"
+#include "SharedConstants/CommonConstants.h"
 #include "Helpers/DebugHelper.h"
 #include "Helpers/ShaderHelper.h"
 // DX11
 #include <DirectXMath.h>
 // define
-#define QUAD_MAX_LENG       800
-#define QUAD_SCALE          5.0f
-#define HEIGHT_SCALE        250.0f
-#define GROUND_SLOT         12
+#define TEX_COL_SLOT        2
+#define TEX_NOR_SLOT        3
 #define LINEAR_SAMPLER_SLOT 0
 #define BUFFER_SLOT_WORLD   2
 #define BUFFER_SLOT_GROUND  3
@@ -27,16 +26,20 @@ using namespace ConstantBuffer;
 Ground::Ground() {
 	m_quadTree = std::make_unique<QuadTree>();
 	m_heightMap = nullptr;
-	m_prevGoundData.padding1 = -1.0f;
-	m_groundSRV = nullptr;
+	m_colSRV = nullptr;
+	m_norSRV = nullptr;
 	m_objectShadowSRV = nullptr;
 	m_terrainShadowSRV = nullptr;
 	m_linearSampler = nullptr;
+	m_quadMaxLeng = CommonConstants::QUAD_MAX_LENG;
+	m_quadScale = CommonConstants::QUAD_SCALE;
+	m_heightScale = CommonConstants::HEIGHT_SCALE;
 } // Ground
 
 Ground::~Ground() {
 	m_heightMap = nullptr;
-	m_groundSRV = nullptr;
+	m_colSRV = nullptr;
+	m_norSRV = nullptr;
 	m_objectShadowSRV = nullptr;
 	m_terrainShadowSRV = nullptr;
 	m_linearSampler = nullptr;
@@ -50,12 +53,13 @@ bool Ground::Init(const InitParams& params) {
 	std::vector<QuadTree::TerrainVertex> vertices;
 	std::vector<UINT> indices;
 	m_heightMap = params.heightMapTex;
-	m_groundSRV = params.groundSRV;
+	m_colSRV = params.colSRV;
+	m_norSRV = params.norSRV;
 
-	GenerateTerrainGrid(QUAD_MAX_LENG, QUAD_MAX_LENG, QUAD_SCALE, vertices, indices);
+	GenerateTerrainGrid(m_quadMaxLeng, m_quadMaxLeng, m_quadScale, vertices, indices);
 
 	if (!m_quadTree->Init(params.device, vertices, indices)) {
-		DebugHelper::DebugPrint("m_quadTree->Init 실패");
+		//DebugHelper::DebugPrint("m_quadTree->Init 실패");
 		return false;
 	}
 
@@ -75,7 +79,8 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 	context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-	context->PSSetShaderResources(GROUND_SLOT, 1, &m_groundSRV);
+	context->PSSetShaderResources(TEX_COL_SLOT, 1, &m_colSRV);
+	context->PSSetShaderResources(TEX_NOR_SLOT, 1, &m_norSRV);
 	context->PSSetSamplers(LINEAR_SAMPLER_SLOT, 1, &m_linearSampler);
 
 	XMMATRIX world = XMMatrixIdentity();
@@ -88,9 +93,6 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
 	context->PSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
 
-	if (UpdateGroundBuffer(context)) {
-		context->PSSetConstantBuffers(BUFFER_SLOT_GROUND, 1, m_groundBuffer.GetAddressOf());
-	}
 
 	m_visibleNodes.clear();
 	m_quadTree->GetVisibleNodes(params.frustum, m_visibleNodes);
@@ -109,7 +111,8 @@ void Ground::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	}
 
 	ID3D11ShaderResourceView* nullSRV = nullptr;
-	context->PSSetShaderResources(GROUND_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(TEX_COL_SLOT, 1, &nullSRV);
+	context->PSSetShaderResources(TEX_NOR_SLOT, 1, &nullSRV);
 } // Render
 
 void Ground::DrawIndexed(ID3D11DeviceContext* context) {
@@ -127,16 +130,13 @@ void Ground::DrawIndexed(ID3D11DeviceContext* context) {
 	}
 } // DrawIndexed
 
-void Ground::OnGui() {
+void Ground::OnGui(ID3D11ShaderResourceView* srv) {
 	ImGui::Begin("Ground Control");
 
-	ImGui::ColorEdit3("Dark Sand", (float*)&m_GoundData.darkSand);
-	ImGui::ColorEdit3("Light Sand", (float*)&m_GoundData.lightSand);
-
-	if (ImGui::Button("Reset Colors")) {
-		m_GoundData = GroundBuffer();
+	if (srv) {
+		ImGui::Text("Shadow Preview");
+		ImGui::Image((ImTextureID)srv, ImVec2(256, 256));
 	}
-
 	ImGui::End();
 } // OnGui
 
@@ -149,10 +149,10 @@ float Ground::GetHeightAt(float worldX, float worldZ) const {
 		return 0.0f;
 	}
 
-	float halfSize = (QUAD_MAX_LENG * QUAD_SCALE) * 0.5f;
+	float halfSize = (m_quadMaxLeng * m_quadScale) * 0.5f;
 
-	float u = (worldX + halfSize) / (QUAD_MAX_LENG * QUAD_SCALE);
-	float v = (worldZ + halfSize) / (QUAD_MAX_LENG * QUAD_SCALE);
+	float u = (worldX + halfSize) / (m_quadMaxLeng * m_quadScale);
+	float v = (worldZ + halfSize) / (m_quadMaxLeng * m_quadScale);
 
 	if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f) {
 		return 0.0f;
@@ -165,7 +165,7 @@ float Ground::GetHeightAt(float worldX, float worldZ) const {
 	int texPixelY = 1 + static_cast<int>(v * innerHeight);
 
 	float h = m_heightMap->GetPixelHeight(texPixelX, texPixelY);
-	return h * HEIGHT_SCALE;
+	return h * m_heightScale;
 } // GetHeightAt
 
 const std::vector<QuadTree::QuadTreeNode*>& Ground::GetVisibleNodes() const {
@@ -180,6 +180,8 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	if (!InitVertexShader(device, hwnd, PathConstants::GROUND_VS,
@@ -191,28 +193,12 @@ bool Ground::InitShader(ID3D11Device* device, HWND hwnd) {
 		return false;
 	}
 
-	if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf()) ||
-		!InitConstantBuffer<GroundBuffer>(device, m_groundBuffer.GetAddressOf())) {
+	if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
 		return false;
 	}
 
 	return true;
 } // InitShader
-
-bool Ground::UpdateGroundBuffer(ID3D11DeviceContext* context) {
-	using namespace ShaderHelper;
-
-	if (memcmp(&m_prevGoundData, &m_GoundData, sizeof(GroundBuffer)) == 0) {
-		return true;
-	}
-
-	if (!UpdateConstantBuffer(context, m_groundBuffer.Get(), m_GoundData)) {
-		return false;
-	}
-
-	m_prevGoundData = m_GoundData;
-	return true;
-} // UpdateGroundBuffer
 
 void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<QuadTree::TerrainVertex>& outVertices, std::vector<UINT>& outIndices) {
 	outVertices.clear();
@@ -245,7 +231,7 @@ void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<
 			int texPixelY = 1 + static_cast<int>(sampleV * innerHeight);
 
 			float h = m_heightMap->GetPixelHeight(texPixelX, texPixelY);
-			v.position.y = h * HEIGHT_SCALE;
+			v.position.y = h * m_heightScale;
 
 			float actualU = (float)x / (width - 1);
 			float actualV = (float)z / (depth - 1);
@@ -281,6 +267,34 @@ void Ground::GenerateTerrainGrid(int width, int depth, float scale, std::vector<
 			XMStoreFloat3(&outVertices[index].normal, normalVec);
 		}
 	} // for - normal
+
+	for (int z = 0; z < depth; ++z) {
+		for (int x = 0; x < width; ++x) {
+			int index = (z * width) + x;
+			int leftX = max(0, x - 1);
+			int rightX = std::min(width - 1, x + 1);
+			int bottomZ = max(0, z - 1);
+			int topZ = std::min(depth - 1, z + 1);
+
+			float actualDistX = static_cast<float>(rightX - leftX) * scale;
+			float actualDistZ = static_cast<float>(topZ - bottomZ) * scale;
+
+			float hL = outVertices[(z * width) + leftX].position.y;
+			float hR = outVertices[(z * width) + rightX].position.y;
+			float hB = outVertices[(bottomZ * width) + x].position.y;
+			float hT = outVertices[(topZ * width) + x].position.y;
+
+			XMVECTOR T = XMVector3Normalize(XMVectorSet(actualDistX, hR - hL, 0.0f, 0.0f));
+			XMVECTOR N = XMLoadFloat3(&outVertices[index].normal);
+
+			// Gram-Schmidt
+			T = XMVector3Normalize(T - N * XMVector3Dot(N, T));
+			XMVECTOR B = XMVector3Normalize(XMVector3Cross(N, T));
+
+			XMStoreFloat3(&outVertices[index].tangent, T);
+			XMStoreFloat3(&outVertices[index].binormal, B);
+		} // for (int x = 0; x < width; ++x)
+	} // for (int z = 0; z < depth; ++z)
 
 	for (int z = 0; z < depth - 1; ++z) {
 		for (int x = 0; x < width - 1; ++x) {

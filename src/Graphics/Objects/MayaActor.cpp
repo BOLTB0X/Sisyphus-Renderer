@@ -1,11 +1,12 @@
 #include "Pch.h"
-#include "DefaultMaya.h"
+#include "MayaActor.h"
 // Components
 #include "Components/TextureManager.h"
 // Resources
 #include "Resources/PBRMesh.h"
 #include "Resources/Texture.h"
 // Utils
+#include "SharedConstants/CommonConstants.h"
 #include "SharedConstants/PathConstants.h"
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
@@ -18,17 +19,18 @@
 
 using namespace DirectX;
 using namespace SharedConstants;
+using namespace ConstantBuffer;
 
-DefaultMaya::DefaultMaya() : AssimpModel(), ActorObject() {
+MayaActor::MayaActor() : AssimpModel(), ActorObject() {
     m_wrapSampler = nullptr;
     m_RenderCount = 0;
-} // DefaultMaya
+} // MayaActor
 
-DefaultMaya::~DefaultMaya() {
+MayaActor::~MayaActor() {
     m_wrapSampler = nullptr;
-} // ~DefaultMaya
+} // ~MayaActor
 
-bool DefaultMaya::Init(const InitParams& params) {
+bool MayaActor::Init(const InitParams& params) {
     if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
@@ -47,7 +49,7 @@ bool DefaultMaya::Init(const InitParams& params) {
     return true;
 } // Init
 
-void DefaultMaya::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+void MayaActor::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     m_worldData.world = XMMatrixTranspose(params.world);
     if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
         return;
@@ -91,14 +93,14 @@ void DefaultMaya::Render(ID3D11DeviceContext* context, const RenderParams& param
     m_RenderCount++;
 } // Render
 
-void DefaultMaya::DrawIndexed(ID3D11DeviceContext* context) {
+void MayaActor::DrawIndexed(ID3D11DeviceContext* context) {
     for (const auto& mesh : m_meshes) {
         mesh->BindBuffers(context);
         context->DrawIndexed(mesh->GetIndexCount(), 0, 0);
     }
 } // DrawIndexed
 
-void DefaultMaya::OnGui() {
+void MayaActor::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
@@ -160,12 +162,12 @@ void DefaultMaya::OnGui() {
     }
 } // OnGui
 
-XMMATRIX DefaultMaya::GetScalingWorldMatrix() {
+XMMATRIX MayaActor::GetScalingWorldMatrix() {
     XMMATRIX correction = XMMatrixRotationX(XMConvertToRadians(90.0f));
     return correction * m_transform.GetWorldMatrix();
 } // GetScalingWorldMatrix
 
-bool DefaultMaya::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
+bool MayaActor::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
     using namespace ShaderHelper;
     using namespace ConstantBuffer;
 
@@ -174,7 +176,9 @@ bool DefaultMaya::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BONEINDICES", 0, DXGI_FORMAT_R32G32B32A32_UINT,  0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
     if (!InitVertexShader(device, hwnd, vsPath,

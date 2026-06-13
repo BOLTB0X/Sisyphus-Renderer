@@ -24,6 +24,7 @@
 using namespace DirectX;
 using namespace SharedConstants;
 using namespace PathConstants;
+using namespace ConstantBuffer;
 
 SkyBox::SkyBox() {
 	m_CubeMesh = std::make_unique<DefaultMesh>();
@@ -72,7 +73,7 @@ bool SkyBox::InitShader(ID3D11Device* device, HWND hwnd) {
         return false;
     }
 
-    if (!InitConstantBuffer<WolrdBuffer>(device, m_worldBuffer.GetAddressOf())) {
+    if (!InitConstantBuffer<WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
         return false;
     }
 
@@ -88,8 +89,8 @@ void SkyBox::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
     XMMATRIX world = XMMatrixScaling(500.0f, 500.0f, 500.0f);
-    m_WolrdData.world = XMMatrixTranspose(world);
-    ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_WolrdData);
+    m_WorldData.world = XMMatrixTranspose(world);
+    ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_WorldData);
 
     context->PSSetSamplers(SAMPLER_SLOT, 1, &m_linerWrapSampler);
     context->PSSetShaderResources(TEX_SLOT_DEPTH, 1, &m_depthSRV);

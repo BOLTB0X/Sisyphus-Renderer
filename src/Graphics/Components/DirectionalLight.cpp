@@ -51,7 +51,7 @@ void DirectionalLight::Update() {
         ShadowConstants::NEAR_Z,
         ShadowConstants::FAR_Z
     );
-} // Update
+} // Animate
 
 void DirectionalLight::UpdateObjectShadow(const XMFLOAT3& objectPos) {
     XMVECTOR dir = XMLoadFloat3(&m_direction);

@@ -11,7 +11,15 @@ public:
         DirectX::XMFLOAT3 normal;
         DirectX::XMFLOAT3 tangent;
         DirectX::XMFLOAT3 binormal;
+
+        unsigned int boneIDs[4] = { 0, 0, 0, 0 };
+        float        boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+        FBRVertex() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f), normal(0.0f, 0.0f, 0.0f),
+                      tangent(0.0f, 0.0f, 0.0f), binormal(0.0f, 0.0f, 0.0f) {
+		} // FBRVertex
     }; // FBRVertex
+
 public:
     PBRMesh();
     ~PBRMesh();

@@ -65,7 +65,7 @@ void Camera::Update() {
     UpdateProjection();
     // 절두체 업데이트
     BuildFrustum();
-} // Update
+} // Animate
 
 void Camera::BuildFrustum() {
     if (m_frustum) {

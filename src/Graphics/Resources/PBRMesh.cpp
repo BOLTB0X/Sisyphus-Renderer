@@ -69,4 +69,3 @@ void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
 
 unsigned int PBRMesh::GetMaterialIndex() const { return m_materialIndex; }
 UINT         PBRMesh::GetIndexCount() const { return m_indexCount; }
-

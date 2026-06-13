@@ -3,11 +3,11 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <wrl/client.h>
-#include "Components/ActorObject.h"
+#include "Resources/ActorObject.h"
 #include "Resources/AssimpModel.h"
-#include "Resources/ConstantBufferType.h"
+#include "Resources/ConstantBuffer.h"
 
-class DefaultMaya : public AssimpModel, public ActorObject {
+class MayaActor : public AssimpModel, public ActorObject {
 public:
     struct RenderParams {
         DirectX::XMMATRIX world;
@@ -17,8 +17,8 @@ public:
     }; // RenderParams
 
 public:
-    DefaultMaya();
-    virtual ~DefaultMaya();
+    MayaActor();
+    virtual ~MayaActor();
 
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
@@ -26,15 +26,6 @@ public:
     void OnGui();
 
     DirectX::XMMATRIX GetScalingWorldMatrix();
-
-private:
-    struct WorldBuffer {
-        DirectX::XMMATRIX world;
-
-        WorldBuffer() {
-            world = DirectX::XMMatrixIdentity();
-        }
-    }; // WorldBuffer;
 
 private:
     bool InitShader(ID3D11Device*, HWND, const std::wstring&, const std::wstring&) override;
@@ -48,5 +39,5 @@ private:
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
 
-    WorldBuffer                                m_worldData;
-}; // DefaultMaya
+    ConstantBuffer::WorldBuffer                m_worldData;
+}; // MayaActor

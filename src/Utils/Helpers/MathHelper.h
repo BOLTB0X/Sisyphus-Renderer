@@ -104,4 +104,13 @@ namespace MathHelper { // 벡터 함수
         return XMMatrixTranspose(TransformUVRotationMatrix(camRot));
     } // GetUVRotationMatrix
 
+    inline DirectX::XMMATRIX GetBillboardMatrix(const DirectX::XMMATRIX& view)
+    {
+        using namespace DirectX;
+        float m00 = XMVectorGetX(view.r[0]);
+        float m01 = XMVectorGetY(view.r[0]);
+        float camRot = atan2(m01, m00);
+        return XMMatrixRotationY(-camRot);
+	} // GetBillboardMatrix
+    
 } // 벡터 연산

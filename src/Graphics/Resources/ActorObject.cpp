@@ -1,5 +1,6 @@
 #include "Pch.h"
 #include "ActorObject.h"
+// ImGui
 
 using namespace DirectX;
 
@@ -57,3 +58,37 @@ XMMATRIX ActorObject::GetWorldMatrix() {
 unsigned int ActorObject::GetRenderCount() const {
 	return m_RenderCount;
 } // GetRenderCount
+
+void ActorObject::DrawTransformGui() {
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.2f, 0.4f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.3f, 0.5f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.4f, 0.4f, 0.6f, 1.0f));
+
+    if (ImGui::CollapsingHeader("TRANSFORM", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent();
+        ImGui::Spacing();
+
+        DirectX::XMFLOAT3 pos = m_transform.GetPosition();
+        DirectX::XMFLOAT3 rot = m_transform.GetRotation();
+        DirectX::XMFLOAT3 scale = m_transform.GetScale();
+
+        bool isChanged = false;
+
+        if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+            m_transform.SetPosition(pos);
+            isChanged = true;
+        }
+        if (ImGui::DragFloat3("Rotation", &rot.x, 1.0f)) {
+            m_transform.SetRotation(rot);
+            isChanged = true;
+        }
+        if (ImGui::DragFloat3("Scale", &scale.x, 0.05f, 0.001f, 100.0f)) {
+            m_transform.SetScale(scale);
+            isChanged = true;
+        }
+
+        ImGui::Unindent();
+        ImGui::Spacing();
+    }
+    ImGui::PopStyleColor(3);
+} // DrawTransformGui

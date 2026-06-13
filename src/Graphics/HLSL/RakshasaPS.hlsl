@@ -1,41 +1,32 @@
-// GroundPS.hlsl
+// RakshasaPS.hlsl
 #include "Common.hlsli"
-#include "Maths.hlsli"
-#include "ShadowMap.hlsli"
-#include "Ground.hlsli"
 #include "PBR.hlsli"
+#include "ShadowMap.hlsli"
 
 SamplerState           LinearSampler : register(s0);
 SamplerComparisonState ShadowSampler : register(s5);
 
-Texture2D AlbedoTex : register(t2);
-Texture2D NormalTex : register(t3);
+Texture2D AlbedoTexture : register(t0);
+Texture2D NormalTexture : register(t1);
+
 Texture2D ObjectShadowMap : register(t10);
 Texture2D TerrainShadowMap : register(t11);
 
-struct PS_IN
+struct VS_OUT
 {
     float4 pos : SV_POSITION;
     float3 worldPos : POSITION;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD;
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
-}; // PS_IN
+    float2 uv : TEXCOORD;
+}; // VS_OUT
 
-cbuffer WorldBuffer : register(b2)
+float4 main(VS_OUT input) : SV_TARGET
 {
-    matrix cWorld;
-}; // WorldBuffer
-
-#define WORLD               cWorld
-
-float4 main(PS_IN input) : SV_TARGET
-{
-    float4 albedo = AlbedoTex.Sample(LinearSampler, input.uv);
-
-    float3 normalSample = NormalTex.Sample(LinearSampler, input.uv).rgb * 2.0f - 1.0f;
-    normalSample.xy *= 0.5f;
+    float4 albedo = AlbedoTexture.Sample(LinearSampler, input.uv);
+    float3 normalMap = NormalTexture.Sample(LinearSampler, input.uv).rgb;
+    float3 normalSample = normalMap * 2.0f - 1.0f;
     normalSample = normalize(normalSample);
 
     float3x3 TBN = float3x3(
@@ -47,7 +38,6 @@ float4 main(PS_IN input) : SV_TARGET
 
     float3 L = normalize(-LIGHT_DIRECTION);
     float NdotL = saturate(dot(N, L));
-
     float3 lightColor = get_dynamic_light_color(LIGHT_DIRECTION.y).rgb;
 
     float4 lightClipPos = mul(mul(float4(input.worldPos, 1.0f), LIGHT_VIEW), LIGHT_PROJ);
@@ -55,26 +45,18 @@ float4 main(PS_IN input) : SV_TARGET
 
     float3 ndcPos = lightClipPos.xyz / lightClipPos.w;
     float terrainShadow = 1.0f, objectShadow = 1.0f;
-    
-    if (ndcPos.x >= -1.0f && ndcPos.x <= 1.0f && ndcPos.y >= -1.0f && ndcPos.y <= 1.0f &&
+    if (ndcPos.x >= -1.0f && ndcPos.x <= 1.0f &&
+        ndcPos.y >= -1.0f && ndcPos.y <= 1.0f &&
         ndcPos.z >= 0.0f && ndcPos.z <= 1.0f)
     {
         terrainShadow = calculate_poisson_shadow(ShadowSampler, TerrainShadowMap, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
-    }
-
-    float3 objNdcPos = objLightClipPos.xyz / objLightClipPos.w;
-
-    if (objNdcPos.x >= -1.0f && objNdcPos.x <= 1.0f && objNdcPos.y >= -1.0f && objNdcPos.y <= 1.0f &&
-        objNdcPos.z >= 0.0f && objNdcPos.z <= 1.0f)
-    {
         objectShadow = calculate_poisson_shadow(ShadowSampler, ObjectShadowMap, objLightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
     }
     float shadowFactor = min(terrainShadow, objectShadow);
 
     float3 ambient = DEFAULT_AMBIENT.rgb * albedo.rgb;
-    float3 diffuse = albedo.rgb / PI;
-    float3 radiance = lightColor * NdotL;
+    float3 lit = albedo.rgb * lightColor * NdotL * shadowFactor;
+    float3 col = ambient + lit;
 
-    float3 col = diffuse * radiance * shadowFactor + ambient;
-    return float4(saturate(col), 1.0f);
+    return float4(saturate(col), albedo.a);
 } // main
