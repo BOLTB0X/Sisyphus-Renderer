@@ -11,7 +11,7 @@
 </div>
 
 - **Assimp** 로더
-- **FBR**
+- **FBR Shading**
 - **Sky LUT**: 대기 산란 Raymarching
 - **Shadow mapping** : Poisson Disk Sampling
 - **Volumetric Cloud** (CloudMap, Volume Worley Noise)
@@ -94,7 +94,7 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 
 <br/>
 
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Volumetric/real)
+*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
 
 ---
 
@@ -160,16 +160,29 @@ start SisyphusRenderer.sln
 
 - [rastertek: grass.dds](https://www.rastertek.com/tertut19.html)
 
+- [sketchfab: (Black Myth)Wukong - Di Luo Cha [Animation]](https://sketchfab.com/3d-models/black-myth-wukong-di-luo-cha-animation-79819655a05f497dbb4225726fcb73e3)
+
 </details>
 
-## [Assimp - Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+## Assimp
+
+### [Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>Assimp Loder (병렬 처리)</strong></p>
+  <p><strong>static Model</strong></p>
+</div>
+
+### [Animation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Animation)
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp05_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp06_Rigid.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong> Skinned | Rigid </strong></p>
 </div>
 
 ## Atmospheric Scattering
@@ -231,7 +244,7 @@ start SisyphusRenderer.sln
 ## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
 
 <div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8401.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8403.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="260"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="260"></td>
     <br>
