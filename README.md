@@ -9,7 +9,7 @@
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar02.png?raw=true" width="320"></td>
   </tr>
 </table>
-\
+
 ## 멀티스레드 기반 머티리얼 병렬 로딩 파이프라인
 
 ```cpp
