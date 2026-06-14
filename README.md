@@ -1,8 +1,9 @@
 # Sisyphus-Renderer - Animation
 
-![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp04_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98.gif?raw=true)
 
 ## 뼈대 기반 변형 애니메이션: Skinned Animation
+
+![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp04_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98.gif?raw=true)
 
 ```cpp
 [Skinned Animation 파이프라인]
@@ -31,6 +32,8 @@
 - [`PBRMesh.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Animation/src/Graphics/Resources/PBRMesh.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Animation/src/Graphics/Resources/PBRMesh.cpp)
 
 ## 계층적 노드 애니메이션: Rigid Animation
+
+![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp06_Rigid.gif?raw=true)
 
 ```cpp
 [Rigid Animation 파이프라인]
