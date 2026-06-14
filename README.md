@@ -7,11 +7,9 @@
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar02.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp-%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%8F%8C.gif?raw=true" width="320"></td>
   </tr>
 </table>
-
-
+\
 ## 멀티스레드 기반 머티리얼 병렬 로딩 파이프라인
 
 ```cpp
