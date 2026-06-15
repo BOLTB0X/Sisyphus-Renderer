@@ -34,8 +34,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             0.125f * tilable_voronoi(coord, 3, 23.0f) - 1.0f;
 
     // B 채널: 구름 타입/높이
-    //col.b = 1.0f - tilable_voronoi(coord + 0.5f, 6, 9.0f);
-    col.b = tilable_voronoi(coord + 0.5f, 6, 9.0f);
+    col.b = 1.0f - tilable_voronoi(coord + 0.5f, 6, 9.0f);
 
     OutCloud2DLUT[DTid.xy] = col;
 } // main

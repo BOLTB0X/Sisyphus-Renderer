@@ -190,35 +190,45 @@ float3 GetSkyColor(float3 rd)
 
 float ComputeCloudDensity(float3 pos, float norY, float dist = 0.0f, bool isShadow = false)
 {
-    float3 ps = pos;
-    float m = GetCloudMapBase(ps, norY, dist);
-    m *= cloud_gradient(norY);
+    float baseDensity = GetCloudMapBase(pos, norY, dist);
+    baseDensity *= cloud_gradient(norY);
     
-    float dstrength = smoothstep(1.0f, 0.5f, m);
-    
-    if (!isShadow)
+    // Coverage 및 Softness 보정
+    baseDensity = smoothstep(0.0f, CLOUDS_BASE_EDGE_SOFTNESS, baseDensity + (CLOUDS_COVERAGE - 1.0f));
+    baseDensity *= linear_step_org(CLOUDS_BOTTOM_SOFTNESS, norY);
+
+    float finalDensity = baseDensity;
+
+    // 빈 공간 스킵(Empty Space Skipping) & 가장자리 침식(Erosion)
+    // 베이스 밀도가 존재할 때만 3D 노이즈를 연산하여 퍼포먼스 확보 및 디테일 깎기
+    if (!isShadow && baseDensity > 0.0f)
     {
         float detail = GetWorleyNoiseMip(pos, dist);
-        m = remap_clamp(m, detail * dstrength * CLOUDS_DETAIL_STRENGTH, 1.0f, 0.0f, 1.0f);
+       
+        float erosionModifier = 1.0f - baseDensity;
+        
+        finalDensity = remap_clamp(baseDensity, detail * erosionModifier * CLOUDS_DETAIL_STRENGTH, 1.0f, 0.0f, 1.0f);
     }
 
-    // Coverage 및 Softness 보정
-    m = smoothstep(0.0f, CLOUDS_BASE_EDGE_SOFTNESS, m + (CLOUDS_COVERAGE - 1.0f));
-    m *= linear_step_org(CLOUDS_BOTTOM_SOFTNESS, norY);
-
-    // 밀도 및 거리 감쇄
-    return clamp(m * CLOUDS_DENSITY * density_distance_attenuation(pos.x), 0.0f, 1.0f);
+    // 최종 밀도 및 거리 감쇄
+    return clamp(finalDensity * CLOUDS_DENSITY * density_distance_attenuation(pos.x), 0.0f, 1.0f);
 } // ComputeCloudDensity
 
-float RaymarchShadow(float3 from, float sundotrd, float3 sphereCenter,
-                       float dC, float norY)
+float DualHenyeyGreenstein(float sundotrd, float gForward, float gBackward, float blendWeight)
+{
+    float forwardPhase = henyey_greenstein(sundotrd, gForward);
+    float backwardPhase = henyey_greenstein(sundotrd, gBackward);
+    
+    return lerp(backwardPhase, forwardPhase, blendWeight);
+} // DualHenyeyGreenstein
+
+float RaymarchShadow(float3 from, float sundotrd, float3 sphereCenter, float dC, float norY)
 {
     int nbSampleLight = CLOUD_SELF_SHADOW_STEPS; // 4~6
     float zMaxl = 600.0f; // 빛 방향 샘플링 거리
     float stepL = zMaxl / float(nbSampleLight);
 
     float lighRayDen = 0.0f;
-
     float3 rd = LIGHT_DIRECTION;
     from += rd * stepL * jittering(from);
 
@@ -229,29 +239,24 @@ float RaymarchShadow(float3 from, float sundotrd, float3 sphereCenter,
             (length(pos - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM))
             / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
         
-
         if (sampleNorY > 1.0f)
             break;
 
         lighRayDen += ComputeCloudDensity(pos, sampleNorY, lighRayDen, true);
     }
     
-    // Beer's Law
-    float mu = sundotrd;
-    float scatterAmount = lerp(0.008f, 1.0f, smoothstep(0.96f, 0.0f, mu));
+    float scatterAmount = lerp(0.008f, 1.0f, smoothstep(0.96f, 0.0f, sundotrd));
     float beersLaw = exp(-stepL * lighRayDen)
-                        + 0.5f * scatterAmount * exp(-0.1f * stepL * lighRayDen)
-                        + scatterAmount * 0.4f * exp(-0.02f * stepL * lighRayDen);
+                   + 0.5f * scatterAmount * exp(-0.1f * stepL * lighRayDen)
+                   + scatterAmount * 0.4f * exp(-0.02f * stepL * lighRayDen);
 
-    // depth_probability
+    // 깊이 확률: 구름 내부로 들어갈수록 빛이 어떻게 퍼지는가
     float depth_prob = lerp(
         0.05f + 1.5f * pow(min(1.0f, dC * 8.5f), 0.3f + 5.5f * norY),
         1.0f,
         clamp(lighRayDen * 0.4f, 0.0f, 1.0f));
 
-    float phaseFunction = lerp(henyey_greenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G),
-                               henyey_greenstein(sundotrd, CLOUDS_BACKWARD_SCATTERING_G), CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
-    return beersLaw * phaseFunction * depth_prob;
+    return beersLaw * depth_prob;
 } // RaymarchShadow
 
 float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPos)
@@ -261,71 +266,58 @@ float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPo
 
     float3 sphereCenter = float3(ro.x, -EARTH_RADIUS, ro.z);
 
-    // 교차점 계산
     float2 inner = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_INNER_RADIUS);
     float2 outer = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_OUTER_RADIUS);
     
     if (outer.y < 0.0f)
-    {
         return float4(0, 0, 0, 1);
-    }
-    float start = max(inner.y, outer.x); // 구름층 진입
-    float end = outer.y; // 구름층 탈출
     
-    end = min(end, sceneDist); // 렌더링된 다른 물체 앞까지만 마칭
+    float start = max(inner.y, outer.x);
+    float end = min(outer.y, sceneDist);
 
     if (start >= end)
-    {
         return float4(0, 0, 0, 1);
-    }
-    
-    end = min(end, sceneDist);
     
     float dayFactor = saturate(-LIGHT_DIRECTION.y);
     float nightFactor = saturate(LIGHT_DIRECTION.y);
 
     float3 currentAmbientTop = lerp(CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, dayFactor);
     currentAmbientTop = lerp(currentAmbientTop, CLOUD_NIGHT_AMBIENT_COLOR_TOP, nightFactor);
-
     float3 currentAmbientBottom = lerp(CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_BOTTOM, dayFactor);
     currentAmbientBottom = lerp(currentAmbientBottom, CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM, nightFactor);
    
     float d = start;
     float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
-
-    // 지터링
-    float noise = GetBlueNoise(pixelPos);
-    d -= dD * noise;
+    d -= dD * GetBlueNoise(pixelPos); // 지터링
 
     float sundotrd = dot(rd, -LIGHT_DIRECTION);
     float transmittance = 1.0;
     float3 scatteredLight = float3(0.0, 0.0, 0.0);
     sceneDist = EARTH_RADIUS;
 
+    float phaseFunction = DualHenyeyGreenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G, CLOUDS_BACKWARD_SCATTERING_G, CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
+
     for (int s = 0; s < CLOUD_MARCH_STEPS; s++)
     {
         float3 p = ro + rd * d;
-        float norY = clamp((length(p - sphereCenter)
-                        - (EARTH_RADIUS + CLOUDS_TOP)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_TOP)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        
         float alpha = ComputeCloudDensity(p, norY, d);
 
         if (alpha > 0.0f)
         {
-            // 조명 적분
-            float shadow = RaymarchShadow(p, sundotrd, sphereCenter, alpha, norY);
-            float extCoeff = max(alpha * 0.1f, 0.001f);
-            float3 ambientLight = compute_ambient_color(p, CLOUDS_TOP, CLOUDS_BOTTOM, extCoeff,
-                            currentAmbientTop, currentAmbientBottom);
-            float heightBright = compute_height_brightness(norY);
-            float sunDimFactor = lerp(0.3f, 1.2f, dayFactor);
-            float powder = 1.0f - exp(-alpha * 2.0f);
-            float powderFactor = lerp(1.0f, powder, POWDER_FACTOR);
-            float ms = compute_multiple_scattering(alpha, dD);
-            
-            float3 lighting = shadow + ms * LIGHTING_SCALE;
-            float3 S = (ambientLight + get_dynamic_light_color(LIGHT_DIRECTION.y).rgb * lighting * heightBright * powderFactor)
-                        * alpha * sunDimFactor;
+            float lightEnergy = RaymarchShadow(p, sundotrd, sphereCenter, alpha, norY);
 
+            float extCoeff = max(alpha * 0.1f, 0.001f);
+            float3 ambientLight = compute_ambient_color(p, CLOUDS_TOP, CLOUDS_BOTTOM, extCoeff, currentAmbientTop, currentAmbientBottom);
+            
+            float heightBright = compute_height_brightness(norY);
+            float powderFactor = lerp(1.0f, 1.0f - exp(-alpha * 2.0f), POWDER_FACTOR);
+            float ms = compute_multiple_scattering(alpha, dD);
+       
+            float3 directionalLight = get_dynamic_light_color(LIGHT_DIRECTION.y).rgb * lightEnergy * phaseFunction;
+
+            float3 S = (ambientLight + directionalLight + (ms * LIGHTING_SCALE)) * alpha * powderFactor * heightBright;
             float dTrans = exp(-alpha * dD);
             float3 Sint = (S - S * dTrans) * (1.0f / max(alpha, 0.001f));
 
@@ -339,17 +331,15 @@ float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPo
         {
             float distToBottom = abs(length(p - sphereCenter) - SPHERE_INNER_RADIUS);
             float distToTop = abs(length(p - sphereCenter) - SPHERE_OUTER_RADIUS);
-            float sdfDist = min(distToBottom, distToTop) * 0.5f;
-            sdfDist = max(sdfDist, dD);
+            float sdfDist = max(min(distToBottom, distToTop) * 0.5f, dD);
             d += sdfDist;
-        } // if - else
-
-        if (transmittance <= CLOUDS_MIN_TRANSMITTANCE)
-        {
-            break;
         }
-    } // for
+        
+        if (transmittance <= CLOUDS_MIN_TRANSMITTANCE)
+            break;
+    }
     
+    // 지평선 페이드 아웃
     float horizonFade = smoothstep(0.0f, HORIZON_FADE_SCALE, rd.y);
     scatteredLight *= horizonFade;
     transmittance = lerp(1.0f, transmittance, horizonFade);

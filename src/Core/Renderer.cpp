@@ -139,18 +139,18 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
  //       return false;
  //   }
 
-    RigidActor::InitParams steveInitParams;
-    steveInitParams.device = device;
-    steveInitParams.context = context;
-    steveInitParams.path = STEVE;
-    steveInitParams.hwnd = hwnd;
-    steveInitParams.textMgr = m_TextureMgr;
-    steveInitParams.VSPath = PBR_VS;
-    steveInitParams.PSPath = RIGID_SAMPLE_PS;
-    steveInitParams.pointSampler = pointCampSampler;
-    if (!m_LowpolyPlayer->Init(steveInitParams)) {
-        return false;
-    }
+    //RigidActor::InitParams steveInitParams;
+    //steveInitParams.device = device;
+    //steveInitParams.context = context;
+    //steveInitParams.path = STEVE;
+    //steveInitParams.hwnd = hwnd;
+    //steveInitParams.textMgr = m_TextureMgr;
+    //steveInitParams.VSPath = PBR_VS;
+    //steveInitParams.PSPath = RIGID_SAMPLE_PS;
+    //steveInitParams.pointSampler = pointCampSampler;
+    //if (!m_LowpolyPlayer->Init(steveInitParams)) {
+    //    return false;
+    //}
 
  //   Tree::InitParams treeInitParam;
  //   treeInitParam.device = device;
@@ -405,7 +405,7 @@ bool Renderer::Render(float deltaTime) {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
-    m_LowpolyPlayer->Animate(deltaTime);
+    //m_LowpolyPlayer->Animate(deltaTime);
     //m_Rakshasa->Animate(deltaTime);
 
     ShadowPass(context, states);
@@ -430,10 +430,6 @@ void Renderer::UpdateModelTransform() {
 	//terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
 	//m_Rakshasa->SetPosition(pos.x, terrainY + 1.0f, pos.z);
 
-    pos = m_LowpolyPlayer->GetPosition();
-    terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_LowpolyPlayer->SetPosition(pos.x, terrainY, pos.z);
-
 	//pos = m_StonePillar->GetPosition();
 	//terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
 	//m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
@@ -457,10 +453,10 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
     //DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Tree->GetPosition());
     //DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Rakshasa->GetPosition());
-    DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_LowpolyPlayer->GetPosition());
+    //DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_LowpolyPlayer->GetPosition());
     DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
 	//DirectX::XMVECTOR p3 = DirectX::XMLoadFloat3(&m_Arca->GetPosition());
-    DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * (1.0f / 2.0f));
+    DirectX::XMStoreFloat3(&shadowFocus, p2);
     //DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2) * (1.0f / 2.0f));
     //DirectX::XMStoreFloat3(&shadowFocus, (p1 + p2 + p3) * (1.0f / 3.0f));
 
@@ -515,19 +511,19 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
  //       //m_Rakshasa->DrawIndexed(context);
 	//}
 
-    if (m_LowpolyPlayer) {
-        RigidActor::RenderShadowParams shadowParams;
+    //if (m_LowpolyPlayer) {
+    //    RigidActor::RenderShadowParams shadowParams;
 
-        renderParams.viewMatrix = sharedView;
-        renderParams.projectionMatrix = sharedProj;
-        renderParams.worldMatrix = m_LowpolyPlayer->GetWorldMatrix();
-        renderParams.isSkinned = false;
-        shadowParams.shadowMap = m_ObjectShadowMap.get();
-        shadowParams.shadowParams = &renderParams;
-        shadowParams.states = states;
+    //    renderParams.viewMatrix = sharedView;
+    //    renderParams.projectionMatrix = sharedProj;
+    //    renderParams.worldMatrix = m_LowpolyPlayer->GetWorldMatrix();
+    //    renderParams.isSkinned = false;
+    //    shadowParams.shadowMap = m_ObjectShadowMap.get();
+    //    shadowParams.shadowParams = &renderParams;
+    //    shadowParams.states = states;
 
-        m_LowpolyPlayer->RenderShadow(context, shadowParams);
-    }
+    //    m_LowpolyPlayer->RenderShadow(context, shadowParams);
+    //}
 
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
