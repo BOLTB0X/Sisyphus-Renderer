@@ -10,6 +10,7 @@ RWTexture2D<float4> OutCloud2DLUT : register(u0);
 const static float mixFbm = MIX_FBM;
 const static float mixVor = MIX_VORONOI;
 
+
 [numthreads(8, 8, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
