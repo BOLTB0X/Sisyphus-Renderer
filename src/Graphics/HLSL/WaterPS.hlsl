@@ -47,11 +47,9 @@ float4 main(PS_IN input) : SV_TARGET
 {
     float2 ndc = (input.clipSpace.xy / input.clipSpace.w);
     float2 screenUV = ndc * 0.5f + 0.5f;
-    screenUV.y = 1.0f - screenUV.y; // DirectX Y축 반전 대응
+    screenUV.y = 1.0f - screenUV.y;
 
-    // -----------------------------------------------------------
-    // 2. Flow Map + Dual Normal Panning (물결 왜곡 오프셋 생성)
-    // -----------------------------------------------------------
+
     // 플로우 맵 방향 추출 (-1 ~ 1 범위 리맵핑)
     float2 flowDir = FlowMap.Sample(LinearSampler, input.uv).rg * 2.0f - 1.0f;
     float flowSpeed = 0.03f;
@@ -79,22 +77,13 @@ float4 main(PS_IN input) : SV_TARGET
     float2 reflectUV = saturate(screenUV + distortion);
     float2 refractUV = saturate(screenUV + distortion * 0.5f); // 굴절은 아티팩트 방지를 위해 왜곡을 절반으로 감쇄
 
-    // -----------------------------------------------------------
-    // 3. 월드 공간 노멀 정의 (XZ 평면 대응)
-    // -----------------------------------------------------------
+
     // 탄젠트 공간의 Z(Up)를 월드 공간의 Y(Up)로 매핑
     float3 worldNormal = normalize(float3(localNormal.x, localNormal.z, localNormal.y));
 
-    // -----------------------------------------------------------
-    // 4. 헬퍼 함수를 통한 정확한 월드 좌표 및 시선 벡터 복원
-    // -----------------------------------------------------------
-    // Common.hlsli의 함수를 이용해 현재 물 표면의 월드 좌표를 정밀 복원
     float3 waterWorldPos = get_world_from_depth(screenUV, input.pos.z, VIEW_INV, PROJ_INV);
     float3 viewDir = normalize(CAMERA_POSITION - waterWorldPos);
 
-    // -----------------------------------------------------------
-    // 5. 깊이 기반 Beer's Law (물속 안개 효과)
-    // -----------------------------------------------------------
     // 굴절 왜곡이 일어난 위치의 바닥(지형) 깊이를 샘플링
     float floorDepthRaw = SceneDepthMap.Sample(LinearSampler, refractUV).r;
     
