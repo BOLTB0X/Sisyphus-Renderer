@@ -29,7 +29,7 @@ class Tree;
 class MayaActor;
 class SkinnedActor;
 class RigidActor;
-class Water;
+class WaterComposite;
 
 class Renderer {
 public:
@@ -52,7 +52,6 @@ private:
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
     void ReflectionPass(ID3D11DeviceContext*, D3D11State*);
-    void RefractionPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessing(ID3D11DeviceContext*, D3D11State*);
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
@@ -62,6 +61,7 @@ private:
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
+    void ApplyWater(ID3D11DeviceContext*, D3D11State*);
     void ApplyComposite(ID3D11DeviceContext*, D3D11State*);
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
@@ -74,8 +74,6 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_frameBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_shadowBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_clipPlaneBuffer;
 
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
     std::unique_ptr<Camera>               m_Camera;
@@ -97,7 +95,7 @@ private:
     std::unique_ptr<MayaActor>            m_Arca;
 	std::unique_ptr<SkinnedActor>         m_Rakshasa;
 	std::unique_ptr<RigidActor>           m_LowpolyPlayer;
-	std::unique_ptr<Water>                m_Water;
+	std::unique_ptr<WaterComposite>       m_Water;
 
     std::shared_ptr<TextureManager>       m_TextureMgr;
     std::shared_ptr<ImGuiManager>         m_ImGuiMgr;

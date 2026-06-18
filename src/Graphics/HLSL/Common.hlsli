@@ -49,6 +49,11 @@ cbuffer DirectionalLightBuffer : register(b1)
     float4 cPadding3;
 }; // DirectionalLightBuffer
 
+cbuffer ClipPlaneBuffer : register(b5)
+{
+    float4 cClipPlane;
+}; // ClipPlaneBuffer
+
 #define CAMERA_POSITION   cCameraPosition
 #define CAMERA_FOV        cCameraFov
 #define SCREEN_RESOLUTION cScreenResolution
@@ -69,6 +74,8 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define LIGHT_PROJ        cLightProj
 #define LIGHT_OBJECT_VIEW cObjectView
 #define LIGHT_OBJECT_PROJ cObjectProj
+
+#define CLIP_PLANE          cClipPlane
 
 #define SHADOW_MAP_SIZE     float2(cMapWidth, cMapHeight)
 #define SHADOW_BIAS         cBias

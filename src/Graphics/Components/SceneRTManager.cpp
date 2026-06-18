@@ -21,7 +21,6 @@ bool SceneRTManager::Init(ID3D11Device* device, int width, int height) {
 
     result &= CreateRT(device, PathConstants::KEY_SCENE_RT, width, height);
     result &= CreateRT(device, PathConstants::KEY_REFLECTION_RT, width, height);
-    result &= CreateRT(device, PathConstants::KEY_REFRACTION_RT, width, height);
 
     if (result == false) {
         DebugHelper::DebugPrint("RTManager: 기본 렌더 타깃 초기화 실패!");
