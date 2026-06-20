@@ -32,11 +32,10 @@ public:
     }; // InitParams
 
     struct RenderParams {
-        ID3D11ShaderResourceView* reflectionSRV;
         ID3D11ShaderResourceView* sceneSRV;
         ID3D11ShaderResourceView* sceneDepthSRV;
 
-        RenderParams() : reflectionSRV(nullptr), sceneSRV(nullptr),
+        RenderParams() : sceneSRV(nullptr),
             sceneDepthSRV(nullptr) {
         }
     }; // RenderParams
@@ -103,5 +102,4 @@ private:
     ID3D11ShaderResourceView*                  m_waterWaveNormalSRV;
     ID3D11ShaderResourceView*                  m_flowSRV;
     ID3D11SamplerState*                        m_linearSampler;
-    ID3D11ShaderResourceView*                  temp;
 }; // WaterComposite

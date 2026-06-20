@@ -59,10 +59,10 @@ cbuffer ClipPlaneBuffer : register(b5)
 #define SCREEN_RESOLUTION cScreenResolution
 #define TIME              cTime
 
-#define VIEW         cView
-#define PROJ         cProjection
-#define VIEW_INV     cViewInv
-#define PROJ_INV     cProjInv
+#define VIEW              cView
+#define PROJ              cProjection
+#define VIEW_INV          cViewInv
+#define PROJ_INV          cProjInv
 
 #define LIGHT_DIRECTION   normalize(cLightDirection)
 #define LIGHT_COLOR       cLightDiffuse
@@ -75,13 +75,13 @@ cbuffer ClipPlaneBuffer : register(b5)
 #define LIGHT_OBJECT_VIEW cObjectView
 #define LIGHT_OBJECT_PROJ cObjectProj
 
-#define CLIP_PLANE          cClipPlane
+#define CLIP_PLANE        cClipPlane
 
-#define SHADOW_MAP_SIZE     float2(cMapWidth, cMapHeight)
-#define SHADOW_BIAS         cBias
-#define SHADOW_SPREAD       cSpread
+#define SHADOW_MAP_SIZE   float2(cMapWidth, cMapHeight)
+#define SHADOW_BIAS       cBias
+#define SHADOW_SPREAD     cSpread
 
-// 쿼드 로컬 버텍스 (인덱스 없이 4개)
+// 쿼드 로컬 버텍스
 static const float2 quad_vertex_pos[4] =
 {
     float2(-1, 0), // left down

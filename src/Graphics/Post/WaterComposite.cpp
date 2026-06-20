@@ -16,8 +16,7 @@
 #define TEX_WAVE_WATER_SLOT   2
 #define TEX_FLOW_MAP_SLOT     3
 #define TEX_DEPTH_SLOT        4
-#define TEX_REFLECTION_SLOT   5
-#define TEX_SCENE_SLOT        6
+#define TEX_SCENE_SLOT        5
 #define CONSTANS_SLOT1        2
 #define CONSTANS_SLOT2        3
 
@@ -35,7 +34,6 @@ WaterComposite::WaterComposite() {
     m_waterWaveNormalSRV = nullptr;
     m_flowSRV = nullptr;
     m_linearSampler = nullptr;
-    temp = nullptr;
 } // WaterComposite
 
 WaterComposite::~WaterComposite() {
@@ -91,12 +89,10 @@ void WaterComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &m_waterWaveNormalSRV);
     context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &m_flowSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &params.sceneDepthSRV);
-    context->PSSetShaderResources(TEX_REFLECTION_SLOT, 1, &params.reflectionSRV);
 
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &params.sceneSRV);
     context->PSSetSamplers(SAMPLER_SLOT, 1, &m_linearSampler);
 
-    temp = params.reflectionSRV;
     context->Draw(3, 0);
 
     ID3D11ShaderResourceView* nullSRV = nullptr;
@@ -104,7 +100,6 @@ void WaterComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &nullSRV);
-    context->PSSetShaderResources(TEX_REFLECTION_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &nullSRV);
 } // Render
 
@@ -179,8 +174,4 @@ void WaterComposite::OnGui() {
 
     ImGui::Spacing();
 
-    if (temp) {
-        ImGui::Text("Preview");
-        ImGui::Image((ImTextureID)temp, ImVec2(256, 256));
-    }
 } // OnGui

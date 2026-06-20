@@ -2,14 +2,14 @@
 struct VS_IN
 {
     float3 position : POSITION;
-    float height : HEIGHT;
+    float  height : HEIGHT;
     float2 uv : TEXCOORD;
 }; // VS_IN
 
 struct GS_IN
 {
     float3 worldPos : POSITION;
-    float height : HEIGHT;
+    float  height : HEIGHT;
     float2 uv : TEXCOORD;
 }; // GS_IN
 

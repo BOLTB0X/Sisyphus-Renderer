@@ -20,6 +20,7 @@ struct VS_OUT
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
     float2 uv : TEXCOORD;
+    float  clipDistance : SV_ClipDistance0;
 }; // VS_OUT
 
 cbuffer WorldBuffer : register(b2)
@@ -74,5 +75,6 @@ VS_OUT main(VS_IN input)
     output.binormal = normalize(mul(skinnedBinormal, worldRot));
     output.uv = input.uv;
 
+    output.clipDistance = dot(worldPos, CLIP_PLANE);
     return output;
 } // main

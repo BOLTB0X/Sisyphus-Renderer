@@ -1,7 +1,7 @@
 // PBRModelVS.hlsl
 #include "Common.hlsli"
 
-struct VS_INPUT {
+struct VS_IN {
     float3 position : POSITION;
     float2 texCoord : TEXCOORD0;
     float3 normal   : NORMAL;
@@ -9,13 +9,14 @@ struct VS_INPUT {
     float3 binormal : BINORMAL;
 }; // VS_INPUT
 
-struct PS_INPUT {
+struct PS_IN {
     float4 position : SV_POSITION;
     float2 texCoord : TEXCOORD0;
     float3 normal   : NORMAL;
     float3 worldPos : TEXCOORD1;
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
+    float  clipDistance : SV_ClipDistance0;
 }; // PS_INPUT
 
 cbuffer WorldBuffer : register(b2)
@@ -25,8 +26,8 @@ cbuffer WorldBuffer : register(b2)
 
 #define WORLD cWorld
 
-PS_INPUT main(VS_INPUT input) {
-    PS_INPUT output;
+PS_IN main(VS_IN input) {
+    PS_IN output;
     
     float4 worldPos = mul(float4(input.position, 1.0f), WORLD);
     output.worldPos = worldPos.xyz;
@@ -39,5 +40,6 @@ PS_INPUT main(VS_INPUT input) {
     output.tangent = normalize(mul(input.tangent, worldMat3));
     output.binormal = normalize(mul(input.binormal, worldMat3));
     
+    output.clipDistance = dot(worldPos, CLIP_PLANE);
     return output;
 } // main

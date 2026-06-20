@@ -50,6 +50,7 @@
 #define SAMPLER_SHADOW_SLOT    5
 #define FRAME_CB_SLOT          0
 #define DIRL_CB_SLOT           1
+#define CLIP_CB_SLOT           5
 #define POST_PS_SLOT1          0
 #define POST_PS_SLOT2          1
 
@@ -106,13 +107,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     auto linerCampSampler = m_D3D11Mgr->GetStates()->GetLinearClampSamplerState();
     auto pointCampSampler = m_D3D11Mgr->GetStates()->GetPointClampSamplerState();
 
-    if (!InitConstantBuffer<FrameBuffer>(device, m_frameBuffer.GetAddressOf())) {
-        return false;
-    }
-    
-    if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
-		return false;
-    }
+    InitCommonBuffer(device);
 
     if (!m_DirectionalLight->Init(device, hwnd)) {
         return false;
@@ -124,7 +119,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
     if (!m_TextureMgr->Init(device, context, hwnd)) {
-		DebugHelper::DebugPrint("Failed to initialize TextureManager.");
         return false;
     }
 
@@ -185,7 +179,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     waterInitParams.linearWrapSampler = linerWrapSampler;
 
     if (!m_Water->Init(waterInitParams)) {
-        DebugHelper::DebugPrint("WaterComposite 초기화 실패");
         return false;
     }
 
@@ -441,9 +434,7 @@ void Renderer::ReflectionPass(ID3D11DeviceContext* context, D3D11State* states) 
     m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
 
     // 카메라 반사 행렬 계산 (수면 기준 대칭)
-    // 평면 방정식: Ax + By + Cz + D = 0 -> (0, 1, 0, -waterHeight)
-    float waterHeight = m_Water->GetWaterHeight();
-    XMVECTOR waterPlane = XMVectorSet(0.0f, 1.0f, 0.0f, -waterHeight);
+    XMVECTOR waterPlane = XMVectorSet(0.0f, 1.0f, 0.0f, -m_Water->GetWaterHeight());
     XMMATRIX reflectionMatrix = XMMatrixReflect(waterPlane);
     XMMATRIX reflectView = XMMatrixMultiply(reflectionMatrix, m_Camera->GetViewMatrix());
 
@@ -458,18 +449,30 @@ void Renderer::ReflectionPass(ID3D11DeviceContext* context, D3D11State* states) 
     XMVECTOR reflectCamPos = XMVector3TransformCoord(camPos, reflectionMatrix);
     XMStoreFloat3(&fData.cameraPosition, reflectCamPos);
     fData.time = m_renderingTime;
-    if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
-        return;
+
+    if (UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
+        context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+        context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+        context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+        context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
     }
 
-    context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-
     DrawSkyBox(context, states);
+
+    XMFLOAT4 clipData = XMFLOAT4(0.0f, 1.0f, 0.0f, -m_Water->GetWaterHeight());
+    if (UpdateConstantBuffer(context, m_clipBuffer.Get(), clipData)) {
+        context->VSSetConstantBuffers(CLIP_CB_SLOT, 1, m_clipBuffer.GetAddressOf());
+    }
+
+    context->RSSetState(m_D3D11Mgr->GetStates()->GetCullFrontState());
+
     DrawGround(context, states);
     DrawModel(context, states);
+
+    context->RSSetState(m_D3D11Mgr->GetStates()->GetCullBackState());
+
+    ID3D11Buffer* nullBuffer = nullptr;
+    context->VSSetConstantBuffers(CLIP_CB_SLOT, 1, &nullBuffer);
 } // ReflectionPass
 
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -577,7 +580,7 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     m_Stone->Render(context, mayaParams);
 } // DrawModel
 
-void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states, bool isReflection) {
     if (!m_Camera || !m_SkyBox) {
         return;
     }
@@ -590,6 +593,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 	skyParams.camPos = m_Camera->GetPosition();
     skyParams.time = m_renderingTime;
 	skyParams.skyLUT = m_AtmosphereLUT->GetLUT();
+    skyParams.isReflection = isReflection ? 1 : 0;
 
     m_SkyBox->Render(context, skyParams);
     context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
@@ -636,7 +640,6 @@ void Renderer::ApplyWater(ID3D11DeviceContext* context, D3D11State* states) {
     WaterComposite::RenderParams waterParams;
     waterParams.sceneSRV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetSRV();
     waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
-    waterParams.reflectionSRV = m_sceneRTMgr->GetRT(KEY_REFLECTION_RT)->GetSRV();
     
     m_Water->Render(context, waterParams);
 } // ApplyWater
@@ -696,6 +699,20 @@ void Renderer::ApplyTAA(ID3D11DeviceContext* context, D3D11State* states) {
     isFirst = false;
     m_TAA->CopyResource(context, m_Post->GetTexture());
 } // ApplyTAA
+
+void Renderer::InitCommonBuffer(ID3D11Device* device) {
+    if (!InitConstantBuffer<FrameBuffer>(device, m_frameBuffer.GetAddressOf())) {
+        return;
+    }
+
+    if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
+        return;
+    }
+
+    if (!InitConstantBuffer<ClipPlaneBuffer>(device, m_clipBuffer.GetAddressOf())) {
+        return;
+    }
+} // InitCommonBuffer
 
 void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
     if (!m_Stone || !m_StonePillar || !m_Arca) {

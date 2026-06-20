@@ -57,7 +57,7 @@ private:
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 	void DrawModel(ID3D11DeviceContext*, D3D11State*);
-    void DrawSkyBox(ID3D11DeviceContext*, D3D11State*);
+    void DrawSkyBox(ID3D11DeviceContext*, D3D11State*, bool isReflection = false);
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
@@ -66,6 +66,7 @@ private:
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
 
+    void InitCommonBuffer(ID3D11Device*);
     void InitDefaultMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
     void InitWidgets();
 
@@ -74,6 +75,7 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_frameBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_clipBuffer;
 
     std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
     std::unique_ptr<Camera>               m_Camera;
