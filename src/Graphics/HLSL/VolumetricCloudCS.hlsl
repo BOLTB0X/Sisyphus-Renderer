@@ -285,7 +285,7 @@ float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPo
     for (int s = 0; s < CLOUD_MARCH_STEPS; s++)
     {
         float3 p = ro + rd * d;
-        float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_TOP)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
         
         float alpha = ComputeCloudDensity(p, norY, d);
 

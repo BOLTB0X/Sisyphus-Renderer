@@ -5,6 +5,7 @@
 ## Self Introduce
 
 <div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC5.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC4.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>시지프스 렌더러</strong></p>
@@ -58,6 +59,39 @@
 Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
 
 </details>
+
+<br/>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>Volumetric Cloud 2.0</strong></p>
+</div>
+
+<details>
+<summary> About Volumetric 2.0 </summary>
+
+> 정석 Volumetric
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+
+  레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 `(현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리)` 을 진행했으나, <br/> 빛 레이마칭 수정으로 수학적으로 올바른 `(현재 거리 - 바닥 거리) / (천장 거리 - 바닥 거리)` 적용
+</div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+  수정 전 | 수정 후
+</div>
+
+바닥(`Bottom`)에서 0, 천장(`Top`)에서 1로 정상적인 고도 그라데이션이 형성되도록 수정
+
+</details>
+
 
 <br/>
 
@@ -221,7 +255,7 @@ start SisyphusRenderer.sln
 
 ## Volumetric
 
-### [Volumetric Cloud](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
+### [Volumetric Cloud(라이팅 과포화)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
 
 <div align="center">
  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
@@ -239,6 +273,16 @@ start SisyphusRenderer.sln
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
     <br>
   <p><strong> Post-Processing Volumetric Scattering</strong></p>
+</div>
+
+### [Volumetric Cloud(에너지 보존 법칙)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0)
+
+<div align="center">
+ <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9501.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="260"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="260"></td>
+  <br>
+  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
 </div>
 
 ## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
