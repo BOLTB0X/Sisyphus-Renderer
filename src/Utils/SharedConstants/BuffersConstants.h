@@ -64,17 +64,16 @@ namespace SharedConstants {
         static constexpr float             CLOUD_TOP = 3350.0f;
 
 		static constexpr float             CLOUD_COVERAGE = 0.552f;
-        static constexpr float             CLOUD_BASE_SCALE = 1.51f;
+        static constexpr float             CLOUD_BASE_SCALE = 0.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
         static constexpr float             CLOUD_DENSITY = 0.03f;
-        //static constexpr float             CLOUD_DENSITY = 0.01f;
-        static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.1f;
+        static constexpr float             CLOUD_BASE_EDGE_SOFTNESS = 0.25f;
         static constexpr float             CLOUD_BOTTOM_SOFTNESS = 0.25f;
         static constexpr float             CLOUD_DETAIL_STRENGTH = 0.225f;
 
-        static constexpr float             CLOUD_FORWARD_SCATTERING_G = 0.8f;
-        static constexpr float             CLOUD_BACKWARD_SCATTERING_G = -0.2f;
+        static constexpr float             CLOUD_FORWARD_SCATTERING_G = 0.2f;
+        static constexpr float             CLOUD_BACKWARD_SCATTERING_G = 0.2f;
         static constexpr float             CLOUD_SCATTERING_LERP = 0.5f;
         static constexpr float             CLOUD_MIN_TRANSMITTANCE = 0.1f;
 
@@ -90,11 +89,9 @@ namespace SharedConstants {
         static constexpr float  WIND_SCALE = 200.0f;
 
         static constexpr float HENYEY_GREENSTEIN_SCALE = 1.0f;
-        static constexpr float POWDER_FACTOR = 0.5f;
-        static constexpr float LIGHTING_SCALE = 0.1f;
-        //static constexpr float POWDER_FACTOR = 1.0f;
-        //static constexpr float LIGHTING_SCALE = 1.0f;
-        static constexpr float HORIZON_FADE_SCALE = 0.58f;
+        static constexpr float POWDER_FACTOR = 0.4f;
+        static constexpr float LIGHTING_SCALE = 0.4f;
+        static constexpr float HORIZON_FADE_SCALE = 0.28f;
         //static constexpr float HORIZON_FADE_SCALE = 0.08f;
 
         // lensflare
@@ -108,9 +105,11 @@ namespace SharedConstants {
         static constexpr float ALPHA_CUT = 0.3f;
 
         // 일반 상수
-		//static float QUAD_MAX_LENG = 800.0f;
-		//static float HEIGHT_SCALE = 250.0f;
-		//static float QUAD_SCALE = 10.0f;
+        static constexpr DirectX::XMFLOAT3 WATER_COLOR_SHALLOW = { 0.0f, 0.6f, 0.7f };
+        static constexpr DirectX::XMFLOAT3 WATER_COLOR_DEEP = { 0.01f, 0.05f, 0.15f };
 
+        static constexpr float WATER_DISTORTION = 0.01f;
+        static constexpr float WATER_REFLECTIVITY = 0.2f;
+        static constexpr float WATER_DENSITY = 0.4f;
     } // BuffersConstants
 }

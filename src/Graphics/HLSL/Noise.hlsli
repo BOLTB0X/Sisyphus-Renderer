@@ -39,7 +39,26 @@ float3 hash_33(float3 p3)
     return frac((p3.xxy + p3.yxx) * p3.zyx);
 } // hash33
 
-float noise(float3 x, float tile)
+float noise(float3 x)
+{
+    float3 p = floor(x);
+    float3 f = frac(x);
+
+    f = f * f * (float3(3.0f, 3.0f, 3.0f) - float3(2.0f, 2.0f, 2.0f) * f);
+    float n = p.x + p.y * 57.0 + 113.0 * p.z;
+    return lerp(
+		lerp(
+			lerp(hash(int(n + 0.0)), hash(int(n + 1.0)), f.x),
+			lerp(hash(int(n + 57.0)), hash(int(n + 58.0)), f.x),
+			f.y),
+		lerp(
+			lerp(hash(int(n + 113.0)), hash(int(n + 114.0)), f.x),
+			lerp(hash(int(n + 170.0)), hash(int(n + 171.0)), f.x),
+			f.y),
+		f.z);
+} // noise
+
+float noise_tile(float3 x, float tile)
 {
     float3 p = floor(x);
     float3 f = frac(x);
@@ -95,6 +114,31 @@ float voronoi(float3 x, float tile)
     return 1.0f - res;
 } // voronoi
 
+float voronoi_cells(float3 p, float cellCount)
+{
+    float3 pCell = p * cellCount;
+    float d = 1.0e10;
+    for (int xo = -1; xo <= 1; xo++)
+    {
+        for (int yo = -1; yo <= 1; yo++)
+        {
+            for (int zo = -1; zo <= 1; zo++)
+            {
+                float3 tp = floor(pCell) + float3(xo, yo, zo);
+
+                float3 tmp = tp % (cellCount / 1.0);
+                tp = pCell - tp - noise(tmp);
+
+                d = min(d, dot(tp, tp));
+            }
+        }
+    }
+    d = min(d, 1.0);
+    d = max(d, 0.0f);
+
+    return d;
+} // voronoi_cells
+
 float tilable_voronoi(float3 p, const int octaves, float tile)
 {
     float f = 1.;
@@ -128,7 +172,7 @@ float tilable_fbm(float3 p, const int octaves, float tile)
 
     for (int i = 0; i < octaves; i++)
     {
-        c += a * noise(p * f, f);
+        c += a * noise_tile(p * f, f);
         f *= 2.0;
         w += a;
         a *= 0.5;
@@ -136,6 +180,11 @@ float tilable_fbm(float3 p, const int octaves, float tile)
 
     return c / w;
 } // tilable_fbm
+
+float worley_noise3D(float3 p, float cellCount)
+{
+    return voronoi_cells(p, cellCount);
+} // worley_noise3D
 
 float grad_noise2D(float2 f)
 {

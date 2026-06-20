@@ -16,26 +16,6 @@ namespace ConstantBuffer {
 		}
     }; // MatrixBuffer
 
-    //struct ShadowBuffer {
-    //    DirectX::XMMATRIX world;
-
-    //    float             mapWidth;
-    //    float             mapHeight;
-    //    float             bias;
-    //    float             spread;
-
-    //    DirectX::XMFLOAT4 padding;
-
-    //    ShadowBuffer() {
-    //        world = DirectX::XMMatrixIdentity();
-    //        mapWidth = 0.0f;
-    //        mapHeight = 0.0f;
-    //        bias = 0.0f;
-    //        spread = 0.0f;
-    //        padding = { 0.0f, 0.0f, 0.0f, 0.0f };
-    //    }
-    //}; // ShadowBuffer
-
     struct WorldBuffer {
         DirectX::XMMATRIX world;
 
@@ -119,6 +99,12 @@ namespace ConstantBuffer {
         }
     }; // ResolutionBuffer
 
+    struct ClipPlaneBuffer {
+        DirectX::XMFLOAT4 clipPlane;
 
+        ClipPlaneBuffer() {
+            clipPlane = { 0.0f, 0.0f, 0.0f, 0.0f };
+        }
+    }; // ClipPlaneBuffer
 
 } // ConstantBuffer

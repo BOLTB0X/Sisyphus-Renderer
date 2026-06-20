@@ -21,7 +21,7 @@ public:
     bool Init(ID3D11Device*, ID3D11DeviceContext*, HWND);
     void Shutdown();
     void CreateVolumeTexture(ID3D11Device*, const std::string&, UINT, UINT, UINT, DXGI_FORMAT);
-    void CreateCloudNoise(ID3D11DeviceContext*, const std::string&);
+    void CreateCloudNoise(ID3D11DeviceContext*, const std::string&, NoiseGenerator*, float);
 
     std::shared_ptr<Texture>       GetTexture(ID3D11Device*, ID3D11DeviceContext*, const std::string&, bool keepCpuPixels = false);
     std::shared_ptr<VolumeTexture> GetVolumeTexture(const std::string&);
@@ -32,6 +32,7 @@ private:
 private:
     std::unordered_map<std::string, std::shared_ptr<Texture>>       m_Textures;
     std::unordered_map<std::string, std::shared_ptr<VolumeTexture>> m_VolumeTextures;
-    std::unique_ptr<NoiseGenerator>                                 m_NoiseGenerator;
+    std::unique_ptr<NoiseGenerator>                                 m_PerlinWorleyGenerator;
+    std::unique_ptr<NoiseGenerator>                                 m_WorleyGenerator;
     std::mutex                                                      m_mutex;
 }; // TexturesManager

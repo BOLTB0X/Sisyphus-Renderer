@@ -14,6 +14,11 @@ float4 mod289(float4 x)
     return x - floor(x * (1.0f / 289.0f)) * 289.0f;
 } // mod289
 
+float4 convert_float4(float f)
+{
+    return float4(f, f, f, f);
+} // convert_float4
+
 float4 permute(float4 x)
 {
     return mod289(((x * 34.0f) + 1.0f) * x);
@@ -21,8 +26,8 @@ float4 permute(float4 x)
 
 float4 taylorInv_sqrt(float4 r)
 {
-    return 1.79284291400159f - 0.85373472095314f * r;
-} // taylorInvSqrt
+    return float4(1.79284291400159f, 1.79284291400159f, 1.79284291400159f, 1.79284291400159f) - float4(0.85373472095314f, 0.85373472095314f, 0.85373472095314f, 0.85373472095314f) * r;
+} // taylorInv_sqrt
 
 float2x2 rot2(float a)
 {
@@ -32,7 +37,7 @@ float2x2 rot2(float a)
 
 float4 fade(float4 t)
 {
-    return (t * t * t) * (t * (t * 6.0f - 15.0f) + 10.0f);
+    return (t * t * t) * (t * (t * float4(6.0f, 6.0f, 6.0f, 6.0f) - float4(15.0f, 15.0f, 15.0f, 15.0f)) + float4(10.0f, 10.0f, 10.0f, 10.0f));
 } // fade
 
 float2 random2(float2 p)
