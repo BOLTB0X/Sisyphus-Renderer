@@ -1,252 +1,219 @@
-# Sisyphus-Renderer
-
-![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
-
-## Self Introduce
+# Sisyphus-Renderer - Volumetric Cloud 2.0
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC4.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9505.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>시지프스 렌더러</strong></p>
+  <p><strong>AAA 급 볼류메트릭 클라우드</strong></p>
 </div>
 
-- **Assimp** 로더
-- **FBR Shading**
-- **Sky LUT**: 대기 산란 Raymarching
-- **Shadow mapping** : Poisson Disk Sampling
-- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
-- **동적 Ambient 전환** : 노을, 낮, 밤
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **Bloom + Lens Flare** 후처리
-- **God Rays**: 후처리 Volumetric Scattering
-- **YCoCg Variance Clipping**
-- **TAA**
-- **Lensflare**
-- **Terrain** : HeightMap, Quad Tree
-- **Grass LOD(Level of Detail)** : Geometry + Instancing, Billboard
+<p align="center">
+  Sisyphus Engine의 볼류메트릭 클라우드 렌더링 시스템을 2.0으로 개편하여, 기존의 비물리적 편향(Hack)을 제거하고 에너지 보존 법칙(Energy Conservation)에 기반한 물리적 렌더링(PBR) 을 달성
+</p>
 
+- 전반적인 파이프라인은 [Volumetric Cloud(라이팅 과포화)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud) 동일
 
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
+- HLSL에서 `RaymarchLight` 함수를  수학적, '물리 기반 정석'으로 수정하여, `(현재 거리 - 바닥 거리) / (천장 거리 - 바닥 거리)` 공식 이용
 
 <br/>
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Volumetric Cloud & God Rays</strong></p>
-</div>
 
-<details>
-<summary> About Volumetric </summary>
+<table>
+<tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9503.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9502.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="320"></td>
+  </tr>
+</table>
 
-> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  | 상황 | FPS |
-  |---|---|
-  | 일반 구름 뷰 | 50 ~ 59 |
-  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
-
-</div>
-
-
-Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
-
-</details>
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC2.gif?raw=true)" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Terrain & LOD Grass</strong></p>
-</div>
-
-<details>
-<summary> About LOD Grass </summary>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC3.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-
-  -Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
-  -이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
-  -Poisson Disk Sampling PCF 소프트 섀도우
-
-  | 거리 구분 | 렌더링 방식 | 특징 |
-  | :--- | :--- | :--- |
-  | 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
-  | D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
-  | D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
-
-
-</div>
-
-</details>
-
-<br/>
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
+<p align="center">
+  기존 NorY 공식에서 Top 기준<br/>
+  레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 (현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리) 을 진행
+</p>
 
 ---
 
-## Quick Start
+## [기존의 '의도된 편향'](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud#1-nory-%EC%98%A4%ED%94%84%EC%85%8B-%ED%8A%9C%EB%8B%9D)
 
-<details>
-<summary> open / close </summary>
-
-### 1. 필수 요구 사항
-
-- **OS** : Windows 10/11
-
-- **IDE** : [Visual Studio Community 2022](https://visualstudio.microsoft.com/ko/vs/community/) (C++를 사용한 데스크톱 개발 워크로드 포함)
-
-- **Build** : [CMake 3.21](https://cmake.org/cmake/help/latest/release/3.21.html) 이상
-
-- **Package Manager** : [vcpkg](https://vcpkg.io/en/)
-
-### 2. 라이브러리 설치 (`vcpkg`)
-
-```bash
-# 터미널/파워쉘에서 다음 라이브러리들을 설치
-vcpkg install imgui[directx11-binding,win32-binding]
-vcpkg install directxtk
-vcpkg install directxtex
-vcpkg install spdlog
-vcpkg install assimp
+```cpp
+float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_TOP)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
 ```
 
-### 3. 클론 및 빌드
+- 초기 버전(1.0)에서는 구름 상단부에서 빛이 누적되어 하얗게 타버리는 **과포화(Oversaturation)** 현상을 막기 위해,
 
-```bash
-# 저장소 클론
-git clone https://github.com/BOLTB0X/Sisyphus-Renderer.git
-cd Sisyphus-Renderer
+- 고도 정규화(`norY`) 계산 시 의도적으로 수식을 비틀어 사용
 
-# 빌드 디렉토리 생성
-mkdir build
-cd build
+- 이로 인해 밀도 전체가 낮아져 과포화는 피할 수 있었으나, 구름 내부의 고도별 밀도 그라데이션이 소실되어 물리적으로 타당하지 않은 *'가짜(Fake)' 렌더링*
 
-# CMake 구성 (vcpkg 경로 설정 필수)
-cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg.cmake
+---
 
-# 프로젝트 열기 (or cmake --build . 실행)
-start SisyphusRenderer.sln
+## 정석 수식 도입과 라이팅 시스템 재설계
+
+```cpp
+float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
 ```
 
-### 4. 사용한 에셋
+2.0 업데이트에서는 고도 기준을 바닥(`Bottom`)으로 바로잡아 구름의 밀도 그라데이션을 완벽하게 복원
 
-- [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+- **Analytical Integration** 기반 에너지 보존:
 
-- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+  빛의 에너지가 무한히 누적되지 않도록, 광학 두께에 따른 투과율(`dTrans`)을 계산하고 `(S - S * dTrans) / alpha` 수식을 통해 에너지가 보존되는 부드러운 산란광을 구현했
 
-- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
+- **Beer-Lambert 법칙 기반 Raymarch Light** :
 
-- [Learn OpenGL: Tessellation Chapter I: Rendering Terrain using Height Maps](https://learnopengl.com/Guest-Articles/2021/Tessellation/Height-map)
+  태양광이 구름 입자를 통과할 때의 감쇠(Attenuation)를 `exp(-sampleDensity * ds * absorption)`로 계산하여, 빛의 뚫고 들어오는 깊이감(God Rays)과 부드러운 Self-Shadowing을 달성
 
-- [sketchfab: Tree GN](https://sketchfab.com/3d-models/tree-gn-40da979cb23f492583ec89c4196cff4e)
+- **Dual Henyey-Greenstein & Powder Factor** :
 
-- [sketchfab: Stone Pillar](https://sketchfab.com/3d-models/stone-pillar-4b74c340d1bf47ccad35b57deb78b58a)
+  태양을 바라볼 때 구름 가장자리가 은빛으로 빛나는 **Silver Lining** 효과와, 짙은 구름의 어두운 **밑면(Powder Factor)** 을 사실적으로 구현했
 
-- [sketchfab: Arca Dwarapala](https://sketchfab.com/3d-models/arca-dwarapala-fe8803efbc0043d7bc3114387c4c1545)
+- **SDF 기반 빈 공간 건너뛰기** :
 
-- [rastertek: grass.dds](https://www.rastertek.com/tertut19.html)
+  레이마칭 성능 최적화를 위해, 밀도가 0인 허공에서는 구름 경계까지의 거리(SDF)를 계산해 스텝을 크게 점프(`d += sdfDist`)하도록 최적화
 
-- [sketchfab: (Black Myth)Wukong - Di Luo Cha [Animation]](https://sketchfab.com/3d-models/black-myth-wukong-di-luo-cha-animation-79819655a05f497dbb4225726fcb73e3)
-
-</details>
-
-## Assimp
-
-### [Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+<br/>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>static Model</strong></p>
-</div>
-
-### [Animation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Animation)
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp05_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp06_Rigid.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong> Skinned | Rigid </strong></p>
-</div>
-
-## Atmospheric Scattering
-
-### [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
-
-<div align="center">
-<td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B001_%ED%95%98%EB%8A%9802.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B002_%EC%9A%B0%EC%A3%BC01.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true" width="260"></td>
-  <br>
-  <p><strong>카메라 위치에 따른 동적 베이킹</strong></p>
-</div>
-
-### [LUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT05_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT06_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT07_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT08_new.png?raw=true" width="200"></td>
-  <br>
-  <p><strong>UAV 로 계산 후 LUT</strong></p>
-</div>
-
-## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B502.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow07.png?raw=true" width="260"></td>
-  <br>
-  <p><strong>Point | Terrain | mix</strong></p>
+  <p><strong>결과</strong></p>
 </div>
 
 
-## Volumetric
+```cpp
+float RaymarchLight(float3 pos, float3 sphereCenter, float3 lightDir, float initialDensity)
+{
+    float ds = CLOUDS_SHADOW_MARGE_STEP_SIZE;
+    float3 startPos = pos;
+    float shadow = 1.0f;
+    float absorption = 1.0f;
 
-### [Volumetric Cloud](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
+    [unroll(CLOUD_SELF_SHADOW_STEPS)]
+    for (int i = 0; i < CLOUD_SELF_SHADOW_STEPS; i++)
+    {
+        startPos += lightDir * ds;
+        float norY = clamp((length(startPos - sphereCenter) - (EARTH_RADIUS + CLOUDS_BOTTOM)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        
+        if (norY > 1.0f)
+            return shadow;
 
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/08Volumetric_%EB%A0%8C%EC%A6%88%ED%94%8C%EB%A0%88%EC%96%B401.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
+        // 빛 방향으로의 밀도 샘플링
+        float sampleDensity = ComputeCloudDensity(startPos, norY, 0.0f);
+        
+        shadow *= exp(-sampleDensity * ds * absorption);
+        
+        ds *= CLOUDS_SHADOW_MARGE_STEP_MULTIPLY;
+    }
+    return shadow;
+} // RaymarchLight
+```
 
-### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
+```cpp
+float4 RaymarchClouds(float3 ro, float3 rd, inout float sceneDist, uint2 pixelPos)
+{
+    if (rd.y < 0.0f)
+        return float4(0, 0, 0, 1);
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Post-Processing Volumetric Scattering</strong></p>
-</div>
+    float3 sphereCenter = float3(ro.x, -EARTH_RADIUS, ro.z);
 
-## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
+    float2 inner = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_INNER_RADIUS);
+    float2 outer = compute_ray_sphere_intersect(ro, rd, sphereCenter, SPHERE_OUTER_RADIUS);
+    
+    if (outer.y < 0.0f)
+        return float4(0, 0, 0, 1);
+    
+    float start = max(inner.y, outer.x);
+    float end = min(outer.y, sceneDist);
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8403.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-</div>
+    if (start >= end)
+        return float4(0, 0, 0, 1);
+    
+    float dayFactor = saturate(-LIGHT_DIRECTION.y);
+    float nightFactor = saturate(LIGHT_DIRECTION.y);
+
+    float3 currentAmbientTop = lerp(CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_TOP, dayFactor);
+    currentAmbientTop = lerp(currentAmbientTop, CLOUD_NIGHT_AMBIENT_COLOR_TOP, nightFactor);
+    float3 currentAmbientBottom = lerp(CLOUD_SUNSET_AMBIENT_COLOR_BOTTOM, CLOUDS_AMBIENT_COLOR_BOTTOM, dayFactor);
+    currentAmbientBottom = lerp(currentAmbientBottom, CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM, nightFactor);
+   
+    float d = start;
+    float dD = (end - start) / (float) CLOUD_MARCH_STEPS;
+    d += dD * GetBlueNoise(pixelPos); // 지터링
+
+    float sundotrd = dot(rd, -LIGHT_DIRECTION);
+    float transmittance = 1.0;
+    float3 scatteredLight = float3(0.0, 0.0, 0.0);
+    sceneDist = EARTH_RADIUS;
+
+    float phaseFunction = DualHenyeyGreenstein(sundotrd, CLOUDS_FORWARD_SCATTERING_G, CLOUDS_BACKWARD_SCATTERING_G, CLOUDS_SCATTERING_LERP) * HENYEY_GREENSTEIN_SCALE;
+
+    for (int s = 0; s < CLOUD_MARCH_STEPS; s++)
+    {
+        float3 p = ro + rd * d;
+        float norY = clamp((length(p - sphereCenter) - (EARTH_RADIUS + CLOUDS_TOP)) / (CLOUDS_TOP - CLOUDS_BOTTOM), 0.0f, 1.0f);
+        
+        float alpha = ComputeCloudDensity(p, norY, d);
+
+        if (alpha > 0.0f)
+        {
+            float lightTransmittance = RaymarchLight(p, sphereCenter, - LIGHT_DIRECTION, alpha);
+
+            float extCoeff = max(alpha * 0.1f, 0.001f);
+            float3 ambientLight = compute_ambient_color(p, CLOUDS_TOP, CLOUDS_BOTTOM, extCoeff, currentAmbientTop, currentAmbientBottom);
+            
+            float heightBright = compute_height_brightness(norY);
+            float powderFactor = lerp(1.0f, 1.0f - exp(-alpha * 2.0f), POWDER_FACTOR);
+            float ms = compute_multiple_scattering(alpha, dD);
+       
+            float3 directionalLight = get_dynamic_light_color(LIGHT_DIRECTION.y).rgb * lightTransmittance * phaseFunction;
+
+            float3 S = (ambientLight + directionalLight + (ms * LIGHTING_SCALE)) * alpha * powderFactor * norY;
+            float dTrans = exp(-alpha * dD);
+            float3 Sint = (S - S * dTrans) * (1.0f / max(alpha, 0.001f));
+
+            scatteredLight += transmittance * Sint;
+            transmittance *= dTrans;
+
+            sceneDist = min(sceneDist, d);
+            d += dD;
+        }
+        else
+        {
+            float distToBottom = abs(length(p - sphereCenter) - SPHERE_INNER_RADIUS);
+            float distToTop = abs(length(p - sphereCenter) - SPHERE_OUTER_RADIUS);
+            float sdfDist = max(min(distToBottom, distToTop) * 0.5f, dD);
+            d += sdfDist;
+        }
+        
+        if (transmittance <= CLOUDS_MIN_TRANSMITTANCE)
+            break;
+    }
+    
+    // 지평선 페이드 아웃
+    float horizonFade = smoothstep(0.0f, HORIZON_FADE_SCALE, rd.y);
+    scatteredLight *= horizonFade;
+    transmittance = lerp(1.0f, transmittance, horizonFade);
+
+    return float4(scatteredLight, transmittance);
+} // RaymarchClouds
+```
+
+- [`VolumetricCloudCS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/VolumetricCloud_2.0/src/Graphics/HLSL/VolumetricCloudCS.hlsl)
+
+## [참고]
+
+- [Guerrilla games: Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine)
+
+- [Patapom: Real-Time Volumetric Rendering](https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf)
+
+- [Github: RenderEngine(NadirRoGue) - OpenGL](https://github.com/NadirRoGue/RenderEngine/tree/master)
+
+- [Github: TerrainEngine(fede-vaccaro) - OpenGL](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
+
+- [Github: Volumetric Cloud(chihirobelmo) - DX11](https://github.com/chihirobelmo/volumetric-cloud-for-directx11/tree/main)
+
+- [Shadertoy: Himalayas(MdGfzh)](https://www.shadertoy.com/view/MdGfzh)
+
+- [Shadertoy: Enscape Cube(4dSBDt)](https://www.shadertoy.com/view/4dSBDt)
+
+- [Chris' Graphics Blog: Volumetric Rendering Part 1](https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html)
