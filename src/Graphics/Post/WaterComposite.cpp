@@ -130,7 +130,7 @@ bool WaterComposite::InitShader(ID3D11Device* device, HWND hwnd, const int& scre
         return false;
     }
 
-    if (InitPixelShader(device, hwnd, PathConstants::WATER_PS,
+    if (InitPixelShader(device, hwnd, PathConstants::WATER_POST_PS,
         m_pixelShader.GetAddressOf()) == false) {
         DebugHelper::DebugPrint("WaterComposite PS 초기화 실패");
         return false;

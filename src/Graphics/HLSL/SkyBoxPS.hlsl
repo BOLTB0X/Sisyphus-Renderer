@@ -14,8 +14,15 @@ struct PS_IN
     float3 localPos : TEXCOORD0;
 }; // PS_INPUT
 
-float4 main(PS_IN input) : SV_TARGET
+struct PS_OUT
+{
+    float4 color : SV_Target0;
+    float4 normal : SV_Target1;
+}; // PS_OUT
+
+PS_OUT main(PS_IN input) : SV_TARGET
 {  
+    PS_OUT output;
     float3 rd = normalize(input.localPos);
     
     float3 ro = CAMERA_POSITION; // 카메라 위치
@@ -33,5 +40,9 @@ float4 main(PS_IN input) : SV_TARGET
 
     }
     skyColor = 1.0 - exp(-1.0 * skyColor);
-    return float4(skyColor, 1.0f);   
+    
+    //return float4(skyColor, 1.0f);   
+    output.color = float4(skyColor, 1.0f);
+    output.normal = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    return output;
 } // main

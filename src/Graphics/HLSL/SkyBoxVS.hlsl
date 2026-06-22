@@ -16,7 +16,6 @@ struct PS_IN
 {
     float4 position : SV_POSITION;
     float3 localPos : TEXCOORD0;
-    float  clipDistance : SV_ClipDistance0;
 }; // PS_INPUT
 
 #define WORLD cWorld
@@ -33,6 +32,5 @@ PS_IN main(VS_IN input)
     output.position = mul(viewPos, PROJ).xyww;
     output.position.z = output.position.w;
     output.localPos = input.position.xyz;
-    output.clipDistance = dot(worldPos, CLIP_PLANE);
     return output;
 } // main

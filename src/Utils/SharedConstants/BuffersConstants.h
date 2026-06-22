@@ -59,11 +59,11 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 3.0f;
 
         // Cloud
-		static constexpr float             CLOUD_RADIUS = 71000.0f;
-        static constexpr float             CLOUD_BOTTOM = 2350.0f;
-        static constexpr float             CLOUD_TOP = 3350.0f;
+		static constexpr float             CLOUD_RADIUS = 710000.0f;
+        static constexpr float             CLOUD_BOTTOM = 4350.0f;
+        static constexpr float             CLOUD_TOP = 5350.0f;
 
-		static constexpr float             CLOUD_COVERAGE = 0.552f;
+		static constexpr float             CLOUD_COVERAGE = 0.52f;
         static constexpr float             CLOUD_BASE_SCALE = 0.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
@@ -90,7 +90,7 @@ namespace SharedConstants {
 
         static constexpr float HENYEY_GREENSTEIN_SCALE = 1.0f;
         static constexpr float POWDER_FACTOR = 0.4f;
-        static constexpr float LIGHTING_SCALE = 0.4f;
+        static constexpr float LIGHTING_SCALE = 0.9f;
         static constexpr float HORIZON_FADE_SCALE = 0.28f;
         //static constexpr float HORIZON_FADE_SCALE = 0.08f;
 

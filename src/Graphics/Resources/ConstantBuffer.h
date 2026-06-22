@@ -107,4 +107,12 @@ namespace ConstantBuffer {
         }
     }; // ClipPlaneBuffer
 
+    struct ReflectionMatrixBuffer {
+        DirectX::XMFLOAT4X4 reflectView;
+
+        ReflectionMatrixBuffer() {
+            reflectView = DirectX::XMFLOAT4X4();
+        }
+    }; // ReflectionMatrixBuffer
+
 } // ConstantBuffer

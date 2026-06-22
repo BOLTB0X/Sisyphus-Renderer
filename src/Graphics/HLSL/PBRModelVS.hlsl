@@ -16,7 +16,6 @@ struct PS_IN {
     float3 worldPos : TEXCOORD1;
     float3 tangent : TANGENT;
     float3 binormal : BINORMAL;
-    float  clipDistance : SV_ClipDistance0;
 }; // PS_INPUT
 
 cbuffer WorldBuffer : register(b2)
@@ -39,7 +38,5 @@ PS_IN main(VS_IN input) {
     output.normal = normalize(mul(input.normal, worldMat3));
     output.tangent = normalize(mul(input.tangent, worldMat3));
     output.binormal = normalize(mul(input.binormal, worldMat3));
-    
-    output.clipDistance = dot(worldPos, CLIP_PLANE);
     return output;
 } // main

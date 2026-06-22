@@ -28,8 +28,9 @@ namespace SharedConstants {
 
         static const std::wstring GROUND_VS = L"HLSL/GroundVS.hlsl";
         static const std::wstring GROUND_PS = L"HLSL/GroundPS.hlsl";
-        //static const std::wstring WATER_VS = L"HLSL/WaterVS.hlsl";
-        static const std::wstring WATER_PS = L"HLSL/WaterCompositePS.hlsl";
+        static const std::wstring WATER_POST_PS = L"HLSL/WaterCompositePS.hlsl";
+        static const std::wstring WATER_VS = L"HLSL/WaterVS.hlsl";
+        static const std::wstring WATER_PS = L"HLSL/WaterPS.hlsl";
 
         static const std::wstring DEPTH_VS = L"HLSL/DepthVS.hlsl";
         static const std::wstring POST_VS = L"HLSL/PostVS.hlsl";
@@ -77,5 +78,7 @@ namespace SharedConstants {
         static const std::string KEY_WORLEY_NOISE = "WorleyNoise";
         static const std::string KEY_SCENE_RT = "Scene";
         static const std::string KEY_REFLECTION_RT = "Reflection";
+        static const std::string KEY_REFRACTION_RT = "Refraction";
+        static const std::string KEY_NORMAL_RT = "NormalRT";
     } // PathConstants
 }

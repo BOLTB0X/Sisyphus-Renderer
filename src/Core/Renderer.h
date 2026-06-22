@@ -30,6 +30,7 @@ class MayaActor;
 class SkinnedActor;
 class RigidActor;
 class WaterComposite;
+class Water;
 
 class Renderer {
 public:
@@ -56,6 +57,7 @@ private:
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
+    void DrawWater(ID3D11DeviceContext*, D3D11State*);
 	void DrawModel(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*, bool isReflection = false);
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
@@ -65,45 +67,47 @@ private:
     void ApplyComposite(ID3D11DeviceContext*, D3D11State*);
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
+    void OnGui();
 
     void InitCommonBuffer(ID3D11Device*);
     void InitDefaultMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
     void InitWidgets();
 
+
 private:
-    static RendererState                  m_RendererState;
+    static RendererState                 m_RendererState;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_frameBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_lightBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>  m_clipBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightBuffer;
 
-    std::unique_ptr<D3D11Manager>         m_D3D11Mgr;
-    std::unique_ptr<Camera>               m_Camera;
-	std::unique_ptr<SkyBox>               m_SkyBox;
-    std::unique_ptr<Ground>               m_Ground;
-    std::unique_ptr<DirectionalLight>     m_DirectionalLight;
-    std::unique_ptr<VolumetricCloud>      m_VolumetricCloud;
-    std::unique_ptr<ShadowMap>            m_ObjectShadowMap;
-    std::unique_ptr<ShadowMap>            m_TerrainShadowMap;
-    std::unique_ptr<CloudMap>             m_CloudMapLUT;
-    std::unique_ptr<AtmosphereMap>        m_AtmosphereLUT;
-    std::unique_ptr<CloudComposite>       m_Composite;
-    std::unique_ptr<PostEffects>          m_Post;
-    std::unique_ptr<TAA>                  m_TAA;
-    std::unique_ptr<Grass>                m_Grass;
-    std::unique_ptr<Tree>                 m_Tree;
-	std::unique_ptr<MayaActor>            m_Stone;
-	std::unique_ptr<MayaActor>            m_StonePillar;
-    std::unique_ptr<MayaActor>            m_Arca;
-	std::unique_ptr<SkinnedActor>         m_Rakshasa;
-	std::unique_ptr<RigidActor>           m_LowpolyPlayer;
-	std::unique_ptr<WaterComposite>       m_Water;
+    std::unique_ptr<D3D11Manager>        m_D3D11Mgr;
+    std::unique_ptr<Camera>              m_Camera;
+	std::unique_ptr<SkyBox>              m_SkyBox;
+    std::unique_ptr<Ground>              m_Ground;
+    std::unique_ptr<DirectionalLight>    m_DirectionalLight;
+    std::unique_ptr<VolumetricCloud>     m_VolumetricCloud;
+    std::unique_ptr<ShadowMap>           m_ObjectShadowMap;
+    std::unique_ptr<ShadowMap>           m_TerrainShadowMap;
+    std::unique_ptr<CloudMap>            m_CloudMapLUT;
+    std::unique_ptr<AtmosphereMap>       m_AtmosphereLUT;
+    std::unique_ptr<CloudComposite>      m_Composite;
+    std::unique_ptr<PostEffects>         m_Post;
+    std::unique_ptr<TAA>                 m_TAA;
+    std::unique_ptr<Grass>               m_Grass;
+    std::unique_ptr<Tree>                m_Tree;
+	std::unique_ptr<MayaActor>           m_Stone;
+	std::unique_ptr<MayaActor>           m_StonePillar;
+    std::unique_ptr<MayaActor>           m_Arca;
+	std::unique_ptr<SkinnedActor>        m_Rakshasa;
+	std::unique_ptr<RigidActor>          m_LowpolyPlayer;
+	std::unique_ptr<WaterComposite>      m_WaterComposite;
+	std::unique_ptr<Water>               m_Water;
 
-    std::shared_ptr<TextureManager>       m_TextureMgr;
-    std::shared_ptr<ImGuiManager>         m_ImGuiMgr;
-    std::unique_ptr<SceneRTManager>       m_sceneRTMgr;
+    std::shared_ptr<TextureManager>      m_TextureMgr;
+    std::shared_ptr<ImGuiManager>        m_ImGuiMgr;
+    std::unique_ptr<SceneRTManager>      m_sceneRTMgr;
 
-    ID3D11RenderTargetView*               m_nullRTV;
-    ID3D11ShaderResourceView*             m_nullSRV;
-    float                                 m_renderingTime;
+    ID3D11RenderTargetView*              m_nullRTV;
+    ID3D11ShaderResourceView*            m_nullSRV;
+    float                                m_renderingTime;
 }; // Renderer

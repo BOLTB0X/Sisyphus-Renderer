@@ -23,6 +23,12 @@ struct PS_IN
     float3 binormal : BINORMAL;
 }; // PS_IN
 
+struct PS_OUT
+{
+    float4 color : SV_Target0;
+    float4 normal : SV_Target1;
+}; // PS_OUT
+
 cbuffer WorldBuffer : register(b2)
 {
     matrix cWorld;
@@ -30,8 +36,9 @@ cbuffer WorldBuffer : register(b2)
 
 #define WORLD               cWorld
 
-float4 main(PS_IN input) : SV_TARGET
+PS_OUT main(PS_IN input) : SV_TARGET
 {
+    PS_OUT output;
     float4 albedo = AlbedoTex.Sample(LinearSampler, input.uv);
 
     float3 normalSample = NormalTex.Sample(LinearSampler, input.uv).rgb * 2.0f - 1.0f;
@@ -76,5 +83,9 @@ float4 main(PS_IN input) : SV_TARGET
     float3 radiance = lightColor * NdotL;
 
     float3 col = diffuse * radiance * shadowFactor + ambient;
-    return float4(saturate(col), 1.0f);
+    
+    output.color = float4(saturate(col), 1.0f);
+    output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, 1.0f);
+    return output;
+    //return float4(saturate(col), 1.0f);
 } // main
