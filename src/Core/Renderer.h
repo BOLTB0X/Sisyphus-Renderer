@@ -52,19 +52,18 @@ private:
 	void UpdateModelTransform();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
-    void ReflectionPass(ID3D11DeviceContext*, D3D11State*);
+    void CompositePass(ID3D11DeviceContext*, D3D11State*);
+    void WaterPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessing(ID3D11DeviceContext*, D3D11State*);
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
-    void DrawWater(ID3D11DeviceContext*, D3D11State*);
 	void DrawModel(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*, bool isReflection = false);
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
     void ApplyWater(ID3D11DeviceContext*, D3D11State*);
-    void ApplyComposite(ID3D11DeviceContext*, D3D11State*);
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
     void OnGui();

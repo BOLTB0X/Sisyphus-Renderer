@@ -33,16 +33,14 @@ public:
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMFLOAT3         cameraPosition;
         DirectX::XMMATRIX         world;
         ID3D11ShaderResourceView* sceneSRV;
-        ID3D11ShaderResourceView* reflectionSRV;
+        ID3D11ShaderResourceView* normalSRV;
         ID3D11ShaderResourceView* sceneDepthSRV;
 
         RenderParams() : world(DirectX::XMMatrixIdentity()),
-            sceneSRV(nullptr), reflectionSRV(nullptr),
+            sceneSRV(nullptr), normalSRV(nullptr),
             sceneDepthSRV(nullptr) {
-            cameraPosition = { 0.0f, 0.0f, 0.0f };
         }
     }; // RenderParams
 
@@ -55,13 +53,11 @@ public:
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void OnGui();
 
-    void              SetReflectView(DirectX::XMMATRIX);
-    float             GetWaterHeight() const;
-    DirectX::XMMATRIX GetWorldMatrix();
+    DirectX::XMMATRIX GetWorldMatrix(const DirectX::XMFLOAT3&);
 
 private:
     struct WaterBuffer {
-        float             waterHeight;  // 추가
+        float             waterHeight;
         DirectX::XMFLOAT3 padding0;
 
         DirectX::XMFLOAT3 waterColorShallow;
@@ -96,18 +92,15 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_waterBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_resolutionBuffer;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_reflectionMatrixBuffer;
 
     DirectX::XMMATRIX                          m_reflectView;
     WaterBuffer                                m_waterData;
     ConstantBuffer::WorldBuffer                m_worldData;
     ConstantBuffer::ResolutionBuffer           m_resolutionData;
-    ConstantBuffer::ReflectionMatrixBuffer     m_reflectionMatrix;
 
     ID3D11ShaderResourceView*                  m_waterNormalSRV;
     ID3D11ShaderResourceView*                  m_waterWaveNormalSRV;
     ID3D11ShaderResourceView*                  m_flowSRV;
-    ID3D11ShaderResourceView*                  temp;
     ID3D11SamplerState*                        m_linearSampler;
     Transform                                  m_transform;
 }; // Water

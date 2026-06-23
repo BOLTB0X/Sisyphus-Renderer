@@ -1,21 +1,20 @@
 // WaterPS.hlsl
 #include "Common.hlsli"
 
-Texture2D NormalMap1 : register(t1);
-Texture2D NormalMap2 : register(t2);
-Texture2D FlowMap : register(t3);
-Texture2D SceneDepthMap : register(t4);
-Texture2D ReflectionMap : register(t5);
-Texture2D SceneMap : register(t6);
-
 SamplerState LinearSampler : register(s0);
+Texture2D    NormalMap1 : register(t1);
+Texture2D    NormalMap2 : register(t2);
+Texture2D    FlowMap : register(t3);
+Texture2D    SceneDepthMap : register(t4);
+Texture2D    SceneNormalMap : register(t5);
+Texture2D    SceneMap : register(t6);
 
 struct PS_IN
 {
     float4 pos : SV_POSITION;
     float3 worldPos : POSITION;
     float2 uv : TEXCOORD0;
-    float4 reflectPosition : TEXCOORD1;
+    float4 clipPos : TEXCOORD1;
 }; // PS_IN
 
 cbuffer ResolutionBuffer : register(b2)
@@ -50,21 +49,23 @@ cbuffer WaterBuffer : register(b3)
 #define REFLECTIVITY        reflectivity
 #define DENSITY             density
 
+float3 GetViewSpacePosition(float2 uv, float rawDepth)
+{
+    float4 clipSpacePos = float4(uv.x * 2.0f - 1.0f, 1.0f - uv.y * 2.0f, rawDepth, 1.0f);
+    float4 viewSpacePos = mul(clipSpacePos, PROJ_INV);
+    return viewSpacePos.xyz / viewSpacePos.w;
+} // GetViewSpacePosition
+
 float4 main(PS_IN input) : SV_TARGET
 {
-    // 1. 투영 텍스처 매핑 (Projective Texture Mapping)
-    // VS에서 넘어온 좌표를 w로 나누어 NDC 좌표(-1 ~ 1)로 만들고, UV 좌표(0 ~ 1)로 변환
-    float2 reflectUV;
-    reflectUV.x = input.reflectPosition.x / input.reflectPosition.w / 2.0f + 0.5f;
-    reflectUV.y = -input.reflectPosition.y / input.reflectPosition.w / 2.0f + 0.5f;
+    return float4(1.0f, 0.0f, 0.0f, 1.0f);
+    // 현재 픽셀의 Screen UV 계산
+    float2 screenUV = input.clipPos.xy / input.clipPos.w * 0.5f + 0.5f;
+    screenUV.y = 1.0f - screenUV.y;
 
-    // 굴절 UV는 현재 메인 화면의 픽셀 좌표를 해상도로 나누어 그대로 사용
-    float2 refractUV = input.pos.xy / RESOLUTION;
-
-    // 2. 노말 맵 & 플로우 맵을 통한 물결 왜곡 (Distortion)
+    // 수면 노말(파도) 계산 및 왜곡(Distortion) 생성
     float2 flowDir = FlowMap.Sample(LinearSampler, input.uv).rg * 2.0f - 1.0f;
     float flowSpeed = 0.03f;
-    
     float phase0 = frac(TIME * flowSpeed);
     float phase1 = frac(TIME * flowSpeed + 0.5f);
 
@@ -73,49 +74,112 @@ float4 main(PS_IN input) : SV_TARGET
 
     float3 n0 = NormalMap1.Sample(LinearSampler, uv0).rgb * 2.0f - 1.0f;
     float3 n1 = NormalMap2.Sample(LinearSampler, uv1).rgb * 2.0f - 1.0f;
-    
+
     float blendFactor = abs((phase0 - 0.5f) * 2.0f);
     float3 localNormal = normalize(lerp(n0, n1, blendFactor));
+    float3 worldWaterNormal = normalize(float3(localNormal.x, localNormal.z, localNormal.y));
 
-    // 왜곡 강도 적용
-    float2 distortion = localNormal.xy * WATER_DISTORTION;
-    reflectUV = saturate(reflectUV + distortion);
-    refractUV = saturate(refractUV + distortion * 0.5f);
+    float2 distortion = localNormal.xy * waterDistortion;
+    float2 refractUV = saturate(screenUV + distortion);
 
-    // 3. 굴절 깊이 아티팩트 방지 (물 밖을 왜곡하는 현상 막기)
-    float rawDepth = SceneDepthMap.SampleLevel(LinearSampler, refractUV, 0).r;
-    float distortLinearDepth = depth_to_meter(rawDepth, PROJ);
-    
-    // 카메라에서 픽셀까지의 실제 뷰 스페이스 Z거리
-    float waterLinearDepth = input.pos.w;
-    
-    // 왜곡된 곳의 깊이가 현재 물 메쉬의 깊이보다 카메라에 가깝다면 (즉, 수면 위 허공/지형이라면)
-    if (distortLinearDepth < waterLinearDepth)
+    // 깊이(Depth) 차이 계산 (지형에 파묻히는 해안선 부드럽게 만들기)
+    float rawSceneDepth = SceneDepthMap.SampleLevel(LinearSampler, screenUV, 0).r;
+    float sceneLinearZ = GetViewSpacePosition(screenUV, rawSceneDepth).z;
+    float waterLinearZ = input.clipPos.w; // Perspective에서 View Space Z는 W와 거의 동일
+
+    float depthDiff = sceneLinearZ - waterLinearZ;
+
+    // 만약 물 표면이 지형보다 깊다면
+    if (depthDiff < 0.0f)
     {
-        // 왜곡 취소
-        refractUV = input.pos.xy / RESOLUTION;
+        discard;
     }
 
-    // 4. 색상 샘플링 및 Beer's Law 깊이 흡수
-    float3 reflectColor = ReflectionMap.Sample(LinearSampler, reflectUV).rgb;
+    // 굴절(Refraction) 색상 및 수심에 따른 흡수(Beer's Law)
+    float distortRawDepth = SceneDepthMap.SampleLevel(LinearSampler, refractUV, 0).r;
+    float distortSceneZ = GetViewSpacePosition(refractUV, distortRawDepth).z;
+    
+    // 왜곡된 UV가 물 밖의 지형(하늘/바위)을 참조하면 왜곡 취소 (아티팩트 방지)
+    if (distortSceneZ < waterLinearZ)
+    {
+        refractUV = screenUV;
+    }
+
     float3 refractColor = SceneMap.Sample(LinearSampler, refractUV).rgb;
-
-    float actualWaterDepth = max(distortLinearDepth - waterLinearDepth, 0.0f);
-    float depthFactor = exp(-actualWaterDepth * density);
+    float depthFactor = exp(-depthDiff * density);
     float3 waterColor = lerp(waterColorDeep, waterColorShallow, depthFactor);
-
     refractColor = lerp(waterColor, refractColor, depthFactor);
 
-    // 5. 프레넬 반사율 (Fresnel)
-    float3 worldNormal = normalize(float3(localNormal.x, localNormal.z, localNormal.y));
-    float3 viewDir = normalize(CAMERA_POSITION - input.worldPos);
+    // SSR (Screen Space Reflection) - 레이 마칭 루프
+    float3 viewDir = normalize(input.worldPos - CAMERA_POSITION);
+    float3 reflectDir = reflect(viewDir, worldWaterNormal);
+    float3 viewReflectDir = mul(reflectDir, (float3x3) VIEW); // 레이 방향을 View 공간으로
+    float3 viewPos = GetViewSpacePosition(screenUV, input.clipPos.z / input.clipPos.w); // 레이 시작점
+
+    // 레이 마칭 세팅값 (성능과 퀄리티의 타협점)
+    int maxSteps = 30;
+    float stepSize = 0.5f;
+    float thickness = 0.5f;
+
+    float3 currentRayPos = viewPos;
+    float2 hitUV = 0.0f;
+    bool isHit = false;
+
+    // SSR 루프
+    [unroll(30)]
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        currentRayPos += viewReflectDir * stepSize;
+
+        // 현재 레이 위치를 화면 UV로 투영
+        float4 marchClipPos = mul(float4(currentRayPos, 1.0f), PROJ);
+        float2 marchUV = marchClipPos.xy / marchClipPos.w * 0.5f + 0.5f;
+        marchUV.y = 1.0f - marchUV.y;
+
+        // 화면 밖으로 나가면 검사 종료
+        if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
+            break;
+
+        // 현재 위치의 실제 씬 뎁스 샘플링
+        float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
+        float sampleSceneZ = GetViewSpacePosition(marchUV, sampleRawDepth).z;
+
+        float zDiff = currentRayPos.z - sampleSceneZ;
+
+        // 레이가 오브젝트 뒤로 들어갔고(충돌), 두께 판정(너무 뒤의 물체를 반사하는 오류 방지) 안에 있다면
+        if (zDiff > 0.0f && zDiff < thickness)
+        {
+            hitUV = marchUV;
+            isHit = true;
+            break;
+        }
+    }
+
+    float3 reflectColor = float3(0, 0, 0);
     
-    float cosTheta = saturate(dot(viewDir, worldNormal));
+    if (isHit)
+    {
+        // 충돌한 지점의 씬 색상(반사) 가져오기
+        reflectColor = SceneMap.Sample(LinearSampler, hitUV).rgb;
+    }
+    else
+    {
+        // [FallBack] 레이가 화면 밖이나 하늘로 날아갔을 경우
+        // 위쪽 하늘을 거꾸로 샘플링하여 가짜 반사 구현
+        float2 skyUV = screenUV;
+        skyUV.y = saturate(1.0f - screenUV.y + reflectDir.y);
+        reflectColor = SceneMap.Sample(LinearSampler, skyUV).rgb;
+    }
+
+    // 프레넬 반사율 (Fresnel)
+    float cosTheta = saturate(dot(-viewDir, worldWaterNormal));
     float fresnel = reflectivity + (1.0f - reflectivity) * pow(1.0f - cosTheta, 5.0f);
 
-    // 최종 반사 + 굴절 합성
+    // 최종 색상 합성
     float3 finalColor = lerp(refractColor, reflectColor, fresnel);
 
-    //return float4(1.0f, 0.0f, 1.0f, 1.0f);
-    return float4(finalColor, 1.0f);
+    // 해안선 처리용 알파 페이드 (물 깊이가 0에 가까우면 투명해짐)
+    float edgeAlpha = saturate(depthDiff * 2.0f);
+
+    return float4(finalColor, edgeAlpha);
 }

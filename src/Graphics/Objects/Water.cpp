@@ -9,13 +9,12 @@
 #define BUFFER_SLOT_WORLD      2
 #define BUFFER_SLOT_RESOLUTION 2
 #define BUFFER_SLOT_WATER      3
-#define BUFFER_SLOT_REFLECTION 4
 #define SAMPLER_SLOT           0
 #define TEX_NOR_WATER_SLOT     1
 #define TEX_WAVE_WATER_SLOT    2
 #define TEX_FLOW_MAP_SLOT      3
 #define TEX_DEPTH_SLOT         4
-#define TEX_REFLECTION_SLOT    5
+#define TEX_NORMAL_SLOT        5
 #define TEX_SCENE_SLOT         6
 
 using namespace DirectX;
@@ -30,7 +29,6 @@ Water::Water() {
     m_waterWaveNormalSRV = nullptr;
     m_flowSRV = nullptr;
     m_linearSampler = nullptr;
-    temp = nullptr;
 } // Water
 
 Water::~Water() {
@@ -38,7 +36,6 @@ Water::~Water() {
     m_waterWaveNormalSRV = nullptr;
     m_flowSRV = nullptr;
     m_linearSampler = nullptr;
-    temp = nullptr;
 } // ~Water
 
 bool Water::Init(const InitParams& params) {
@@ -65,20 +62,9 @@ bool Water::Init(const InitParams& params) {
 } // Init
 
 void Water::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    float camX = params.cameraPosition.x;
-    float camZ = params.cameraPosition.z;
-    float waterScale = 5000.0f;
-    XMMATRIX scale = XMMatrixScaling(waterScale, waterScale, 1.0f);
-    XMMATRIX rot = XMMatrixRotationX(XMConvertToRadians(90.0f));
-    XMMATRIX trans = XMMatrixTranslation(camX, -m_waterData.waterHeight, camZ);
-    XMMATRIX world = scale * rot * trans;
-
-    m_worldData.world = XMMatrixTranspose(world);
-
-    XMStoreFloat4x4(&m_reflectionMatrix.reflectView, XMMatrixTranspose(m_reflectView));
+    m_worldData.world = XMMatrixTranspose(params.world);
 
     if (!UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData) ||
-        !UpdateConstantBuffer(context, m_reflectionMatrixBuffer.Get(), m_reflectionMatrix) ||
         !UpdateConstantBuffer(context, m_resolutionBuffer.Get(), m_resolutionData) ||
         !UpdateConstantBuffer(context, m_waterBuffer.Get(), m_waterData)) {
         return;
@@ -91,7 +77,6 @@ void Water::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->PSSetSamplers(SAMPLER_SLOT, 1, &m_linearSampler);
 
     context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
-    context->VSSetConstantBuffers(BUFFER_SLOT_REFLECTION, 1, m_reflectionMatrixBuffer.GetAddressOf());
 
     context->PSSetConstantBuffers(BUFFER_SLOT_RESOLUTION, 1, m_resolutionBuffer.GetAddressOf());
     context->PSSetConstantBuffers(BUFFER_SLOT_WATER, 1, m_waterBuffer.GetAddressOf());
@@ -100,10 +85,8 @@ void Water::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &m_waterWaveNormalSRV);
     context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &m_flowSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &params.sceneDepthSRV);
-    context->PSSetShaderResources(TEX_REFLECTION_SLOT, 1, &params.reflectionSRV);
+    context->PSSetShaderResources(TEX_NORMAL_SLOT, 1, &params.normalSRV);
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &params.sceneSRV);
-
-    temp = params.reflectionSRV;
 
     m_waterMesh->RenderBuffer(context);
     context->DrawIndexed(m_waterMesh->GetIndexCount(), 0, 0);
@@ -113,12 +96,12 @@ void Water::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &nullSRV);
-    context->PSSetShaderResources(TEX_REFLECTION_SLOT, 1, &nullSRV);
+    context->PSSetShaderResources(TEX_NORMAL_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &nullSRV);
 } // Render
 
 void Water::OnGui() {
-    ImGui::Begin("Water Composite Control");
+    //ImGui::Begin("Water Control");
 
     ImGui::Text("Transform Settings");
     ImGui::SliderFloat("Water Height", &m_waterData.waterHeight, -500.0f, 500.0f);
@@ -136,24 +119,17 @@ void Water::OnGui() {
     ImGui::ColorEdit3("Shallow Color", &m_waterData.waterColorShallow.x);
     ImGui::ColorEdit3("Deep Color", &m_waterData.waterColorDeep.x);
 
-    if (temp) {
-        ImGui::Text("Ref:");
-        ImGui::Image((ImTextureID)temp, ImVec2(256, 256));
-    }
+    ImGui::Spacing();
 
-    ImGui::End();
+    //ImGui::End();
 } // OnGui
 
-void Water::SetReflectView(XMMATRIX mat) {
-    m_reflectView = mat;
-} // m_reflectView
-
-float Water::GetWaterHeight() const { 
-    return m_waterData.waterHeight;
-} // GetWaterHeight
-
-XMMATRIX Water::GetWorldMatrix() {
-    return m_transform.GetWorldMatrix();
+XMMATRIX Water::GetWorldMatrix(const XMFLOAT3& cameraPosition) {
+    float waterScale = 500.0f;
+    XMMATRIX scale = XMMatrixScaling(waterScale, waterScale, 1.0f);
+    XMMATRIX rot = XMMatrixRotationX(XMConvertToRadians(90.0f));
+    XMMATRIX trans = XMMatrixTranslation(cameraPosition.x, m_waterData.waterHeight, cameraPosition.z);
+    return scale * rot * trans;
 } // GetWorldMatrix
 
 bool Water::InitShader(ID3D11Device* device, HWND hwnd, const int& screenWidth, const int& screenHeight) {
@@ -184,10 +160,6 @@ bool Water::InitShader(ID3D11Device* device, HWND hwnd, const int& screenWidth, 
 
     if (!InitConstantBuffer<WaterBuffer>(device, m_waterBuffer.GetAddressOf())) {
         DebugHelper::DebugPrint("WaterBuffer 초기화 실패");
-        return false;
-    }
-
-    if (!InitConstantBuffer<ReflectionMatrixBuffer>(device, m_reflectionMatrixBuffer.GetAddressOf())) {
         return false;
     }
 

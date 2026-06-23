@@ -12,7 +12,7 @@ struct VS_OUT
     float4 pos : SV_POSITION;
     float3 worldPos : POSITION;
     float2 uv : TEXCOORD0;
-    float4 reflectPosition : TEXCOORD1;
+    float4 clipPos : TEXCOORD1;
 }; // VS_OUT
 
 cbuffer WorldBuffer : register(b2)
@@ -20,13 +20,7 @@ cbuffer WorldBuffer : register(b2)
     matrix cWorld;
 }; // WorldBuffer
 
-cbuffer ReflectionMatrixBuffer : register(b4)
-{
-    matrix reflectionView;
-}; // ReflectionMatrixBuffer
-
 #define WORLD           cWorld
-#define REFLECTION_VIEW reflectionView
 
 VS_OUT main(VS_IN input)
 {
@@ -40,8 +34,7 @@ VS_OUT main(VS_IN input)
     
     output.uv = input.uv * 10.0f;
     
-    output.reflectPosition = mul(worldPos, REFLECTION_VIEW);
-    output.reflectPosition = mul(output.reflectPosition, PROJ);
+    output.clipPos = output.pos;
     
     return output;
 } // main
