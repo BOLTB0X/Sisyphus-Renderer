@@ -101,8 +101,8 @@ private:
 
         VolumetricCloudBuffer() {
             using namespace SharedConstants::BuffersConstants;
-            planetCenter = { 0.0f, -CLOUD_RADIUS, 0.0f };
-            planetRadius = CLOUD_RADIUS;
+            planetCenter = { 0.0f, -PLANET_RADIUS, 0.0f };
+            planetRadius = PLANET_RADIUS;
 
             cloudBottom = CLOUD_BOTTOM; 
             cloudTop = CLOUD_TOP;

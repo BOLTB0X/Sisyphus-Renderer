@@ -9,7 +9,6 @@
 #include "Objects/MayaActor.h"
 #include "Objects/SkinnedActor.h"
 #include "Objects/RigidActor.h"
-#include "Objects/Water.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -85,7 +84,6 @@ Renderer::Renderer() {
 	m_Rakshasa = std::make_unique<SkinnedActor>();
     m_LowpolyPlayer = std::make_unique<RigidActor>();
     m_WaterComposite = std::make_unique<WaterComposite>();
-    m_Water = std::make_unique<Water>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -169,7 +167,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    Water::InitParams waterInitParams;
+    WaterComposite::InitParams waterInitParams;
     waterInitParams.device = device;
     waterInitParams.hwnd = hwnd;
     waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
@@ -177,9 +175,8 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     waterInitParams.screenHeight = RendererState::ScreenHeight;
     waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
     waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
-    waterInitParams.flowSRV = m_TextureMgr->GetTexture(device, context, PathConstants::FLOW_MAP)->GetSRV();
     waterInitParams.linearWrapSampler = linerWrapSampler;
-    if (!m_Water->Init(waterInitParams)) {
+    if (!m_WaterComposite->Init(waterInitParams)) {
         return false;
     }
 
@@ -363,8 +360,8 @@ bool Renderer::Render(float deltaTime) {
     ShadowPass(context, states);
     MainPass(context, states);
     CompositePass(context, states);
-    //WaterPass(context, states);
-    PostProcessing(context, states);
+    WaterPass(context, states);
+    PostProcessingPass(context, states);
 
     m_ImGuiMgr->Frame();
     m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
@@ -424,6 +421,7 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_nullSRV);
     context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &m_nullSRV);
 } // ShadowPass
+
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_D3D11Mgr->RestoreViewport();
 
@@ -449,51 +447,10 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
 	ComputeShaderData(context, states);
 } // MainPass
 
-void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
-    if (!m_Water) {
-        return;
-    }
-
-    ID3D11Texture2D* sceneTex = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetTexture();
-    ID3D11Texture2D* refractionTex = m_sceneRTMgr->GetRT(KEY_REFRACTION_RT)->GetTexture();
-    context->CopyResource(refractionTex, sceneTex);
-
-    ID3D11RenderTargetView* sceneRTV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetRTV();
-    context->OMSetRenderTargets(1, &sceneRTV, m_D3D11Mgr->GetDepthRT()->GetDSV());
-
-    context->RSSetState(states->GetCullBackState());
-    //context->RSSetState(states->GetCullNone());
-    context->OMSetDepthStencilState(states->GetDepthState(), 1);
-    context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
-
-    //FrameBuffer fData;
-    //fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
-    //fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
-    //fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetViewMatrix()));
-    //fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
-    //fData.cameraPosition = m_Camera->GetPosition();
-    //fData.time = m_renderingTime;
-
-    //if (UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
-    //    context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    //    context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    //}
-
-    Water::RenderParams waterParams;
-    waterParams.world = m_Water->GetWorldMatrix(m_Camera->GetPosition());
-    waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
-    waterParams.normalSRV = m_sceneRTMgr->GetRT(KEY_REFLECTION_RT)->GetSRV();
-    waterParams.sceneSRV = m_Composite->GetSRV();
-
-    m_Water->Render(context, waterParams);
-
-    context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
-} // WaterPass
-
-void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::PostProcessingPass(ID3D11DeviceContext* context, D3D11State* states) {
     ApplyEffects(context, states);
     ApplyTAA(context, states);
-} // PostProcessing
+} // PostProcessingPass
 
 void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State* states) {
     FrameBuffer fData;
@@ -564,7 +521,6 @@ void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     m_Ground->Render(context, groundParams);
 } // DrawGround
 
-
 void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
@@ -624,21 +580,6 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
     m_VolumetricCloud->Execute(context, cloudExecParams);
 } // ComputeShaderData
 
-void Renderer::ApplyWater(ID3D11DeviceContext* context, D3D11State* states) {
-    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
-    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
-
-    ID3D11RenderTargetView* compositeRTV = m_WaterComposite->GetRTV();
-    context->OMSetRenderTargets(1, &compositeRTV, nullptr);
-    m_WaterComposite->ClearRT(context);
-    
-    WaterComposite::RenderParams waterParams;
-    waterParams.sceneSRV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetSRV();
-    waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
-    
-    m_WaterComposite->Render(context, waterParams);
-} // ApplyWater
-
 void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
@@ -648,13 +589,28 @@ void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
     m_Composite->ClearRT(context);
 
     CloudComposite::RenderParams renderParam;
-    //renderParam.sceneSRV = m_WaterComposite->GetSRV();
     renderParam.sceneSRV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetSRV();
     renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
-	renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
     renderParam.linerSampler = states->GetLinearWrapSamplerState();
     m_Composite->Render(context, renderParam);
 } // CompositePass
+
+void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* compositeRTV = m_WaterComposite->GetRTV();
+    context->OMSetRenderTargets(1, &compositeRTV, nullptr);
+    m_WaterComposite->ClearRT(context);
+    
+    WaterComposite::RenderParams waterParams;
+    waterParams.sceneSRV = m_Composite->GetSRV();
+    waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
+    waterParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();
+
+    m_WaterComposite->Render(context, waterParams);
+} // WaterPass
 
 void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
@@ -665,7 +621,7 @@ void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     m_Post->ClearRT(context);
 
     PostEffects::RenderParams effectParam;
-    effectParam.inputSRV = m_Composite->GetSRV();
+    effectParam.inputSRV = m_WaterComposite->GetSRV();
     effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
     effectParam.transmittanceSRV = m_VolumetricCloud->GetTransmittanceSRV();
     effectParam.linerSampler = states->GetLinearWrapSamplerState();
@@ -754,11 +710,6 @@ void Renderer::InitWidgets() {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Volumetric Cloud Control",
             [this]() { m_VolumetricCloud->OnGui(); }
-        ));
-
-        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "RT Control",
-            [this]() { this->OnGui(); }
         ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(

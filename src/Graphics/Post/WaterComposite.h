@@ -21,12 +21,11 @@ public:
         int		                  screenHeight;
         ID3D11ShaderResourceView* waterNormalSRV;
         ID3D11ShaderResourceView* waterWaveNormalSRV;
-        ID3D11ShaderResourceView* flowSRV;
         ID3D11SamplerState*       linearWrapSampler;
 
         InitParams() : device(nullptr), hwnd(nullptr),
             waterHeight(0.0f), screenWidth(0), screenHeight(0),
-            waterNormalSRV(nullptr), waterWaveNormalSRV(nullptr), flowSRV(nullptr),
+            waterNormalSRV(nullptr), waterWaveNormalSRV(nullptr),
             linearWrapSampler(nullptr) {
         }
     }; // InitParams
@@ -34,9 +33,10 @@ public:
     struct RenderParams {
         ID3D11ShaderResourceView* sceneSRV;
         ID3D11ShaderResourceView* sceneDepthSRV;
+        ID3D11ShaderResourceView* normalSRV;
 
         RenderParams() : sceneSRV(nullptr),
-            sceneDepthSRV(nullptr) {
+            sceneDepthSRV(nullptr), normalSRV(nullptr) {
         }
     }; // RenderParams
 
@@ -100,6 +100,5 @@ private:
     float                                      m_waterHeight;
     ID3D11ShaderResourceView*                  m_waterNormalSRV;
     ID3D11ShaderResourceView*                  m_waterWaveNormalSRV;
-    ID3D11ShaderResourceView*                  m_flowSRV;
     ID3D11SamplerState*                        m_linearSampler;
 }; // WaterComposite

@@ -14,9 +14,9 @@
 #define SAMPLER_SLOT          0
 #define TEX_NOR_WATER_SLOT    1
 #define TEX_WAVE_WATER_SLOT   2
-#define TEX_FLOW_MAP_SLOT     3
-#define TEX_DEPTH_SLOT        4
-#define TEX_SCENE_SLOT        5
+#define TEX_DEPTH_SLOT        3
+#define TEX_SCENE_SLOT        4
+#define TEX_NORMAL_SLOT       5
 #define CONSTANS_SLOT1        2
 #define CONSTANS_SLOT2        3
 
@@ -32,14 +32,12 @@ WaterComposite::WaterComposite() {
     m_waterHeight = 0.0f;
     m_waterNormalSRV = nullptr;
     m_waterWaveNormalSRV = nullptr;
-    m_flowSRV = nullptr;
     m_linearSampler = nullptr;
 } // WaterComposite
 
 WaterComposite::~WaterComposite() {
     m_waterNormalSRV = nullptr;
     m_waterWaveNormalSRV = nullptr;
-    m_flowSRV = nullptr;
     m_linearSampler = nullptr;
 } // ~WaterComposite
 
@@ -57,7 +55,6 @@ bool WaterComposite::Init(const InitParams& params) {
     m_waterHeight = params.waterHeight;
     m_waterNormalSRV = params.waterNormalSRV;
     m_waterWaveNormalSRV = params.waterWaveNormalSRV;
-    m_flowSRV = params.flowSRV;
     m_linearSampler = params.linearWrapSampler;
 
     if (!InitShader(params.device, params.hwnd, params.screenWidth, params.screenHeight)) {
@@ -87,10 +84,11 @@ void WaterComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
 
     context->PSSetShaderResources(TEX_NOR_WATER_SLOT, 1, &m_waterNormalSRV);
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &m_waterWaveNormalSRV);
-    context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &m_flowSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &params.sceneDepthSRV);
 
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &params.sceneSRV);
+    context->PSSetShaderResources(TEX_NORMAL_SLOT, 1, &params.normalSRV);
+
     context->PSSetSamplers(SAMPLER_SLOT, 1, &m_linearSampler);
 
     context->Draw(3, 0);
@@ -98,9 +96,10 @@ void WaterComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
     ID3D11ShaderResourceView* nullSRV = nullptr;
     context->PSSetShaderResources(TEX_NOR_WATER_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_WAVE_WATER_SLOT, 1, &nullSRV);
-    context->PSSetShaderResources(TEX_FLOW_MAP_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_DEPTH_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_SCENE_SLOT, 1, &nullSRV);
+    context->PSSetShaderResources(TEX_NORMAL_SLOT, 1, &nullSRV);
+
 } // Render
 
 void WaterComposite::ClearRT(ID3D11DeviceContext* context) {

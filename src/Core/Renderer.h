@@ -30,7 +30,6 @@ class MayaActor;
 class SkinnedActor;
 class RigidActor;
 class WaterComposite;
-class Water;
 
 class Renderer {
 public:
@@ -54,7 +53,7 @@ private:
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
     void CompositePass(ID3D11DeviceContext*, D3D11State*);
     void WaterPass(ID3D11DeviceContext*, D3D11State*);
-    void PostProcessing(ID3D11DeviceContext*, D3D11State*);
+    void PostProcessingPass(ID3D11DeviceContext*, D3D11State*);
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
@@ -63,7 +62,6 @@ private:
 	void DrawGrass(ID3D11DeviceContext*, D3D11State*);
 	void ComputeShaderData(ID3D11DeviceContext*, D3D11State*);
 
-    void ApplyWater(ID3D11DeviceContext*, D3D11State*);
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
     void OnGui();
@@ -100,7 +98,6 @@ private:
 	std::unique_ptr<SkinnedActor>        m_Rakshasa;
 	std::unique_ptr<RigidActor>          m_LowpolyPlayer;
 	std::unique_ptr<WaterComposite>      m_WaterComposite;
-	std::unique_ptr<Water>               m_Water;
 
     std::shared_ptr<TextureManager>      m_TextureMgr;
     std::shared_ptr<ImGuiManager>        m_ImGuiMgr;
