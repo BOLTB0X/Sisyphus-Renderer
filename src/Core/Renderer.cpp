@@ -608,6 +608,7 @@ void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
     waterParams.sceneSRV = m_Composite->GetSRV();
     waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
     waterParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();
+    waterParams.lightUV = m_DirectionalLight->GetUV(m_Camera->GetViewMatrix(), m_Camera->GetProjectionMatrix());
 
     m_WaterComposite->Render(context, waterParams);
 } // WaterPass

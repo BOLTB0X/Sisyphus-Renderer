@@ -37,7 +37,15 @@ cbuffer WaterBuffer : register(b3)
     float  waterDistortion;
     float  reflectivity;
     float  density;
-    float  wPadding4;
+    float  sunShininess;
+    
+    float2 lightUV;
+    float2 wPadding4;
+    
+    int   raymarchMaxStep;
+    float stepSize;
+    float thickness;
+    float wPadding5;
 }; // WaterBuffer
 
 #define WATER_HEIGHT        waterHeight
@@ -46,6 +54,98 @@ cbuffer WaterBuffer : register(b3)
 #define WATER_DISTORTION    waterDistortion
 #define WATER_REFLECTIVITY  reflectivity
 #define WATER_DENSITY       density
+#define SUN_SHININESS       sunShininess
+#define LIGHT_UV            lightUV
+#define RAY_MAX_STEP_SIZE   raymarchMaxStep
+#define STEP_SIZE           stepSize
+#define THICKNESS           thickness
+
+void CalculateWaterNormal(float2 waterUV, out float3 localNormal, out float3 worldNormal)
+{
+    float2 uv0 = waterUV * 4.0f + float2(TIME * 0.015f, TIME * 0.01f);
+    float2 uv1 = waterUV * 2.5f + float2(-TIME * 0.01f, TIME * 0.02f);
+
+    float3 n0 = NormalMap1.Sample(LinearSampler, uv0).rgb * 2.0f - 1.0f;
+    float3 n1 = NormalMap2.Sample(LinearSampler, uv1).rgb * 2.0f - 1.0f;
+    
+    localNormal = normalize(n0 + n1);
+    worldNormal = normalize(float3(localNormal.x, localNormal.z, localNormal.y));
+} // CalculateWaterNormal
+
+float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, float2 screenUV)
+{
+    float3 reflectDir = reflect(-viewDir, worldNormal);
+    float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
+    float3 viewPos = mul(float4(waterWorldPos, 1.0f), VIEW).xyz;
+
+    float3 currentRayPos = viewPos;
+    float2 hitUV = 0.0f;
+    bool isHit = false;
+
+    [loop] 
+    for (int i = 0; i < RAY_MAX_STEP_SIZE; ++i)
+    {
+        currentRayPos += viewReflectDir * STEP_SIZE;
+        float4 marchClipPos = mul(float4(currentRayPos, 1.0f), PROJ);
+        float2 marchUV = marchClipPos.xy / marchClipPos.w * 0.5f + 0.5f;
+        marchUV.y = 1.0f - marchUV.y;
+
+        if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
+            break;
+
+        float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
+        float sampleSceneZ = depth_to_meter(sampleRawDepth, PROJ);
+        float zDiff = currentRayPos.z - sampleSceneZ;
+
+        if (zDiff > 0.0f && zDiff < THICKNESS)
+        {
+            float3 hitNormal = SceneNormalMap.SampleLevel(LinearSampler, marchUV, 0).rgb * 2.0f - 1.0f;
+            if (dot(viewReflectDir, hitNormal) > 0.0f)
+            {
+                continue;
+            }
+
+            hitUV = marchUV;
+            isHit = true;
+            break;
+        }
+    }
+
+    if (isHit)
+    {
+        return SceneMap.SampleLevel(LinearSampler, hitUV, 0).rgb;
+    }
+    else
+    {
+        float2 skyUV = screenUV;
+        skyUV.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
+        return SceneMap.SampleLevel(LinearSampler, skyUV, 0).rgb;
+    }
+} // RaymarchSSR
+
+float3 GetSunHighlight(float2 screenUV, float3 worldNormal, float3 localNormal, float3 viewDir)
+{
+    float3 lightDir = normalize(-LIGHT_DIRECTION);
+    float3 halfVector = normalize(lightDir + viewDir);
+    float NdotH = max(0.0f, dot(worldNormal, halfVector));
+    float specular = pow(NdotH, SUN_SHININESS);
+
+    float sunPillarGlow = 0.0f;
+    if (LIGHT_UV.x > 0.0f && LIGHT_UV.x < 1.0f && LIGHT_UV.y > 0.0f)
+    {
+        float depthWeight = saturate(screenUV.y - LIGHT_UV.y);
+        float rippleOffset = localNormal.x * 0.04f * depthWeight;
+        float distToSunX = abs(screenUV.x + rippleOffset - LIGHT_UV.x);
+        float pillarWidth = lerp(0.01f, 0.08f, depthWeight);
+        
+        float glowLine = smoothstep(pillarWidth, 0.0f, distToSunX) * smoothstep(1.0f, LIGHT_UV.y, screenUV.y);
+        float sparkle = saturate(localNormal.y * 1.5f + 0.2f);
+        
+        sunPillarGlow = glowLine * sparkle;
+    }
+
+    return LIGHT_COLOR.rgb * (specular * 3.0f + sunPillarGlow * 2.0f);
+} // GetSunHighlight
 
 float4 main(PS_IN input) : SV_TARGET
 {
@@ -67,31 +167,22 @@ float4 main(PS_IN input) : SV_TARGET
     {
         float3 waterWorldPos = ro + rd * t;
         float2 waterUV = waterWorldPos.xz * 0.01f;
+        float3 viewDir = -rd;
 
-        float2 uv0 = waterUV * 4.0f + float2(TIME * 0.015f, TIME * 0.01f);
-        float2 uv1 = waterUV * 2.5f + float2(-TIME * 0.01f, TIME * 0.02f); // 방향 다르게
+        // 파도 노말 연산
+        float3 localNormal, worldNormal;
+        CalculateWaterNormal(waterUV, localNormal, worldNormal);
 
-        float3 n0 = NormalMap1.Sample(LinearSampler, uv0).rgb * 2.0f - 1.0f;
-        float3 n1 = NormalMap2.Sample(LinearSampler, uv1).rgb * 2.0f - 1.0f;
-        
-        float3 localNormal = normalize(n0 + n1);
-
+        // 굴절(Refraction) 색상 연산
         float2 distortion = localNormal.xy * WATER_DISTORTION;
         float2 refractUV = saturate(input.uv + distortion * 0.5f);
-
-        float distortRawDepth = SceneDepthMap.SampleLevel(LinearSampler, refractUV, 0).r;
-        float distortLinearDepth = depth_to_meter(distortRawDepth, PROJ);
         
-        // 굴절된 UV가 물 밖의 지형을 참조하면 아티팩트 방지
-        if (distortLinearDepth < t)
+        float distortRawDepth = SceneDepthMap.SampleLevel(LinearSampler, refractUV, 0).r;
+        if (depth_to_meter(distortRawDepth, PROJ) < t)
         {
             refractUV = input.uv;
         }
 
-        float3 worldNormal = normalize(float3(localNormal.x, localNormal.z, localNormal.y));
-        float3 viewDir = -rd;
-
-        // 수심에 따른 색상 흡수 (Refraction & Beer's Law)
         float actualWaterDepth = sceneActualDistance - t;
         float depthFactor = exp(-actualWaterDepth * WATER_DENSITY);
         float3 waterColor = lerp(WATER_COLOR_DEEP, WATER_COLOR_SHALLOW, depthFactor);
@@ -99,74 +190,13 @@ float4 main(PS_IN input) : SV_TARGET
         float3 refractColor = SceneMap.SampleLevel(LinearSampler, refractUV, 0).rgb;
         refractColor = lerp(waterColor, refractColor, depthFactor);
 
-        float3 reflectDir = reflect(rd, worldNormal);
-        float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
-        float3 viewPos = mul(float4(waterWorldPos, 1.0f), VIEW).xyz; // 물 표면의 View 공간 좌표
+        float3 reflectColor = RaymarchSSR(waterWorldPos, worldNormal, viewDir, input.uv);
+        float3 sunHighlight = GetSunHighlight(input.uv, worldNormal, localNormal, viewDir);
 
-        int maxSteps = 30; // 레이 반복 횟수 (품질)
-        float stepSize = 0.5f; // 한 스텝당 전진 거리
-        float thickness = 0.5f; // 뒤쪽 오브젝트 오판 방지 두께
-
-        float3 currentRayPos = viewPos;
-        float2 hitUV = 0.0f;
-        bool isHit = false;
-
-        [unroll(30)]
-        for (int i = 0; i < maxSteps; ++i)
-        {
-            currentRayPos += viewReflectDir * stepSize;
-
-            // View -> Screen UV 투영
-            float4 marchClipPos = mul(float4(currentRayPos, 1.0f), PROJ);
-            float2 marchUV = marchClipPos.xy / marchClipPos.w * 0.5f + 0.5f;
-            marchUV.y = 1.0f - marchUV.y;
-
-            // 화면 밖으로 나가면 즉시 포기
-            if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
-                break;
-
-            // 현재 UV의 깊이를 가져와 선형 View Z로 변환
-            float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
-            float sampleSceneZ = depth_to_meter(sampleRawDepth, PROJ);
-
-            float zDiff = currentRayPos.z - sampleSceneZ;
-
-            if (zDiff > 0.0f && zDiff < thickness)
-            {
-                float3 hitNormal = SceneNormalMap.SampleLevel(LinearSampler, marchUV, 0).rgb * 2.0f - 1.0f;
-                
-                // 레이 방향과 노말 방향 내적
-                // 내적 값이 양수라면, 레이가 물체의 뒷면을 뚫고 들어갔다는 뜻
-                if (dot(viewReflectDir, hitNormal) > 0.0f)
-                {
-                    continue;
-                }
-
-                hitUV = marchUV;
-                isHit = true;
-                break;
-            }
-        }
-
-        float3 reflectColor = float3(0, 0, 0);
-
-        if (isHit)
-        {
-            // 지형이나 돌에 부딪힌 경우 (SSR)
-            reflectColor = SceneMap.SampleLevel(LinearSampler, hitUV, 0).rgb;
-        }
-        else
-        {
-            float2 skyUV = input.uv;
-            skyUV.y = saturate(1.0f - input.uv.y + reflectDir.y * 0.5f);
-            reflectColor = SceneMap.SampleLevel(LinearSampler, skyUV, 0).rgb;
-        }
-
-        // 프레넬 연산 및 최종 합성
         float cosTheta = saturate(dot(viewDir, worldNormal));
         float fresnel = WATER_REFLECTIVITY + (1.0f - WATER_REFLECTIVITY) * pow(1.0f - cosTheta, 5.0f);
 
-        float3 finalColor = lerp(refractColor, reflectColor, fresnel);
+        float3 finalColor = lerp(refractColor, reflectColor, fresnel) + sunHighlight;
         
         return float4(finalColor, 1.0f);
     }

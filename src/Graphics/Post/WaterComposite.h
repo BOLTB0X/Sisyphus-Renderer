@@ -31,11 +31,12 @@ public:
     }; // InitParams
 
     struct RenderParams {
+        DirectX::XMFLOAT2         lightUV;
         ID3D11ShaderResourceView* sceneSRV;
         ID3D11ShaderResourceView* sceneDepthSRV;
         ID3D11ShaderResourceView* normalSRV;
 
-        RenderParams() : sceneSRV(nullptr),
+        RenderParams() : lightUV(0.0f, 0.0f), sceneSRV(nullptr),
             sceneDepthSRV(nullptr), normalSRV(nullptr) {
         }
     }; // RenderParams
@@ -68,7 +69,15 @@ private:
         float             distortion;
         float             reflectivity;
         float             density;
-        float             padding4;
+        float             sunShininess;
+
+        DirectX::XMFLOAT2 lightUV;
+        DirectX::XMFLOAT2 padding4;
+
+        int               raymarchMaxStep;
+        float             stepSize;
+        float             thickness;
+        float             padding5;
 
         WaterBuffer() {
             waterHeight = 0.0f;
@@ -80,7 +89,13 @@ private:
             distortion = SharedConstants::BuffersConstants::WATER_DISTORTION;
             reflectivity = SharedConstants::BuffersConstants::WATER_REFLECTIVITY;
             density = SharedConstants::BuffersConstants::WATER_DENSITY;
-            padding4 = 0.0f;
+            sunShininess = SharedConstants::BuffersConstants::SUN_SHINIESS;
+            lightUV = { 0.0f, 0.0f };
+            raymarchMaxStep = 30;
+            stepSize = 0.5f;
+            thickness = 0.5f;
+            padding4 = { 0.0f, 0.0f };
+            padding5 = 0.0f;
         }
     }; // WaterBuffer
 

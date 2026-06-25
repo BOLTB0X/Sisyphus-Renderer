@@ -110,5 +110,7 @@ namespace SharedConstants {
         static constexpr float             WATER_DISTORTION = 0.01f;
         static constexpr float             WATER_REFLECTIVITY = 0.2f;
         static constexpr float             WATER_DENSITY = 0.4f;
+        static constexpr float             SUN_SHINIESS = 400.0f;
+
     } // BuffersConstants
 }

@@ -73,6 +73,7 @@ void WaterComposite::Render(ID3D11DeviceContext* context, const RenderParams& pa
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
     m_waterBufferData.waterHeight = m_waterHeight;
+    m_waterBufferData.lightUV = params.lightUV;
 
     if (UpdateConstantBuffer(context, m_resolutionBuffer.Get(), m_resolutionBufferData)) {
         context->PSSetConstantBuffers(CONSTANS_SLOT1, 1, m_resolutionBuffer.GetAddressOf());
@@ -153,10 +154,10 @@ void WaterComposite::OnGui() {
     ImGui::Text("WaterComposite Parameters");
     ImGui::Separator();
 
-    ImGui::SliderFloat("WaterComposite Height", &m_waterHeight, 0.0f, 150.0f, "%.1f");
+    ImGui::SliderFloat("Water Height", &m_waterHeight, 0.0f, 150.0f, "%.1f");
 
     ImGui::Spacing();
-    ImGui::Text("WaterComposite Colors");
+    ImGui::Text("Water Colors");
 
     ImGui::ColorEdit3("Shallow Color", &m_waterBufferData.waterColorShallow.x);
     ImGui::ColorEdit3("Deep Color", &m_waterBufferData.waterColorDeep.x);
@@ -165,12 +166,16 @@ void WaterComposite::OnGui() {
     ImGui::Text("Optical & Wave Settings");
 
     ImGui::SliderFloat("Distortion", &m_waterBufferData.distortion, 0.0f, 0.1f, "%.4f");
-
     ImGui::SliderFloat("Reflectivity", &m_waterBufferData.reflectivity, 0.0f, 1.0f, "%.2f");
-
     ImGui::SliderFloat("Density", &m_waterBufferData.density, 0.0f, 2.0f, "%.2f");
-
+    ImGui::SliderFloat("Sun Shininess", &m_waterBufferData.sunShininess, 10.0f, 1000.0f, "%.1f");
 
     ImGui::Spacing();
+    ImGui::Text("SSR (Screen Space Reflection) Settings");
 
+    ImGui::SliderInt("Ray Max Steps", &m_waterBufferData.raymarchMaxStep, 10, 100);
+    ImGui::SliderFloat("Ray Step Size", &m_waterBufferData.stepSize, 0.1f, 2.0f, "%.2f");
+    ImGui::SliderFloat("Hit Thickness", &m_waterBufferData.thickness, 0.1f, 2.0f, "%.2f");
+
+    ImGui::Spacing();
 } // OnGui
