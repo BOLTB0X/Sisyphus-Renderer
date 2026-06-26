@@ -8,6 +8,8 @@
 #include "Components/Transform.h"
 
 class TextureManager;
+class RenderQueue;
+class D3D11State;
 
 class ActorObject {
 public:
@@ -28,11 +30,26 @@ public:
         }
     }; // InitParams
 
+    struct SubmitParams {
+        RenderQueue*      opaqueQueue;
+        RenderQueue*      transparentQueue;
+        DirectX::XMFLOAT3 cameraPosition;
+        DirectX::XMMATRIX worldMatrix;
+        uint16_t          shaderID;
+        D3D11State*       states;
+
+        SubmitParams() : opaqueQueue(nullptr), transparentQueue(nullptr),
+            cameraPosition(0.0f, 0.0f, 0.0f), worldMatrix(DirectX::XMMatrixIdentity()),
+            shaderID(0), states(nullptr) {
+        }
+    }; // SubmitParams
+
 public:
     ActorObject();
     virtual ~ActorObject() = default;
 	virtual bool Init(const InitParams&) = 0;
     virtual bool InitShader(ID3D11Device*, HWND, const std::wstring&, const std::wstring&) = 0;
+    virtual void Submit(const SubmitParams&) = 0;
 
     void SetPosition(const DirectX::XMFLOAT3&);
     void SetPosition(float, float, float);
