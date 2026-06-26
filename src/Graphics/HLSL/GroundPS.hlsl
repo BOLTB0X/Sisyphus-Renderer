@@ -87,5 +87,4 @@ PS_OUT main(PS_IN input) : SV_TARGET
     output.color = float4(saturate(col), 1.0f);
     output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, 1.0f);
     return output;
-    //return float4(saturate(col), 1.0f);
 } // main

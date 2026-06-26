@@ -11,7 +11,7 @@
 class TextureManager;
 class D3D11State;
 
-class Tree : public AssimpModel, public ActorObject {
+class TransparentActor : public AssimpModel, public ActorObject {
 public:
     struct RenderParams {
         DirectX::XMMATRIX world;
@@ -31,8 +31,8 @@ public:
     }; // RenderShadowParams
    
 public:
-    Tree();
-    virtual ~Tree();
+    TransparentActor();
+    virtual ~TransparentActor();
 
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
@@ -70,4 +70,4 @@ private:
 	CheckTransparentBuffer                     m_checkTranspData;
 
     std::vector<std::string>                   m_leafKeywords;
-}; // Tree
+}; // TransparentActor

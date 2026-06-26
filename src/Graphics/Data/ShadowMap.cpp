@@ -2,7 +2,7 @@
 #include "ShadowMap.h"
 #include "RenderTexture.h"
 // Objects
-#include "Objects/Tree.h"
+#include "Objects/TransparentActor.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"

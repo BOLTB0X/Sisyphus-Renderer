@@ -5,7 +5,7 @@
 #include "Objects/SkyBox.h"
 #include "Objects/Ground.h"
 #include "Objects/Grass.h"
-#include "Objects/Tree.h"
+#include "Objects/TransparentActor.h"
 #include "Objects/MayaActor.h"
 #include "Objects/SkinnedActor.h"
 #include "Objects/RigidActor.h"
@@ -77,7 +77,7 @@ Renderer::Renderer() {
     m_Post = std::make_unique<PostEffects>();
     m_TAA = std::make_unique<TAA>();
 	m_Grass = std::make_unique<Grass>();
-    m_Tree = std::make_unique<Tree>();
+    m_Tree = std::make_unique<TransparentActor>();
 	m_Stone = std::make_unique<MayaActor>();
 	m_StonePillar = std::make_unique<MayaActor>();
 	m_Arca = std::make_unique<MayaActor>();

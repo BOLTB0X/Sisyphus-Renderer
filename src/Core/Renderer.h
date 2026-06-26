@@ -25,7 +25,7 @@ class CloudComposite;
 class TAA;
 class PostEffects;
 class Grass;
-class Tree;
+class TransparentActor;
 class MayaActor;
 class SkinnedActor;
 class RigidActor;
@@ -91,7 +91,7 @@ private:
     std::unique_ptr<PostEffects>         m_Post;
     std::unique_ptr<TAA>                 m_TAA;
     std::unique_ptr<Grass>               m_Grass;
-    std::unique_ptr<Tree>                m_Tree;
+    std::unique_ptr<TransparentActor>                m_Tree;
 	std::unique_ptr<MayaActor>           m_Stone;
 	std::unique_ptr<MayaActor>           m_StonePillar;
     std::unique_ptr<MayaActor>           m_Arca;

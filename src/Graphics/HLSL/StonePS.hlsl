@@ -84,8 +84,6 @@ PS_OUT main(PS_IN input) : SV_TARGET
 
     float shadowFactor = min(terrainShadow, objectShadow);
     float3 col = (diffuse + specular) * radiance * shadowFactor + ambient;
-
-    //return float4(saturate(col), albedo.a);
     
     output.color = float4(saturate(col), albedo.a);
     output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, 1.0f);

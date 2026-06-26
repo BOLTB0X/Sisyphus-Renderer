@@ -1,15 +1,21 @@
 // WaterCompositePS.hlsl
 // https://www.rastertek.com/dx11win10tut31.html
 // https://www.shadertoy.com/view/3lyXRt
+// https://www.shadertoy.com/view/Xl2XRW
+// https://www.shadertoy.com/view/Ms2SD1
 #include "Common.hlsli"
+#include "ShadowMap.hlsli"
 
-Texture2D NormalMap1 : register(t1);
-Texture2D NormalMap2 : register(t2);
-Texture2D SceneDepthMap : register(t3);
-Texture2D SceneMap : register(t4);
-Texture2D SceneNormalMap : register(t5);
+SamplerState           LinearSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s5);
 
-SamplerState LinearSampler : register(s0);
+Texture2D    NormalMap1 : register(t1);
+Texture2D    NormalMap2 : register(t2);
+Texture2D    SceneDepthMap : register(t3);
+Texture2D    SceneMap : register(t4);
+Texture2D    SceneNormalMap : register(t5);
+Texture2D    ObjectShadowMap : register(t10);
+Texture2D    TerrainShadowMap : register(t11);
 
 struct PS_IN
 {
@@ -25,24 +31,24 @@ cbuffer ResolutionBuffer : register(b2)
 
 cbuffer WaterBuffer : register(b3)
 {
-    float  waterHeight;
+    float waterHeight;
     float3 wPadding1;
     
     float3 waterColorShallow;
-    float  wPadding2;
+    float wPadding2;
     
     float3 waterColorDeep;
-    float  wPadding3;
+    float wPadding3;
     
-    float  waterDistortion;
-    float  reflectivity;
-    float  density;
-    float  sunShininess;
+    float waterDistortion;
+    float reflectivity;
+    float density;
+    float sunShininess;
     
     float2 lightUV;
     float2 wPadding4;
     
-    int   raymarchMaxStep;
+    int raymarchMaxStep;
     float stepSize;
     float thickness;
     float wPadding5;
@@ -147,6 +153,19 @@ float3 GetSunHighlight(float2 screenUV, float3 worldNormal, float3 localNormal, 
     return LIGHT_COLOR.rgb * (specular * 3.0f + sunPillarGlow * 2.0f);
 } // GetSunHighlight
 
+float GetWaterShadow(float3 worldPos)
+{
+    // 지형 그림자
+    float4 lightClipPos = mul(mul(float4(worldPos, 1.0f), LIGHT_VIEW), LIGHT_PROJ);
+    float terrainShadow = calculate_poisson_shadow(ShadowSampler, TerrainShadowMap, lightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+    
+    // 객체 그림자
+    float4 objLightClipPos = mul(mul(float4(worldPos, 1.0f), LIGHT_OBJECT_VIEW), LIGHT_OBJECT_PROJ);
+    float objectShadow = calculate_poisson_shadow(ShadowSampler, ObjectShadowMap, objLightClipPos, SHADOW_MAP_SIZE, SHADOW_SPREAD, SHADOW_BIAS);
+    
+    return min(terrainShadow, objectShadow);
+} // GetWaterShadow
+
 float4 main(PS_IN input) : SV_TARGET
 {
     float3 originalSceneColor = SceneMap.SampleLevel(LinearSampler, input.uv, 0).rgb;
@@ -192,11 +211,14 @@ float4 main(PS_IN input) : SV_TARGET
 
         float3 reflectColor = RaymarchSSR(waterWorldPos, worldNormal, viewDir, input.uv);
         float3 sunHighlight = GetSunHighlight(input.uv, worldNormal, localNormal, viewDir);
+        float shadowFactor = GetWaterShadow(waterWorldPos);
+        sunHighlight *= shadowFactor;
 
         float cosTheta = saturate(dot(viewDir, worldNormal));
         float fresnel = WATER_REFLECTIVITY + (1.0f - WATER_REFLECTIVITY) * pow(1.0f - cosTheta, 5.0f);
 
-        float3 finalColor = lerp(refractColor, reflectColor, fresnel) + sunHighlight;
+        float3 waterLitColor = lerp(refractColor, reflectColor, fresnel);
+        float3 finalColor = waterLitColor * lerp(0.8f, 1.0f, shadowFactor) + sunHighlight;
         
         return float4(finalColor, 1.0f);
     }
