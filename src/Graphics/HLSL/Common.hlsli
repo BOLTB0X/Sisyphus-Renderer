@@ -49,15 +49,20 @@ cbuffer DirectionalLightBuffer : register(b1)
     float4 cPadding3;
 }; // DirectionalLightBuffer
 
+cbuffer ClipPlaneBuffer : register(b5)
+{
+    float4 cClipPlane;
+}; // ClipPlaneBuffer
+
 #define CAMERA_POSITION   cCameraPosition
 #define CAMERA_FOV        cCameraFov
 #define SCREEN_RESOLUTION cScreenResolution
 #define TIME              cTime
 
-#define VIEW         cView
-#define PROJ         cProjection
-#define VIEW_INV     cViewInv
-#define PROJ_INV     cProjInv
+#define VIEW              cView
+#define PROJ              cProjection
+#define VIEW_INV          cViewInv
+#define PROJ_INV          cProjInv
 
 #define LIGHT_DIRECTION   normalize(cLightDirection)
 #define LIGHT_COLOR       cLightDiffuse
@@ -70,11 +75,13 @@ cbuffer DirectionalLightBuffer : register(b1)
 #define LIGHT_OBJECT_VIEW cObjectView
 #define LIGHT_OBJECT_PROJ cObjectProj
 
-#define SHADOW_MAP_SIZE     float2(cMapWidth, cMapHeight)
-#define SHADOW_BIAS         cBias
-#define SHADOW_SPREAD       cSpread
+#define CLIP_PLANE        cClipPlane
 
-// 쿼드 로컬 버텍스 (인덱스 없이 4개)
+#define SHADOW_MAP_SIZE   float2(cMapWidth, cMapHeight)
+#define SHADOW_BIAS       cBias
+#define SHADOW_SPREAD     cSpread
+
+// 쿼드 로컬 버텍스
 static const float2 quad_vertex_pos[4] =
 {
     float2(-1, 0), // left down

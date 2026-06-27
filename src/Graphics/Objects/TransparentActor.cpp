@@ -1,5 +1,5 @@
 #include "Pch.h"
-#include "Objects/Tree.h"
+#include "Objects/TransparentActor.h"
 // D3D11
 #include "D3D11/D3D11State.h"
 // Components
@@ -25,17 +25,17 @@ using namespace DirectX;
 using namespace SharedConstants;
 using namespace ConstantBuffer;
 
-Tree::Tree() : AssimpModel(), ActorObject() {
+TransparentActor::TransparentActor() : AssimpModel(), ActorObject() {
     m_linerSampler = nullptr;
 	m_checkTranspData = CheckTransparentBuffer();
     m_leafKeywords = { "ClusterB", "ClusterB2" };
-} // Tree
+} // TransparentActor
 
-Tree::~Tree() {
+TransparentActor::~TransparentActor() {
     m_linerSampler = nullptr;
-} // ~Tree
+} // ~TransparentActor
 
-bool Tree::Init(const InitParams& params) {
+bool TransparentActor::Init(const InitParams& params) {
     if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
@@ -55,7 +55,7 @@ bool Tree::Init(const InitParams& params) {
     return true;
 } // Init
 
-void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+void TransparentActor::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
         if (srv) {
             context->PSSetShaderResources(slot, 1, &srv);
@@ -121,7 +121,7 @@ void Tree::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     m_RenderCount++;
 } // Render
 
-void Tree::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
+void TransparentActor::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
     if (!context || !params.shadowMap || !params.shadowParams || !params.states) {
         return;
     }
@@ -152,7 +152,7 @@ void Tree::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& 
     }
 } // RenderShadow
 
-void Tree::OnGui() {
+void TransparentActor::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
@@ -211,12 +211,12 @@ void Tree::OnGui() {
     }
 } // OnGui
 
-XMMATRIX Tree::GetWorldMatrix() {
+XMMATRIX TransparentActor::GetWorldMatrix() {
     XMMATRIX correction = XMMatrixRotationX(XMConvertToRadians(90.0f));
     return correction * m_transform.GetWorldMatrix();
 } // GetWorldMatrix
 
-bool Tree::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
+bool TransparentActor::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
     using namespace ShaderHelper;
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
@@ -248,7 +248,7 @@ bool Tree::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPat
     return true;
 } // InitShader
 
-bool Tree::IsTransparentMaterial(const std::string& materialName) const {
+bool TransparentActor::IsTransparentMaterial(const std::string& materialName) const {
     for (const auto& keyword : m_leafKeywords) {
         if (materialName.find(keyword) != std::string::npos) {
             return true;

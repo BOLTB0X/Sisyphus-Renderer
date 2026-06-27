@@ -14,7 +14,7 @@ Texture2D    AOTexture : register(t4);
 Texture2D    ObjectShadowMap : register(t10);
 Texture2D    TerrainShadowMap : register(t11);
 
-struct PS_INPUT
+struct PS_IN
 {
     float4 position : SV_POSITION;
     float2 texCoord : TEXCOORD0;
@@ -24,8 +24,15 @@ struct PS_INPUT
     float3 binormal : BINORMAL;
 }; // PS_INPUT
 
-float4 main(PS_INPUT input) : SV_TARGET
+struct PS_OUT
 {
+    float4 color : SV_Target0;
+    float4 normal : SV_Target1;
+}; // PS_OUT
+
+PS_OUT main(PS_IN input) : SV_TARGET
+{
+    PS_OUT output;
     float4 albedo = AlbedoTexture.Sample(LinearSampler, input.texCoord);
     float3 normalMap = NormalTexture.Sample(LinearSampler, input.texCoord).rgb;
     float metallic = MetallicTexture.Sample(LinearSampler, input.texCoord).r;
@@ -77,6 +84,8 @@ float4 main(PS_INPUT input) : SV_TARGET
 
     float shadowFactor = min(terrainShadow, objectShadow);
     float3 col = (diffuse + specular) * radiance * shadowFactor + ambient;
-
-    return float4(saturate(col), albedo.a);
+    
+    output.color = float4(saturate(col), albedo.a);
+    output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, 1.0f);
+    return output;
 } // main

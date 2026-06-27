@@ -8,13 +8,13 @@ namespace SharedConstants {
     namespace BuffersConstants {
 
         // Atmoshpere
-        static constexpr float PLANET_RADIUS = 6371000.0f;
-        static constexpr float ATMOSPHERE_RADIUS = 6471000.0f;
-        static constexpr float ATMOSPHERE_HEIGHT = 100000.0f;
-        static constexpr float RAYLEIGH_HEIGHT = 8000.0f;
-        static constexpr float MIE_HEIGHT = 1.2e3f;
-        static constexpr float ABSORPTION_HEIGHT = 30000.0f;
-        static constexpr float ABSORPTION_FALLOFF = 4000.0f;
+        static constexpr float             PLANET_RADIUS = 6371000.0f;
+        static constexpr float             ATMOSPHERE_RADIUS = 6471000.0f;
+        static constexpr float             ATMOSPHERE_HEIGHT = 100000.0f;
+        static constexpr float             RAYLEIGH_HEIGHT = 8000.0f;
+        static constexpr float             MIE_HEIGHT = 1.2e3f;
+        static constexpr float             ABSORPTION_HEIGHT = 30000.0f;
+        static constexpr float             ABSORPTION_FALLOFF = 4000.0f;
 
         static constexpr DirectX::XMFLOAT3 RAYLEIGH_SCATTERING_COEFFICIENT = { 5.8e-6f, 13.5e-6f, 33.1e-6f };
         static constexpr float             MIE_BETA = 21e-6f;
@@ -59,11 +59,11 @@ namespace SharedConstants {
         static constexpr float             SPREAD = 3.0f;
 
         // Cloud
-		static constexpr float             CLOUD_RADIUS = 71000.0f;
-        static constexpr float             CLOUD_BOTTOM = 2350.0f;
-        static constexpr float             CLOUD_TOP = 3350.0f;
+		static constexpr float             CLOUD_RADIUS = 710000.0f;
+        static constexpr float             CLOUD_BOTTOM = 5350.0f;
+        static constexpr float             CLOUD_TOP = 6350.0f;
 
-		static constexpr float             CLOUD_COVERAGE = 0.552f;
+		static constexpr float             CLOUD_COVERAGE = 0.52f;
         static constexpr float             CLOUD_BASE_SCALE = 0.51f;
         static constexpr float             CLOUD_DETAIL_SCALE = 20.0f;
 
@@ -85,31 +85,32 @@ namespace SharedConstants {
         static constexpr DirectX::XMFLOAT3 CLOUD_NIGHT_AMBIENT_COLOR_BOTTOM = { 5.0f * (1.5f / 255.0f), 10.0f * (1.5f / 255.0f), 15.0f * (1.5f / 255.0f) };
         
         static constexpr DirectX::XMFLOAT2 WIND_DIRECTION = { 0.5f, -0.5f };
-        static constexpr float  WIND_SPEED = 1.5f;
-        static constexpr float  WIND_SCALE = 200.0f;
+        static constexpr float             WIND_SPEED = 1.5f;
+        static constexpr float             WIND_SCALE = 200.0f;
 
-        static constexpr float HENYEY_GREENSTEIN_SCALE = 1.0f;
-        static constexpr float POWDER_FACTOR = 0.4f;
-        static constexpr float LIGHTING_SCALE = 0.4f;
-        static constexpr float HORIZON_FADE_SCALE = 0.28f;
-        //static constexpr float HORIZON_FADE_SCALE = 0.08f;
+        static constexpr float             HENYEY_GREENSTEIN_SCALE = 1.0f;
+        static constexpr float             POWDER_FACTOR = 0.4f;
+        static constexpr float             LIGHTING_SCALE = 0.9f;
+        static constexpr float             HORIZON_FADE_SCALE = 0.28f;
 
         // lensflare
         static constexpr DirectX::XMFLOAT3 LENSFLARE_RETOUCH_COLOR = { 1.4f, 1.2f, 1.0f };
 
         // GRASS
-        static constexpr float GRASS_BLADE_WIDTH = 5.0f;
-		static constexpr float GRASS_BLADE_HEIGHT = 7.0f;
-        static constexpr float WIND_STRENGTH = 1.0f;
-        static constexpr float DIST = 500.0f;
-        static constexpr float ALPHA_CUT = 0.3f;
+        static constexpr float             GRASS_BLADE_WIDTH = 5.0f;
+		static constexpr float             GRASS_BLADE_HEIGHT = 7.0f;
+        static constexpr float             WIND_STRENGTH = 1.0f;
+        static constexpr float             DIST = 500.0f;
+        static constexpr float             ALPHA_CUT = 0.3f;
 
         // 일반 상수
         static constexpr DirectX::XMFLOAT3 WATER_COLOR_SHALLOW = { 0.0f, 0.6f, 0.7f };
         static constexpr DirectX::XMFLOAT3 WATER_COLOR_DEEP = { 0.01f, 0.05f, 0.15f };
 
-        static constexpr float WATER_DISTORTION = 0.01f;
-        static constexpr float WATER_REFLECTIVITY = 0.2f;
-        static constexpr float WATER_DENSITY = 0.4f;
+        static constexpr float             WATER_DISTORTION = 0.01f;
+        static constexpr float             WATER_REFLECTIVITY = 0.2f;
+        static constexpr float             WATER_DENSITY = 0.4f;
+        static constexpr float             SUN_SHINIESS = 400.0f;
+
     } // BuffersConstants
 }

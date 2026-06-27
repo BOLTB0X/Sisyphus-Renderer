@@ -34,6 +34,10 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	LoadTexture(device, context, PathConstants::GROUND_COL);
 	LoadTexture(device, context, PathConstants::GROUND_NOR);
 
+	LoadTexture(device, context, PathConstants::WATER_NOR);
+	LoadTexture(device, context, PathConstants::WATER_WAVE_NOR);
+	LoadTexture(device, context, PathConstants::FLOW_MAP);
+
     NoiseGenerator::InitParams perlinParams;
     perlinParams.device = device;
     perlinParams.hwnd = hwnd;
@@ -58,8 +62,6 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 
     CreateVolumeTexture(device, PathConstants::KEY_PERLIN_NOISE, 128, 128, 128, DXGI_FORMAT_R16G16B16A16_FLOAT);
     CreateCloudNoise(context, PathConstants::KEY_PERLIN_NOISE, m_PerlinWorleyGenerator.get(), 128.0f);
-
-    return true;
     return true;
 } // Init
 

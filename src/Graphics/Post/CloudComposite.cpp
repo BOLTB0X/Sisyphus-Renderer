@@ -54,7 +54,7 @@ bool CloudComposite::Init(const InitParams& params) {
 
 void CloudComposite::Render(ID3D11DeviceContext* context, const RenderParams& params) {
 	if (UpdateResolutionBuffer(context)) {
-		context->CSSetConstantBuffers(CONSTANS_SLOT, 1, m_resolutionBuffer.GetAddressOf());
+		context->PSSetConstantBuffers(CONSTANS_SLOT, 1, m_resolutionBuffer.GetAddressOf());
 	}
 
 	context->IASetInputLayout(nullptr);

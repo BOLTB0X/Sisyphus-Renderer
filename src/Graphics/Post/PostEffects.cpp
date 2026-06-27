@@ -194,7 +194,7 @@ void PostEffects::ApplyComposite(ID3D11DeviceContext* context) {
 
     context->PSSetShaderResources(TEX_C_FLARE_SLOT_SRV, 1, &nullSRV);
     context->PSSetShaderResources(TEX_C_RAY_SLOT_SRV, 1, &nullSRV);
-} // ApplyComposite
+} // CompositePass
 
 void PostEffects::OnGui() {
     if (ImGui::CollapsingHeader("POST EFFECTS", ImGuiTreeNodeFlags_DefaultOpen)) {

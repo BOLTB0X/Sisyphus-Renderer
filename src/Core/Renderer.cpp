@@ -5,11 +5,10 @@
 #include "Objects/SkyBox.h"
 #include "Objects/Ground.h"
 #include "Objects/Grass.h"
-#include "Objects/Tree.h"
+#include "Objects/TransparentActor.h"
 #include "Objects/MayaActor.h"
 #include "Objects/SkinnedActor.h"
 #include "Objects/RigidActor.h"
-#include "Objects/Water.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -31,6 +30,7 @@
 #include "Resources/Texture.h"
 // Post
 #include "Post/CloudComposite.h"
+#include "Post/WaterComposite.h"
 #include "Post/TAA.h"
 #include "Post/PostEffects.h"
 // Utils
@@ -42,6 +42,7 @@
 #include "SharedConstants/CameraConstants.h"
 #include "SharedConstants/BuffersConstants.h"
 #include "SharedConstants/ShadowConstants.h"
+#include "SharedConstants/CommonConstants.h"
 // define
 #define STONE_TRANSFORM_OFFSET 8.0f
 #define OBJECT_SHADOW_SLOT     10
@@ -49,6 +50,7 @@
 #define SAMPLER_SHADOW_SLOT    5
 #define FRAME_CB_SLOT          0
 #define DIRL_CB_SLOT           1
+#define CLIP_CB_SLOT           5
 #define POST_PS_SLOT1          0
 #define POST_PS_SLOT2          1
 
@@ -75,13 +77,13 @@ Renderer::Renderer() {
     m_Post = std::make_unique<PostEffects>();
     m_TAA = std::make_unique<TAA>();
 	m_Grass = std::make_unique<Grass>();
-    m_Tree = std::make_unique<Tree>();
+    m_Tree = std::make_unique<TransparentActor>();
 	m_Stone = std::make_unique<MayaActor>();
 	m_StonePillar = std::make_unique<MayaActor>();
 	m_Arca = std::make_unique<MayaActor>();
 	m_Rakshasa = std::make_unique<SkinnedActor>();
     m_LowpolyPlayer = std::make_unique<RigidActor>();
-    m_Water = std::make_unique<Water>();
+    m_WaterComposite = std::make_unique<WaterComposite>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -105,17 +107,7 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     auto linerCampSampler = m_D3D11Mgr->GetStates()->GetLinearClampSamplerState();
     auto pointCampSampler = m_D3D11Mgr->GetStates()->GetPointClampSamplerState();
 
-    if (!InitConstantBuffer<FrameBuffer>(device, m_frameBuffer.GetAddressOf())) {
-        return false;
-    }
-    
-    if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
-		return false;
-    }
-
-    if (!InitConstantBuffer<ClipPlaneBuffer>(device, m_clipPlaneBuffer.GetAddressOf())) {
-        return false;
-    }
+    InitCommonBuffer(device);
 
     if (!m_DirectionalLight->Init(device, hwnd)) {
         return false;
@@ -127,7 +119,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
     if (!m_TextureMgr->Init(device, context, hwnd)) {
-		DebugHelper::DebugPrint("Failed to initialize TextureManager.");
         return false;
     }
 
@@ -173,6 +164,19 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 	groundInitParams.linearSampler = linerWrapSampler;
 
     if (!m_Ground->Init(groundInitParams)) {
+        return false;
+    }
+
+    WaterComposite::InitParams waterInitParams;
+    waterInitParams.device = device;
+    waterInitParams.hwnd = hwnd;
+    waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
+    waterInitParams.screenWidth = RendererState::ScreenWidth;
+    waterInitParams.screenHeight = RendererState::ScreenHeight;
+    waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
+    waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
+    waterInitParams.linearWrapSampler = linerWrapSampler;
+    if (!m_WaterComposite->Init(waterInitParams)) {
         return false;
     }
 
@@ -354,12 +358,10 @@ bool Renderer::Render(float deltaTime) {
     auto states  = m_D3D11Mgr->GetStates();
 
     ShadowPass(context, states);
-
-    ReflectionPass(context, states);
-    RefractionPass(context, states);
-
     MainPass(context, states);
-    PostProcessing(context, states);
+    CompositePass(context, states);
+    WaterPass(context, states);
+    PostProcessingPass(context, states);
 
     m_ImGuiMgr->Frame();
     m_D3D11Mgr->EndScene(RendererState::VsyncEnable);
@@ -420,103 +422,20 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &m_nullSRV);
 } // ShadowPass
 
-void Renderer::ReflectionPass(ID3D11DeviceContext* context, D3D11State* states) {
-    auto reflectionRT = m_sceneRTMgr->GetRT("Reflection");
-    ID3D11RenderTargetView* rtv = reflectionRT->GetRTV();
-
-    context->OMSetRenderTargets(1, &rtv, m_D3D11Mgr->GetDepthRT()->GetDSV());
-    reflectionRT->Clear(context, 0.15f, 0.15f, 0.15f, 1.0f);
-    m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
-
-    // 카메라 반사 행렬 계산 (수면 기준 대칭)
-    // 평면 방정식: Ax + By + Cz + D = 0 -> (0, 1, 0, -waterHeight)
-    float waterHeight = m_Water->GetWaterHeight();
-    XMVECTOR waterPlane = XMVectorSet(0.0f, 1.0f, 0.0f, -waterHeight);
-    XMMATRIX reflectionMatrix = XMMatrixReflect(waterPlane);
-    XMMATRIX reflectView = XMMatrixMultiply(reflectionMatrix, m_Camera->GetViewMatrix());
-
-    FrameBuffer fData;
-    fData.view = XMMatrixTranspose(reflectView);
-    fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
-    fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, reflectView));
-    fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
-
-    // 카메라 위치도 반사된 위치로 업데이트 
-    XMVECTOR camPos = XMLoadFloat3(&m_Camera->GetPosition());
-    XMVECTOR reflectCamPos = XMVector3TransformCoord(camPos, reflectionMatrix);
-    XMStoreFloat3(&fData.cameraPosition, reflectCamPos);
-    fData.time = m_renderingTime;
-    if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
-        return;
-    }
-
-    // 클립 평면 설정
-    ClipPlaneBuffer clipData;
-    clipData.clipPlane = XMFLOAT4(0.0f, 1.0f, 0.0f, -waterHeight + 0.1f);
-    if (!UpdateConstantBuffer(context, m_clipPlaneBuffer.Get(), clipData)) {
-        return;
-    }
-    else {
-        context->VSSetConstantBuffers(5, 1, m_clipPlaneBuffer.GetAddressOf());
-    }
-
-    context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-
-    DrawSkyBox(context, states);
-    DrawGround(context, states);
-    DrawModel(context, states);
-} // ReflectionPass
-
-void Renderer::RefractionPass(ID3D11DeviceContext* context, D3D11State* states) {
-    auto refractionRT = m_sceneRTMgr->GetRT("Refraction");
-    ID3D11RenderTargetView* rtv = refractionRT->GetRTV();
-
-    context->OMSetRenderTargets(1, &rtv, m_D3D11Mgr->GetDepthRT()->GetDSV());
-    refractionRT->Clear(context, 0.15f, 0.15f, 0.15f, 1.0f);
-    m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
-
-    // 굴절은 일반 카메라 뷰를 그대로 사용
-    FrameBuffer fData;
-    fData.view = XMMatrixTranspose(m_Camera->GetViewMatrix());
-    fData.projection = XMMatrixTranspose(m_Camera->GetProjectionMatrix());
-    fData.viewInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetViewMatrix()));
-    fData.projInv = XMMatrixTranspose(XMMatrixInverse(nullptr, m_Camera->GetProjectionMatrix()));
-    fData.cameraPosition = m_Camera->GetPosition();
-    fData.time = m_renderingTime;
-    if (!UpdateConstantBuffer(context, m_frameBuffer.Get(), fData)) {
-        return;
-    }
-
-    // 클립 평면 설정
-    float waterHeight = m_Water->GetWaterHeight();
-    ClipPlaneBuffer clipData;
-    clipData.clipPlane = XMFLOAT4(0.0f, -1.0f, 0.0f, waterHeight + 0.1f);
-    if (!UpdateConstantBuffer(context, m_clipPlaneBuffer.Get(), clipData)) {
-        return;
-    }
-    else {
-        context->VSSetConstantBuffers(5, 1, m_clipPlaneBuffer.GetAddressOf());
-    }
-
-    context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
-    context->PSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
-
-    DrawGround(context, states);
-} // RefractionPass
-
 void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_D3D11Mgr->RestoreViewport();
 
     float clearColor[4] = { 0.15f, 0.15f, 0.15f, 1.0f };
+    float clearNormal[4] = { 0.5f, 0.5f, 1.0f, 1.0f };
 
-    ID3D11RenderTargetView* sceneRTV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetRTV();
-    context->OMSetRenderTargets(1, &sceneRTV, m_D3D11Mgr->GetDepthRT()->GetDSV());
-    context->ClearRenderTargetView(sceneRTV, clearColor);
+    ID3D11RenderTargetView* rtvList[2];
+    rtvList[0] = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetRTV();
+    rtvList[1] = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetRTV();
+    context->OMSetRenderTargets(2, rtvList, m_D3D11Mgr->GetDepthRT()->GetDSV());
+
+    context->ClearRenderTargetView(rtvList[0], clearColor);
+    context->ClearRenderTargetView(rtvList[1], clearNormal);
+
     m_D3D11Mgr->GetDepthRT()->ClearDepth(context, 1.0f, 0);
 
     UpdateCommonShaderBuffer(context, states);
@@ -524,14 +443,14 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     DrawGround(context, states);
     DrawModel(context, states);
     DrawSkyBox(context, states);
+
 	ComputeShaderData(context, states);
 } // MainPass
 
-void Renderer::PostProcessing(ID3D11DeviceContext* context, D3D11State* states) {
-    ApplyComposite(context, states);
+void Renderer::PostProcessingPass(ID3D11DeviceContext* context, D3D11State* states) {
     ApplyEffects(context, states);
     ApplyTAA(context, states);
-} // PostProcessing
+} // PostProcessingPass
 
 void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State* states) {
     FrameBuffer fData;
@@ -610,10 +529,9 @@ void Renderer::DrawModel(ID3D11DeviceContext* context, D3D11State* states) {
     MayaActor::RenderParams mayaParams;
     mayaParams.world = m_Stone->GetWorldMatrix();
     m_Stone->Render(context, mayaParams);
-
 } // DrawModel
 
-void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states, bool isReflection) {
     if (!m_Camera || !m_SkyBox) {
         return;
     }
@@ -626,6 +544,7 @@ void Renderer::DrawSkyBox(ID3D11DeviceContext* context, D3D11State* states) {
 	skyParams.camPos = m_Camera->GetPosition();
     skyParams.time = m_renderingTime;
 	skyParams.skyLUT = m_AtmosphereLUT->GetLUT();
+    skyParams.isReflection = isReflection ? 1 : 0;
 
     m_SkyBox->Render(context, skyParams);
     context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
@@ -661,7 +580,7 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
     m_VolumetricCloud->Execute(context, cloudExecParams);
 } // ComputeShaderData
 
-void Renderer::ApplyComposite(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
 
@@ -672,10 +591,27 @@ void Renderer::ApplyComposite(ID3D11DeviceContext* context, D3D11State* states) 
     CloudComposite::RenderParams renderParam;
     renderParam.sceneSRV = m_sceneRTMgr->GetRT(KEY_SCENE_RT)->GetSRV();
     renderParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
-	renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
     renderParam.linerSampler = states->GetLinearWrapSamplerState();
     m_Composite->Render(context, renderParam);
-} // ApplyComposite
+} // CompositePass
+
+void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* compositeRTV = m_WaterComposite->GetRTV();
+    context->OMSetRenderTargets(1, &compositeRTV, nullptr);
+    m_WaterComposite->ClearRT(context);
+    
+    WaterComposite::RenderParams waterParams;
+    waterParams.sceneSRV = m_Composite->GetSRV();
+    waterParams.sceneDepthSRV = m_D3D11Mgr->GetDepthRT()->GetSRV();
+    waterParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();
+    waterParams.lightUV = m_DirectionalLight->GetUV(m_Camera->GetViewMatrix(), m_Camera->GetProjectionMatrix());
+
+    m_WaterComposite->Render(context, waterParams);
+} // WaterPass
 
 void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
@@ -686,7 +622,7 @@ void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     m_Post->ClearRT(context);
 
     PostEffects::RenderParams effectParam;
-    effectParam.inputSRV = m_Composite->GetSRV();
+    effectParam.inputSRV = m_WaterComposite->GetSRV();
     effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
     effectParam.transmittanceSRV = m_VolumetricCloud->GetTransmittanceSRV();
     effectParam.linerSampler = states->GetLinearWrapSamplerState();
@@ -716,6 +652,17 @@ void Renderer::ApplyTAA(ID3D11DeviceContext* context, D3D11State* states) {
     m_TAA->CopyResource(context, m_Post->GetTexture());
 } // ApplyTAA
 
+void Renderer::InitCommonBuffer(ID3D11Device* device) {
+    if (!InitConstantBuffer<FrameBuffer>(device, m_frameBuffer.GetAddressOf())) {
+        return;
+    }
+
+    if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
+        return;
+    }
+\
+} // InitCommonBuffer
+
 void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
     if (!m_Stone || !m_StonePillar || !m_Arca) {
         return;
@@ -740,6 +687,15 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
     }
 } // InitDefaultMaya
 
+void Renderer::OnGui() {
+    ImGui::Text("Renderer RT");
+    ImGui::Separator();
+
+    if (auto normalRT = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)) {
+        ImGui::Image((ImTextureID)normalRT->GetSRV(), ImVec2(256, 144));
+    }
+} // onGui
+
 void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
@@ -753,13 +709,13 @@ void Renderer::InitWidgets() {
         ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Ground Control",
-            [this]() { m_Ground->OnGui(m_ObjectShadowMap->GetSRV()); }
+            "Volumetric Cloud Control",
+            [this]() { m_VolumetricCloud->OnGui(); }
         ));
 
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-            "Volumetric Cloud Control",
-            [this]() { m_VolumetricCloud->OnGui(); }
+            "WaterComposite Control",
+            [this]() { m_WaterComposite->OnGui(); }
         ));
 
     }

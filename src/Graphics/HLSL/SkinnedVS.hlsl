@@ -73,6 +73,5 @@ VS_OUT main(VS_IN input)
     output.tangent = normalize(mul(skinnedTangent, worldRot));
     output.binormal = normalize(mul(skinnedBinormal, worldRot));
     output.uv = input.uv;
-
     return output;
 } // main

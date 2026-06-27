@@ -26,10 +26,13 @@ public:
     }; // InitParams
 
     struct RenderParams {
-        DirectX::XMFLOAT3 camPos;
-        float             time;
+        DirectX::XMFLOAT3         camPos;
+        float                     time;
         ID3D11ShaderResourceView* skyLUT;
-		RenderParams() : camPos(0.0f, 0.0f, 0.0f), time(0.0f), skyLUT(nullptr) {
+        bool                      isReflection;
+
+		RenderParams() : camPos(0.0f, 0.0f, 0.0f), time(0.0f),
+            skyLUT(nullptr), isReflection(false){
         }
     }; // RenderParams
 
@@ -42,6 +45,15 @@ public:
     void OnGui(); // Imgui 용
 
 private:
+    struct CheckBuffer {
+        int               flag;
+        DirectX::XMFLOAT3 padding;
+        
+        CheckBuffer() :flag(0), padding(0.0f, 0.0f, 0.0f) {
+        }
+    }; // CheckBuffer
+
+private:
     bool InitShader(ID3D11Device*, HWND);
 
 private:
@@ -51,8 +63,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_checkBuffer;
+
     // buffers
     ConstantBuffer::WorldBuffer                m_WorldData;
+    CheckBuffer                                m_isReflection;
     // textures
     ID3D11SamplerState*                        m_linerWrapSampler;
     ID3D11ShaderResourceView*                  m_depthSRV;

@@ -28,6 +28,7 @@ namespace SharedConstants {
 
         static const std::wstring GROUND_VS = L"HLSL/GroundVS.hlsl";
         static const std::wstring GROUND_PS = L"HLSL/GroundPS.hlsl";
+        static const std::wstring WATER_POST_PS = L"HLSL/WaterCompositePS.hlsl";
         static const std::wstring WATER_VS = L"HLSL/WaterVS.hlsl";
         static const std::wstring WATER_PS = L"HLSL/WaterPS.hlsl";
 
@@ -68,6 +69,9 @@ namespace SharedConstants {
         //static const std::string FARAWAY_GRASS = "assets/Ground/farawayGrass.tga";
         static const std::string GROUND_COL = "assets/Ground/Ground_baseColor.tga";
         static const std::string GROUND_NOR = "assets/Ground/Ground_normal.tga";
+        static const std::string WATER_NOR = "assets/Map/water_normal.jpg";
+        static const std::string WATER_WAVE_NOR = "assets/Map/water_wave_normal.jpg";
+        static const std::string FLOW_MAP = "assets/Map/flowmap.png";
 
         static const std::string KEY_CLOUD_VOL = "CloudNoise";
         static const std::string KEY_PERLIN_NOISE = "PerlinNoise";
@@ -75,5 +79,6 @@ namespace SharedConstants {
         static const std::string KEY_SCENE_RT = "Scene";
         static const std::string KEY_REFLECTION_RT = "Reflection";
         static const std::string KEY_REFRACTION_RT = "Refraction";
+        static const std::string KEY_NORMAL_RT = "NormalRT";
     } // PathConstants
 }
