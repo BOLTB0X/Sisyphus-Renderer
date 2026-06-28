@@ -36,6 +36,8 @@ cbuffer WorldBuffer : register(b2)
 
 #define WORLD               cWorld
 
+static const float TILING_FACTOR = 50.0f;
+
 PS_OUT main(PS_IN input) : SV_TARGET
 {
     PS_OUT output;

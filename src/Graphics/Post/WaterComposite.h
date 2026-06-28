@@ -91,7 +91,7 @@ private:
             density = SharedConstants::BuffersConstants::WATER_DENSITY;
             sunShininess = SharedConstants::BuffersConstants::SUN_SHINIESS;
             lightUV = { 0.0f, 0.0f };
-            raymarchMaxStep = 15;
+            raymarchMaxStep = 32;
             stepSize = 0.5f;
             thickness = 0.5f;
             padding4 = { 0.0f, 0.0f };

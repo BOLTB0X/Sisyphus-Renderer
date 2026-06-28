@@ -60,8 +60,8 @@ namespace SharedConstants {
 
         // Cloud
 		static constexpr float             CLOUD_RADIUS = 710000.0f;
-        static constexpr float             CLOUD_BOTTOM = 5350.0f;
-        static constexpr float             CLOUD_TOP = 6350.0f;
+        static constexpr float             CLOUD_BOTTOM = 2350.0f;
+        static constexpr float             CLOUD_TOP = 3350.0f;
 
 		static constexpr float             CLOUD_COVERAGE = 0.52f;
         static constexpr float             CLOUD_BASE_SCALE = 0.51f;

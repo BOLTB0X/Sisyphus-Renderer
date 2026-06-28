@@ -129,6 +129,7 @@ float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, flo
     }
 } // RaymarchSSR
 
+
 float3 GetSunHighlight(float2 screenUV, float3 worldNormal, float3 localNormal, float3 viewDir)
 {
     float3 lightDir = normalize(-LIGHT_DIRECTION);
@@ -210,6 +211,7 @@ float4 main(PS_IN input) : SV_TARGET
         refractColor = lerp(waterColor, refractColor, depthFactor);
 
         float3 reflectColor = RaymarchSSR(waterWorldPos, worldNormal, viewDir, input.uv);
+
         float3 sunHighlight = GetSunHighlight(input.uv, worldNormal, localNormal, viewDir);
         float shadowFactor = GetWaterShadow(waterWorldPos);
         sunHighlight *= shadowFactor;

@@ -373,7 +373,7 @@ bool Renderer::Render(float deltaTime) {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
-    m_Rakshasa->Animate(deltaTime);
+    //m_Rakshasa->Animate(deltaTime);
 
     ShadowPass(context, states);
     MainPass(context, states);
@@ -403,13 +403,13 @@ void Renderer::UpdateModelTransform() {
     //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     //m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
 
-    pos = m_Rakshasa->GetPosition();
-    terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_Rakshasa->SetPosition(pos.x, terrainY + 1.0f, pos.z);
+    //pos = m_Rakshasa->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Rakshasa->SetPosition(pos.x, terrainY + 1.0f, pos.z);
 
-    pos = m_Tree->GetPosition();
-    terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
+    //pos = m_Tree->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -428,18 +428,18 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMMATRIX sharedView = m_DirectionalLight->GetObjectViewMatrix();
     DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
 
-    if (m_Tree) {
-        TransparentActor::RenderShadowParams shadowParams;
-        shadowParams.shadowMap = m_ObjectShadowMap.get();
+    //if (m_Tree) {
+    //    TransparentActor::RenderShadowParams shadowParams;
+    //    shadowParams.shadowMap = m_ObjectShadowMap.get();
 
-        renderParams.viewMatrix = sharedView;
-        renderParams.projectionMatrix = sharedProj;
-        renderParams.worldMatrix = m_Tree->GetWorldMatrix();
-        shadowParams.shadowParams = &renderParams;
-        shadowParams.states = states;
+    //    renderParams.viewMatrix = sharedView;
+    //    renderParams.projectionMatrix = sharedProj;
+    //    renderParams.worldMatrix = m_Tree->GetWorldMatrix();
+    //    shadowParams.shadowParams = &renderParams;
+    //    shadowParams.states = states;
 
-        m_Tree->RenderShadow(context, shadowParams);
-    }
+    //    m_Tree->RenderShadow(context, shadowParams);
+    //}
 
     //if (m_Arca) {
     //    renderParams.viewMatrix = sharedView;
@@ -459,7 +459,7 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         m_Stone->DrawIndexed(context);
     }
     
-    if (m_Rakshasa) {
+    /*if (m_Rakshasa) {
        SkinnedActor::RenderShadowParams shadowParams;
 
        renderParams.viewMatrix = sharedView;
@@ -471,7 +471,7 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
        shadowParams.states = states;
 
        m_Rakshasa->RenderShadow(context,shadowParams);
-    }
+    }*/
 
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
@@ -544,17 +544,17 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     //    m_Arca->Submit(submitParams);
     //}
 
-    if (m_Tree) {
-        submitParams.worldMatrix = m_Tree->GetWorldMatrix();
-        submitParams.shaderID = static_cast<uint16_t>(ShaderID::Tree);
-        m_Tree->Submit(submitParams);
-    }
+    //if (m_Tree) {
+    //    submitParams.worldMatrix = m_Tree->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Tree);
+    //    m_Tree->Submit(submitParams);
+    //}
 
-    if (m_Rakshasa) {
-        submitParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
-        submitParams.shaderID = static_cast<uint16_t>(ShaderID::Rakshasa);
-        m_Rakshasa->Submit(submitParams);
-    }
+    //if (m_Rakshasa) {
+    //    submitParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Rakshasa);
+    //    m_Rakshasa->Submit(submitParams);
+    //}
 
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
@@ -835,7 +835,7 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
 } // InitDefaultMaya
 
 void Renderer::InitTransparentMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
-    TransparentActor::InitParams treeInitParam;
+    /*TransparentActor::InitParams treeInitParam;
     treeInitParam.device = device;
     treeInitParam.context = context;
     treeInitParam.hwnd = hwnd;
@@ -849,7 +849,7 @@ void Renderer::InitTransparentMaya(HWND hwnd, ID3D11Device* device, ID3D11Device
     }
     else {
         m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
-    }
+    }*/
 } // InitTransparentMaya
 
 void Renderer::InitWidgets() {
