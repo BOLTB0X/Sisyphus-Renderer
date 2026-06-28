@@ -95,8 +95,7 @@ Renderer::~Renderer() {
 } // ~Renderer
 
 bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
-    if (!m_D3D11Mgr->Init(hwnd,
-                          RendererState::ScreenWidth, RendererState::ScreenHeight,
+    if (!m_D3D11Mgr->Init(hwnd, RendererState::ScreenWidth, RendererState::ScreenHeight,
                           RendererState::FullScrren, RendererState::VsyncEnable)) {
         return false;
     }
@@ -123,6 +122,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     }
 
 	InitDefaultMaya(hwnd, device, context, linerWrapSampler);
+    InitTransparentMaya(hwnd, device, context, linerWrapSampler);
+
+    SkinnedActor::InitParams rakshasaInitParam;
+    rakshasaInitParam.device = device;
+    rakshasaInitParam.context = context;
+    rakshasaInitParam.path = RAKSHASA;
+    rakshasaInitParam.hwnd = hwnd;
+    rakshasaInitParam.textMgr = m_TextureMgr;
+    rakshasaInitParam.VSPath = SKINNED_VS;
+    rakshasaInitParam.PSPath = RAKSHASA_PS;
+    rakshasaInitParam.linerSampler = linerWrapSampler;
+    if (!m_Rakshasa->Init(rakshasaInitParam)) {
+        return false;
+    }
 
     CloudMap::InitParams cloudMapParams;
     cloudMapParams.device = device;
@@ -259,6 +272,9 @@ void Renderer::Shutdown() {
     if (m_Post) {
         m_Post.reset();
     }
+    if (m_WaterComposite) {
+        m_WaterComposite.reset();
+    }
     if (m_Composite) {
         m_Composite.reset();
     }
@@ -357,6 +373,8 @@ bool Renderer::Render(float deltaTime) {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
+    //m_Rakshasa->Animate(deltaTime);
+
     ShadowPass(context, states);
     MainPass(context, states);
     CompositePass(context, states);
@@ -369,13 +387,29 @@ bool Renderer::Render(float deltaTime) {
 } // Render
 
 void Renderer::UpdateModelTransform() {
-    if (!m_Stone || !m_Ground) {
+    if (!m_Stone || !m_Ground || !m_Tree || !m_StonePillar || !m_Arca) {
         return;
     }
     
     XMFLOAT3 pos = m_Stone->GetPosition();
     float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
+
+    //pos = m_StonePillar->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+
+    //pos = m_Arca->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
+
+    //pos = m_Rakshasa->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Rakshasa->SetPosition(pos.x, terrainY + 1.0f, pos.z);
+
+    //pos = m_Tree->GetPosition();
+    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -394,6 +428,27 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     DirectX::XMMATRIX sharedView = m_DirectionalLight->GetObjectViewMatrix();
     DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
 
+    //if (m_Tree) {
+    //    TransparentActor::RenderShadowParams shadowParams;
+    //    shadowParams.shadowMap = m_ObjectShadowMap.get();
+
+    //    renderParams.viewMatrix = sharedView;
+    //    renderParams.projectionMatrix = sharedProj;
+    //    renderParams.worldMatrix = m_Tree->GetWorldMatrix();
+    //    shadowParams.shadowParams = &renderParams;
+    //    shadowParams.states = states;
+
+    //    m_Tree->RenderShadow(context, shadowParams);
+    //}
+
+    //if (m_Arca) {
+    //    renderParams.viewMatrix = sharedView;
+    //    renderParams.projectionMatrix = sharedProj;
+    //    renderParams.worldMatrix = m_Arca->GetWorldMatrix();
+    //    m_ObjectShadowMap->RenderOpaque(context, renderParams);
+    //    m_Arca->DrawIndexed(context);
+    //}
+
     if (m_Stone) {
         renderParams.viewMatrix = sharedView;
         renderParams.projectionMatrix = sharedProj;
@@ -403,10 +458,32 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         m_ObjectShadowMap->RenderOpaque(context, renderParams);
         m_Stone->DrawIndexed(context);
     }
+    
+    /*if (m_Rakshasa) {
+       SkinnedActor::RenderShadowParams shadowParams;
+
+       renderParams.viewMatrix = sharedView;
+       renderParams.projectionMatrix = sharedProj;
+       renderParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
+       renderParams.isSkinned = true;
+       shadowParams.shadowMap = m_ObjectShadowMap.get();
+       shadowParams.shadowParams = &renderParams;
+       shadowParams.states = states;
+
+       m_Rakshasa->RenderShadow(context,shadowParams);
+    }*/
 
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
+
+    //if (m_StonePillar) {
+    //    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    //    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+    //    renderParams.worldMatrix = m_StonePillar->GetScalingWorldMatrix();
+    //    m_TerrainShadowMap->RenderOpaque(context, renderParams);
+    //    m_StonePillar->DrawIndexed(context);
+    //}
 
     if (m_Ground) {
         renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
@@ -441,10 +518,60 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
     UpdateCommonShaderBuffer(context, states);
  
     DrawGround(context, states);
-    DrawModel(context, states);
+
+    const DirectX::XMFLOAT3& camPos = m_Camera->GetPosition();
+    ActorObject::SubmitParams submitParams;
+    submitParams.opaqueQueue = &m_OpaqueQueue;
+    submitParams.transparentQueue = &m_TransparentQueue;
+    submitParams.cameraPosition = m_Camera->GetPosition();
+    submitParams.states = states;
+
+    if (m_Stone) {
+        submitParams.worldMatrix = m_Stone->GetWorldMatrix();
+        submitParams.shaderID = static_cast<uint16_t>(ShaderID::Stone);
+        m_Stone->Submit(submitParams);
+    }
+
+    //if (m_StonePillar) {
+    //    submitParams.worldMatrix = m_StonePillar->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::StonePillar);
+    //    m_StonePillar->Submit(submitParams);
+    //}
+
+    //if (m_Arca) {
+    //    submitParams.worldMatrix = m_Arca->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Arca);
+    //    m_Arca->Submit(submitParams);
+    //}
+
+    //if (m_Tree) {
+    //    submitParams.worldMatrix = m_Tree->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Tree);
+    //    m_Tree->Submit(submitParams);
+    //}
+
+    //if (m_Rakshasa) {
+    //    submitParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
+    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Rakshasa);
+    //    m_Rakshasa->Submit(submitParams);
+    //}
+
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+
+    context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
+    m_OpaqueQueue.SortOpaque();
+    m_OpaqueQueue.Execute(context);
+
     DrawSkyBox(context, states);
 
+    m_TransparentQueue.SortTransparent();
+    m_TransparentQueue.Execute(context);
+
 	ComputeShaderData(context, states);
+
+    m_OpaqueQueue.Clear();
+    m_TransparentQueue.Clear();
 } // MainPass
 
 void Renderer::PostProcessingPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -660,7 +787,6 @@ void Renderer::InitCommonBuffer(ID3D11Device* device) {
     if (!InitConstantBuffer<DirectionalLightBuffer>(device, m_lightBuffer.GetAddressOf())) {
         return;
     }
-\
 } // InitCommonBuffer
 
 void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
@@ -685,16 +811,46 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
         m_Stone->SetPosition(20.0f, 0.0f, 20.0f);
 		m_Stone->SetScale(10.0f, 10.0f, 10.0f);
     }
+
+    /*initParams.path = STONE_PILLAR;
+    initParams.PSPath = STONE_PILLAR_PS;
+
+    if (!m_StonePillar->Init(initParams)) {
+        return;
+    }
+    else {
+        m_StonePillar->SetPosition(300.0f, 0.0f, -500.0f);
+        m_StonePillar->SetScale(300.0f, 500.0f, 300.0f);
+    }
+
+    initParams.path = ARCA;
+    initParams.PSPath = ARCA_PS;
+    if (!m_Arca->Init(initParams)) {
+        return;
+    }
+    else {
+        m_Arca->SetPosition(70.0f, 0.0f, -50.0f);
+        m_Arca->SetScale(30.0f, 30.0f, 30.0f);
+    }*/
 } // InitDefaultMaya
 
-void Renderer::OnGui() {
-    ImGui::Text("Renderer RT");
-    ImGui::Separator();
-
-    if (auto normalRT = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)) {
-        ImGui::Image((ImTextureID)normalRT->GetSRV(), ImVec2(256, 144));
+void Renderer::InitTransparentMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
+    /*TransparentActor::InitParams treeInitParam;
+    treeInitParam.device = device;
+    treeInitParam.context = context;
+    treeInitParam.hwnd = hwnd;
+    treeInitParam.textMgr = m_TextureMgr;
+    treeInitParam.path = TREE;
+    treeInitParam.VSPath = PBR_VS;
+    treeInitParam.PSPath = TREE_PS;
+    treeInitParam.linerSampler = linerWrapSampler;
+    if (!m_Tree->Init(treeInitParam)) {
+        return;
     }
-} // onGui
+    else {
+        m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
+    }*/
+} // InitTransparentMaya
 
 void Renderer::InitWidgets() {
     if (m_ImGuiMgr) {

@@ -7,6 +7,8 @@
 #include "Resources/AssimpModel.h"
 #include "Resources/ConstantBuffer.h"
 
+class RenderQueue;
+
 class MayaActor : public AssimpModel, public ActorObject {
 public:
     struct RenderParams {
@@ -23,6 +25,7 @@ public:
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void DrawIndexed(ID3D11DeviceContext*);
+    void Submit(const SubmitParams& params) override;
     void OnGui();
 
     DirectX::XMMATRIX GetScalingWorldMatrix();

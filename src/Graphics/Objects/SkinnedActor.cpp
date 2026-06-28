@@ -1,5 +1,7 @@
 #include "Pch.h"
 #include "Objects/SkinnedActor.h"
+// Core
+#include "Core/RenderQueue.h"
 // D3D11
 #include "D3D11/D3D11State.h"
 // Components
@@ -52,11 +54,6 @@ bool SkinnedActor::Init(const InitParams& params) {
 
     if (m_modelType == AssimpModel::ModelType::Skinned) {
         m_Animator.Init(this);
-
-        //for (const auto& clip : m_clips) {
-        //    DebugHelper::DebugPrint("Clip: " + clip.name);
-        //}
-
         m_Animator.Play(m_clips.empty() ? "" : m_clips[0].name);
     }
 
@@ -148,6 +145,68 @@ void SkinnedActor::RenderShadow(ID3D11DeviceContext* context, const RenderShadow
         mesh->RenderBuffer(context);
     }
 } // RenderShadow
+
+void SkinnedActor::Submit(const SubmitParams& params) {
+    if (!params.opaqueQueue) return;
+
+    DirectX::XMVECTOR posVec = DirectX::XMLoadFloat3(&m_transform.GetPosition());
+    DirectX::XMVECTOR camVec = DirectX::XMLoadFloat3(&params.cameraPosition);
+    float distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(posVec, camVec)));
+
+    // 멤버 변수 갱신
+    m_worldData.world = DirectX::XMMatrixTranspose(params.worldMatrix);
+
+    const auto& matrices = m_Animator.GetBoneMatrices();
+    for (size_t i = 0; i < matrices.size() && i < 256; ++i) {
+        m_boneData.boneMatrices[i] = DirectX::XMMatrixTranspose(matrices[i]);
+    }
+
+    // 메시 단위로 순회
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        PBRMesh* currentMesh = m_meshes[i].get();
+        unsigned int matIndex = currentMesh->GetMaterialIndex();
+
+        if (matIndex >= m_materials.size()) continue;
+
+        RenderQueue::DrawCommand cmd;
+        cmd.vs = m_skinnedVertexShader.Get();
+        cmd.ps = m_pixelShader.Get();
+        cmd.sortKey = GenerateSortKey(params.shaderID, static_cast<uint16_t>(matIndex), distance);
+
+        cmd.execute = [this, currentMesh, matIndex](ID3D11DeviceContext* context) {
+
+            // 람다가 실행되는 시점에 직접 참조
+            if (ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
+                context->VSSetConstantBuffers(WORLD_BUFFER_SLOT, 1, m_worldBuffer.GetAddressOf());
+            }
+
+            if (ShaderHelper::UpdateConstantBuffer(context, m_boneBuffer.Get(), m_boneData)) {
+                context->VSSetConstantBuffers(ANIMATION_BUFFER_SLOT, 1, m_boneBuffer.GetAddressOf());
+            }
+
+            context->IASetInputLayout(m_layout.Get());
+            if (m_linerSampler) {
+                context->PSSetSamplers(0, 1, &m_linerSampler);
+            }
+
+            const auto& mat = m_materials[matIndex];
+
+            auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
+                if (srv) context->PSSetShaderResources(slot, 1, &srv);
+                else {
+                    ID3D11ShaderResourceView* nullSRV = nullptr;
+                    context->PSSetShaderResources(slot, 1, &nullSRV);
+                }
+            };
+
+            BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
+            BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
+
+            currentMesh->RenderBuffer(context);
+        };
+        params.opaqueQueue->Submit(cmd);
+    }
+} // Submit
 
 void SkinnedActor::Animate(float delta) {
     m_Animator.Update(delta);

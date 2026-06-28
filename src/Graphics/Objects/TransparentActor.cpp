@@ -1,5 +1,7 @@
 #include "Pch.h"
 #include "Objects/TransparentActor.h"
+// Core
+#include "Core/RenderQueue.h"
 // D3D11
 #include "D3D11/D3D11State.h"
 // Components
@@ -151,6 +153,83 @@ void TransparentActor::RenderShadow(ID3D11DeviceContext* context, const RenderSh
         mesh->RenderBuffer(context);
     }
 } // RenderShadow
+
+void TransparentActor::Submit(const SubmitParams& params) {
+    if (!params.opaqueQueue || !params.states) return;
+
+    DirectX::XMVECTOR posVec = DirectX::XMLoadFloat3(&m_transform.GetPosition());
+    DirectX::XMVECTOR camVec = DirectX::XMLoadFloat3(&params.cameraPosition);
+    float distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(posVec, camVec)));
+
+    m_worldData.world = DirectX::XMMatrixTranspose(params.worldMatrix);
+    ConstantBuffer::WorldBuffer snapshotWorldData = m_worldData;
+
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        PBRMesh* currentMesh = m_meshes[i].get();
+        unsigned int matIndex = currentMesh->GetMaterialIndex();
+        if (matIndex >= m_materials.size()) continue;
+
+        bool isLeaf = IsTransparentMaterial(m_materials[matIndex].name);
+
+        RenderQueue::DrawCommand cmd;
+        cmd.vs = m_vertexShader.Get();
+        cmd.ps = m_pixelShader.Get();
+        cmd.sortKey = GenerateSortKey(params.shaderID, static_cast<uint16_t>(matIndex), distance);
+
+        cmd.execute = [this, currentMesh, matIndex, isLeaf, states = params.states](ID3D11DeviceContext* context) {
+
+            ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData);
+            context->VSSetConstantBuffers(WORLD_BUFFER_SLOT, 1, m_worldBuffer.GetAddressOf());
+
+            CheckTransparentBuffer leafData;
+            leafData.isLeaf = isLeaf ? 1 : 0;
+            ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), leafData);
+            context->PSSetConstantBuffers(CHECK_LEAF_BUFFER_SLOT, 1, m_checkLeafBuffer.GetAddressOf());
+
+            // 렌더 상태 변경
+            if (isLeaf) {
+                context->RSSetState(states->GetCullNone());
+                context->OMSetBlendState(states->GetBlendState(), nullptr, 0xFFFFFFFF);
+            }
+            else {
+                context->RSSetState(states->GetCullBackState());
+                context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xFFFFFFFF);
+            }
+
+            context->IASetInputLayout(m_layout.Get());
+            if (m_linerSampler) {
+                context->PSSetSamplers(0, 1, &m_linerSampler);
+            }
+
+            auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
+                if (srv) {
+                    context->PSSetShaderResources(slot, 1, &srv);
+                }
+                else {
+                    ID3D11ShaderResourceView* nullSRV = nullptr;
+                    context->PSSetShaderResources(slot, 1, &nullSRV);
+                }
+            };
+
+            const auto& mat = m_materials[matIndex];
+            BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
+            BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
+            BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
+            BindTexture(mat.alpha ? mat.alpha->GetSRV() : nullptr, OPACITY_TEXTURE_SLOT);
+            BindTexture(mat.subsurface ? mat.subsurface->GetSRV() : nullptr, SSS_TEXTURE_SLOT);
+
+            currentMesh->RenderBuffer(context);
+            m_RenderCount++;
+            };
+
+        if (isLeaf && params.transparentQueue) {
+            params.transparentQueue->Submit(cmd);
+        }
+        else {
+            params.opaqueQueue->Submit(cmd);
+        }
+    }
+} // Submit
 
 void TransparentActor::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));

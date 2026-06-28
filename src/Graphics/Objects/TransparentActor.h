@@ -10,6 +10,7 @@
 
 class TextureManager;
 class D3D11State;
+class RenderQueue;
 
 class TransparentActor : public AssimpModel, public ActorObject {
 public:
@@ -37,6 +38,7 @@ public:
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void RenderShadow(ID3D11DeviceContext*, const RenderShadowParams&);
+    void Submit(const SubmitParams& params) override;
     void OnGui();
 
     DirectX::XMMATRIX GetWorldMatrix() override;

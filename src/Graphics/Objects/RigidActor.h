@@ -30,6 +30,7 @@ public:
     bool Init(const InitParams&) override;
     void Render(ID3D11DeviceContext*, const RenderParams&);
     void RenderShadow(ID3D11DeviceContext*, const RenderShadowParams&);
+    void Submit(const SubmitParams&) override;
     void Animate(float);
     void OnGui();
 

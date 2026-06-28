@@ -2,6 +2,7 @@
 #pragma once
 #include <windows.h>
 #include <d3d11.h>
+#include "RenderQueue.h"
 // STL
 #include <memory>
 // Debug
@@ -64,15 +65,17 @@ private:
 
     void ApplyEffects(ID3D11DeviceContext*, D3D11State*);
     void ApplyTAA(ID3D11DeviceContext*, D3D11State*);
-    void OnGui();
 
     void InitCommonBuffer(ID3D11Device*);
     void InitDefaultMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
+    void InitTransparentMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
     void InitWidgets();
 
 
 private:
     static RendererState                 m_RendererState;
+    RenderQueue                          m_OpaqueQueue;
+    RenderQueue                          m_TransparentQueue;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_frameBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_lightBuffer;
@@ -91,7 +94,7 @@ private:
     std::unique_ptr<PostEffects>         m_Post;
     std::unique_ptr<TAA>                 m_TAA;
     std::unique_ptr<Grass>               m_Grass;
-    std::unique_ptr<TransparentActor>                m_Tree;
+    std::unique_ptr<TransparentActor>    m_Tree;
 	std::unique_ptr<MayaActor>           m_Stone;
 	std::unique_ptr<MayaActor>           m_StonePillar;
     std::unique_ptr<MayaActor>           m_Arca;
