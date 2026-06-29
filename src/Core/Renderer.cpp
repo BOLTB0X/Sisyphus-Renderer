@@ -9,6 +9,7 @@
 #include "Objects/MayaActor.h"
 #include "Objects/SkinnedActor.h"
 #include "Objects/RigidActor.h"
+#include "Objects/Terrain.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -84,6 +85,7 @@ Renderer::Renderer() {
 	m_Rakshasa = std::make_unique<SkinnedActor>();
     m_LowpolyPlayer = std::make_unique<RigidActor>();
     m_WaterComposite = std::make_unique<WaterComposite>();
+    m_Terrain = std::make_unique<Terrain>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -168,15 +170,30 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    Ground::InitParams groundInitParams;
-    groundInitParams.device = device;
-    groundInitParams.hwnd = hwnd;
-	groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
-	groundInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_COL)->GetSRV();
-	groundInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_NOR)->GetSRV();
-	groundInitParams.linearSampler = linerWrapSampler;
+ //   Ground::InitParams groundInitParams;
+ //   groundInitParams.device = device;
+ //   groundInitParams.hwnd = hwnd;
+	//groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
+	//groundInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_COL)->GetSRV();
+	//groundInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_NOR)->GetSRV();
+	//groundInitParams.linearSampler = linerWrapSampler;
 
-    if (!m_Ground->Init(groundInitParams)) {
+ //   if (!m_Ground->Init(groundInitParams)) {
+ //       return false;
+ //   }
+
+    Terrain::InitParams terrainInitParams;
+    terrainInitParams.device = device;
+    terrainInitParams.hwnd = hwnd;
+    terrainInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
+    terrainInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_COL)->GetSRV();
+    terrainInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_RNOL)->GetSRV();
+    terrainInitParams.diffSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_RDIFF)->GetSRV();
+    terrainInitParams.grassSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_GRASS)->GetSRV();
+    terrainInitParams.sandSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_SAND)->GetSRV();
+    terrainInitParams.snowSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_SNOW)->GetSRV();
+    terrainInitParams.linearSampler = linerWrapSampler;
+    if (!m_Terrain->Init(terrainInitParams)) {
         return false;
     }
 
@@ -387,13 +404,17 @@ bool Renderer::Render(float deltaTime) {
 } // Render
 
 void Renderer::UpdateModelTransform() {
-    if (!m_Stone || !m_Ground || !m_Tree || !m_StonePillar || !m_Arca) {
+    if (!m_Stone || !m_Terrain || !m_Tree || !m_StonePillar || !m_Arca) {
         return;
     }
     
     XMFLOAT3 pos = m_Stone->GetPosition();
-    float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    float terrainY = m_Terrain->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
+
+    //XMFLOAT3 pos = m_Stone->GetPosition();
+    //float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
+    //m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 
     //pos = m_StonePillar->GetPosition();
     //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
@@ -485,13 +506,22 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     //    m_StonePillar->DrawIndexed(context);
     //}
 
-    if (m_Ground) {
+    //if (m_Ground) {
+    //    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
+    //    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
+    //    renderParams.worldMatrix = m_Ground->GetWorldMatrix();
+    //    renderParams.isSkinned = false;
+    //    m_TerrainShadowMap->RenderOpaque(context, renderParams);
+    //    m_Ground->DrawIndexed(context);
+    //}
+
+    if (m_Terrain) {
         renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
         renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
         renderParams.worldMatrix = m_Ground->GetWorldMatrix();
         renderParams.isSkinned = false;
         m_TerrainShadowMap->RenderOpaque(context, renderParams);
-        m_Ground->DrawIndexed(context);
+        m_Terrain->RenderShadow(context);
     }
 
     context->OMSetRenderTargets(0, nullptr, nullptr);
@@ -517,7 +547,8 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
 
     UpdateCommonShaderBuffer(context, states);
  
-    DrawGround(context, states);
+    //DrawGround(context, states);
+    DrawTerrain(context, states);
 
     const DirectX::XMFLOAT3& camPos = m_Camera->GetPosition();
     ActorObject::SubmitParams submitParams;
@@ -629,7 +660,28 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
     context->CSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
     context->GSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->GSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+    context->DSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->DSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+    context->HSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
+    context->HSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 } // UpdateCommonShaderBuffer
+
+void Renderer::DrawTerrain(ID3D11DeviceContext* context, D3D11State* states) {
+    if (!m_Terrain) {
+        return;
+    }
+
+    context->RSSetState(states->GetCullBackState());
+    context->OMSetDepthStencilState(states->GetDepthState(), 1);
+    context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
+
+    Terrain::RenderParams terrainParams;
+    terrainParams.cameraPosition = m_Camera->GetPosition();
+    terrainParams.time = m_renderingTime;
+    terrainParams.frustum = m_Camera->GetFrustum();
+
+    m_Terrain->Render(context, terrainParams);
+} // DrawTerrain
 
 void Renderer::DrawGround(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Ground) {
@@ -874,5 +926,14 @@ void Renderer::InitWidgets() {
             [this]() { m_WaterComposite->OnGui(); }
         ));
 
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Terrain Control",
+            [this]() { m_Terrain->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Stone Control",
+            [this]() { m_Stone->OnGui(); }
+        ));
     }
 } // InitWidgets

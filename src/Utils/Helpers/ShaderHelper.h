@@ -8,6 +8,8 @@ namespace ShaderHelper {
 	inline static std::string psProfile = "ps_5_0";
     inline static std::string csProfile = "cs_5_0";
     inline static std::string gsProfile = "gs_5_0";
+    inline static std::string hsProfile = "hs_5_0";
+    inline static std::string dsProfile = "ds_5_0";
 
     bool CompileShader(HWND, const std::wstring&, const std::string&, const std::string&, ID3DBlob**);
     void OutputError(ID3DBlob*, HWND, const std::wstring&);
@@ -16,6 +18,8 @@ namespace ShaderHelper {
     bool InitPixelShader(ID3D11Device*, HWND, const std::wstring&, ID3D11PixelShader**);
     bool InitComputingShader(ID3D11Device*, HWND, const std::wstring&, ID3D11ComputeShader**);
     bool InitGeometryShader(ID3D11Device*, HWND, const std::wstring&, ID3D11GeometryShader**);
+    bool InitHullShader(ID3D11Device*, HWND, const std::wstring&, ID3D11HullShader**);
+    bool InitDomainShader(ID3D11Device*, HWND, const std::wstring&, ID3D11DomainShader**);
 
     template<typename T>
     bool InitConstantBuffer(ID3D11Device* device, ID3D11Buffer** outBuffer) {

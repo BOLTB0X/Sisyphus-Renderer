@@ -156,6 +156,8 @@ void MayaActor::Submit(const SubmitParams& params) {
 } // Submit
 
 void MayaActor::OnGui() {
+    DrawTransformGui();
+
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));

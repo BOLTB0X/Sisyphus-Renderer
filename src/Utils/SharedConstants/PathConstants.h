@@ -18,7 +18,7 @@ namespace SharedConstants {
         static const std::wstring NOISEGEN_CS = L"HLSL/NoiseGeneratorCS.hlsl";
         static const std::wstring CLOUD_MAP_CS = L"HLSL/CloudMapCS.hlsl";
         static const std::wstring WORLEY_NOISE_CS = L"HLSL/WorleyNoiseCS.hlsl";
-        static const std::wstring PERLINE_WORLEY_CS = L"HLSL/PerlinWorleyCS.hlsl";
+        static const std::wstring PERLINE_CS = L"HLSL/PerlinHeightMapCS.hlsl";
 
         static const std::wstring ATMOSPHERE_CS = L"HLSL/AtmosphereMapCS.hlsl";
         static const std::wstring VOLUMETRIC_CLOUD_CS = L"HLSL/VolumetricCloudCS.hlsl";
@@ -55,6 +55,11 @@ namespace SharedConstants {
         static const std::wstring RAKSHASA_PS = L"HLSL/RakshasaPS.hlsl";
         static const std::wstring RIGID_SAMPLE_PS = L"HLSL/RigidSampePS.hlsl";
 
+        static const std::wstring TERRAIN_VS = L"HLSL/TerrainVS.hlsl";
+        static const std::wstring TERRAIN_PS = L"HLSL/TerrainPS.hlsl";
+        static const std::wstring TERRAIN_HS = L"HLSL/TerrainHS.hlsl";
+        static const std::wstring TERRAIN_DS = L"HLSL/TerrainDS.hlsl";
+
         static const std::string STONE = "assets/Stone/Stone.fbx";
         static const std::string TREE = "assets/Tree/TreeGen.fbx";
         static const std::string STONE_PILLAR = "assets/StonePillar/StonePillar_low.fbx";
@@ -72,6 +77,12 @@ namespace SharedConstants {
         static const std::string WATER_NOR = "assets/Map/water_normal.jpg";
         static const std::string WATER_WAVE_NOR = "assets/Map/water_wave_normal.jpg";
         static const std::string FLOW_MAP = "assets/Map/flowmap.png";
+        static const std::string TERRAIN_COL = "assets/Terrain/Terrain_Col.jpg";
+        static const std::string TERRAIN_GRASS = "assets/Terrain/Terrain_GRASS.jpg";
+        static const std::string TERRAIN_RDIFF = "assets/Terrain/Terrain_rdiffuse.jpg";
+        static const std::string TERRAIN_RNOL = "assets/Terrain/Terrain_rnormal.jpg";
+        static const std::string TERRAIN_SAND = "assets/Terrain/Terrain_Sand.jpg";
+        static const std::string TERRAIN_SNOW = "assets/Terrain/Terrain_snow.jpg";
 
         static const std::string KEY_CLOUD_VOL = "CloudNoise";
         static const std::string KEY_PERLIN_NOISE = "PerlinNoise";

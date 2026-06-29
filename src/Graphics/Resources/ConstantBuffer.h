@@ -115,4 +115,16 @@ namespace ConstantBuffer {
         }
     }; // ReflectionMatrixBuffer
 
+    struct TessellationControlBuffer {
+        float             minTessDist; // 이 거리 안쪽은 가장 세밀하게
+        float             maxTessDist; // 이 거리 바깥은 쪼개지 않음 (Tess=1)
+        float             minTessFactor; // 최소 분할 (원래 폴리곤)
+        float             maxTessFactor; // 최대 분할 (하드웨어 한계 64)
+        DirectX::XMFLOAT4 padding;
+
+        TessellationControlBuffer() : minTessDist(20.0f), maxTessDist(500.0f),
+            minTessFactor(1.0f), maxTessFactor(64.0f), padding(0.0f, 0.0f, 0.0f, 0.0f){
+        }
+    }; // TessellationControlBuffer
+
 } // ConstantBuffer
