@@ -22,7 +22,6 @@ public:
         ID3D11Device*             device;
         HWND                      hwnd;
         std::shared_ptr<Texture>  heightMapTex;
-        ID3D11ShaderResourceView* colSRV;
         ID3D11ShaderResourceView* sandSRV;
         ID3D11ShaderResourceView* grassSRV;
         ID3D11ShaderResourceView* snowSRV;
@@ -31,7 +30,7 @@ public:
         ID3D11SamplerState*       linearSampler;
 
         InitParams() : device(nullptr), hwnd(nullptr), heightMapTex(nullptr),
-            colSRV(nullptr), sandSRV(nullptr), grassSRV(nullptr),
+            sandSRV(nullptr), grassSRV(nullptr),
             snowSRV(nullptr), diffSRV(nullptr), norSRV(nullptr), linearSampler(nullptr) {
         }
     }; // InitParams
@@ -74,7 +73,7 @@ private:
         float             uv_tiling;
         DirectX::XMFLOAT3 padding;
 
-        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(100.0f),
+        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(140.0f),
             uv_tiling(37.0f), padding(0.0f, 0.0f, 0.0f) {
         } // TerrainBlendingBuffer
     }; // TerrainBlendingBuffer
@@ -104,7 +103,6 @@ private:
     TerrainBlendingBuffer                      m_terrainBlending;
 
     std::shared_ptr<Texture>                   m_heightMap;
-    ID3D11ShaderResourceView*                  m_colSRV;
     ID3D11ShaderResourceView*                  m_sandSRV;
     ID3D11ShaderResourceView*                  m_grassSRV;
     ID3D11ShaderResourceView*                  m_snowSRV;

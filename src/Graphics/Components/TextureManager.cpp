@@ -30,7 +30,6 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	LoadTexture(device, context, PathConstants::NOISE_2D);
 	LoadTexture(device, context, PathConstants::HEIGHT, true);
 	LoadTexture(device, context, PathConstants::GRASS);
-	//LoadTexture(device, context, PathConstants::FARAWAY_GRASS);
 	LoadTexture(device, context, PathConstants::GROUND_COL);
 	LoadTexture(device, context, PathConstants::GROUND_NOR);
 
@@ -66,19 +65,6 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
     if (!m_PerlinGenerator->Init(perlinParams)) {
         return false;
     }
-
-    //auto heightTex = std::make_shared<Texture>();
-    //NoiseGenerator::Generate2DParams genParams;
-    //genParams.device = device;
-    //genParams.width = 1024;  // 원하는 해상도
-    //genParams.height = 1024;
-    //genParams.outputTexture = heightTex.get();
-    //m_PerlinGenerator->Generate2D(context, genParams);
-
-    //{
-    //    std::lock_guard<std::mutex> lock(m_mutex);
-    //    m_Textures[PathConstants::HEIGHT] = heightTex;
-    //}
 
     return true;
 } // Init

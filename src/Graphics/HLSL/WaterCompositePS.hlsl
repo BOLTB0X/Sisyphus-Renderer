@@ -80,7 +80,9 @@ void CalculateWaterNormal(float2 waterUV, out float3 localNormal, out float3 wor
 
 float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, float2 screenUV)
 {
-    float3 reflectDir = reflect(-viewDir, worldNormal);
+    float3 reflectDir = reflect(-viewDir, worldNormal); // 월드 공간 반사 벡터
+    
+    // 뷰 공간으로 변환
     float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
     float3 viewPos = mul(float4(waterWorldPos, 1.0f), VIEW).xyz;
 
@@ -88,28 +90,127 @@ float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, flo
     float2 hitUV = 0.0f;
     bool isHit = false;
 
+    float adaptiveThickness = max(STEP_SIZE * 1.5f, THICKNESS);
+
     [loop] 
     for (int i = 0; i < RAY_MAX_STEP_SIZE; ++i)
     {
+        // 뷰 공간에서 레이 전진
         currentRayPos += viewReflectDir * STEP_SIZE;
+        
+        // 투영 공간 및 화면 UV 변환
         float4 marchClipPos = mul(float4(currentRayPos, 1.0f), PROJ);
         float2 marchUV = marchClipPos.xy / marchClipPos.w * 0.5f + 0.5f;
         marchUV.y = 1.0f - marchUV.y;
 
+        // 화면 영역을 벗어나면 루프 탈출
         if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
             break;
 
+        // 씬 깊이 버퍼 샘플링 후 뷰 공간 선형 깊이(Z)로 변환
         float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
         float sampleSceneZ = depth_to_meter(sampleRawDepth, PROJ);
+        
+        // 레이의 현재 깊이와 실제 지형 깊이 비교
         float zDiff = currentRayPos.z - sampleSceneZ;
 
-        if (zDiff > 0.0f && zDiff < THICKNESS)
+        // 적응형 두께 판정 구간 진입
+        if (zDiff > 0.0f && zDiff < adaptiveThickness)
+        {
+            // 월드 공간 지형 노말 샘플링
+            float3 hitNormal = SceneNormalMap.SampleLevel(LinearSampler, marchUV, 0).rgb * 2.0f - 1.0f;
+            hitNormal = normalize(hitNormal);
+
+            if (dot(reflectDir, hitNormal) > 0.0f)
+            {
+                continue; // 카메라를 등진 뒷면 지형 파편이라면 충돌 스킵
+            }
+
+            currentRayPos -= viewReflectDir * STEP_SIZE * 0.5f;
+            marchClipPos = mul(float4(currentRayPos, 1.0f), PROJ);
+            marchUV = marchClipPos.xy / marchClipPos.w * 0.5f + 0.5f;
+            marchUV.y = 1.0f - marchUV.y;
+
+            hitUV = marchUV;
+            isHit = true;
+            break;
+        }
+    }
+
+    if (isHit)
+    {
+        // 충돌한 씬의 색상 반환
+        return SceneMap.SampleLevel(LinearSampler, hitUV, 0).rgb;
+    }
+    else
+    {
+        float2 skyUV = screenUV;
+        skyUV.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
+        return SceneMap.SampleLevel(LinearSampler, skyUV, 0).rgb;
+    }
+} // RaymarchSSR
+
+float3 RaymarchSSR2(float3 waterWorldPos, float3 worldNormal, float3 viewDir, float2 screenUV)
+{
+    float3 reflectDir = reflect(-viewDir, worldNormal);
+
+    float3 viewPos0 = mul(float4(waterWorldPos, 1.0f), VIEW).xyz;
+    float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
+
+    // 기존과 동일한 총 추적 거리 예산 유지
+    float rayLength = STEP_SIZE * RAY_MAX_STEP_SIZE;
+    float3 viewPos1 = viewPos0 + viewReflectDir * rayLength;
+
+    float4 clip0 = mul(float4(viewPos0, 1.0f), PROJ);
+    float4 clip1 = mul(float4(viewPos1, 1.0f), PROJ);
+
+    if (clip0.w <= 0.0001f || clip1.w <= 0.0001f)
+    {
+        float2 skyUV0 = screenUV;
+        skyUV0.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
+        return SceneMap.SampleLevel(LinearSampler, skyUV0, 0).rgb;
+    }
+
+    float2 uv0 = (clip0.xy / clip0.w) * float2(0.5f, -0.5f) + 0.5f;
+    float2 uv1 = (clip1.xy / clip1.w) * float2(0.5f, -0.5f) + 0.5f;
+
+    float2 px0 = uv0 * resolution;
+    float2 px1 = uv1 * resolution;
+    float2 pxDelta = px1 - px0;
+
+    int stepCount = (int) clamp(max(abs(pxDelta.x), abs(pxDelta.y)), 1.0f, (float) RAY_MAX_STEP_SIZE);
+    float2 pixelStep = pxDelta / stepCount;
+
+    bool isHit = false;
+    float2 hitUV = 0.0f;
+    float2 currentPixel = px0;
+
+    [loop]
+    for (int i = 0; i < stepCount; ++i)
+    {
+        currentPixel += pixelStep;
+        float2 marchUV = currentPixel / resolution;
+
+        if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
+            break;
+
+        float t = saturate((float) (i + 1) / stepCount);
+
+        float invW = lerp(1.0f / clip0.w, 1.0f / clip1.w, t);
+        float rayViewZ = lerp(viewPos0.z / clip0.w, viewPos1.z / clip1.w, t) / invW;
+
+        float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
+        float sampleSceneZ = depth_to_meter(sampleRawDepth, PROJ);
+
+        float zDiff = rayViewZ - sampleSceneZ;
+        float adaptiveThickness = max(THICKNESS, abs(rayLength / stepCount));
+
+        if (zDiff > 0.0f && zDiff < adaptiveThickness)
         {
             float3 hitNormal = SceneNormalMap.SampleLevel(LinearSampler, marchUV, 0).rgb * 2.0f - 1.0f;
-            if (dot(viewReflectDir, hitNormal) > 0.0f)
-            {
+            hitNormal = normalize(hitNormal);
+            if (dot(reflectDir, hitNormal) > 0.0f)
                 continue;
-            }
 
             hitUV = marchUV;
             isHit = true;
@@ -127,8 +228,7 @@ float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, flo
         skyUV.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
         return SceneMap.SampleLevel(LinearSampler, skyUV, 0).rgb;
     }
-} // RaymarchSSR
-
+} // RaymarchSSR2
 
 float3 GetSunHighlight(float2 screenUV, float3 worldNormal, float3 localNormal, float3 viewDir)
 {
@@ -210,7 +310,7 @@ float4 main(PS_IN input) : SV_TARGET
         float3 refractColor = SceneMap.SampleLevel(LinearSampler, refractUV, 0).rgb;
         refractColor = lerp(waterColor, refractColor, depthFactor);
 
-        float3 reflectColor = RaymarchSSR(waterWorldPos, worldNormal, viewDir, input.uv);
+        float3 reflectColor = RaymarchSSR2(waterWorldPos, worldNormal, viewDir, input.uv);
 
         float3 sunHighlight = GetSunHighlight(input.uv, worldNormal, localNormal, viewDir);
         float shadowFactor = GetWaterShadow(waterWorldPos);

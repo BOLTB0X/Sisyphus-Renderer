@@ -36,7 +36,6 @@ cbuffer TessellationControlBuffer : register(b3)
 #define MIN_TESS_FACTOR   tMinTessFactor
 #define MAX_TESS_FACTOR   tMaxTessFactor
 
-// 카메라 거리에 따른 분할 계수(LOD)를 계산하는 함수
 float CalcTessFactor(float3 patchCenterPos)
 {
     float dist = distance(patchCenterPos, CAMERA_POSITION);
@@ -46,35 +45,30 @@ float CalcTessFactor(float3 patchCenterPos)
     return lerp(MIN_TESS_FACTOR, MAX_TESS_FACTOR, tess);
 } // CalcTessFactor
 
-// -----------------------------------------------------------------------------
-// Patch Constant Function (패치마다 한 번 실행)
-// -----------------------------------------------------------------------------
 PatchTess CalcHSPatchConstants(
     InputPatch<VS_OUT, 4> patch,
     uint patchID : SV_PrimitiveID)
 {
     PatchTess pt;
-    
-    // 패치의 4개 모서리 중심점을 구하여 대략적인 패치 위치를 계산
+
+    float3 edgeMid0 = 0.5f * (patch[0].posW + patch[3].posW); // edge0: 0-3
+    float3 edgeMid1 = 0.5f * (patch[0].posW + patch[1].posW); // edge1: 0-1
+    float3 edgeMid2 = 0.5f * (patch[1].posW + patch[2].posW); // edge2: 1-2
+    float3 edgeMid3 = 0.5f * (patch[2].posW + patch[3].posW); // edge3: 2-3
+
+    pt.edgeTess[0] = CalcTessFactor(edgeMid0);
+    pt.edgeTess[1] = CalcTessFactor(edgeMid1);
+    pt.edgeTess[2] = CalcTessFactor(edgeMid2);
+    pt.edgeTess[3] = CalcTessFactor(edgeMid3);
+
     float3 centerPos = 0.25f * (patch[0].posW + patch[1].posW + patch[2].posW + patch[3].posW);
-    float tessLevel = CalcTessFactor(centerPos);
-    
-    // 4개의 엣지(Edge) 분할 계수
-    pt.edgeTess[0] = tessLevel;
-    pt.edgeTess[1] = tessLevel;
-    pt.edgeTess[2] = tessLevel;
-    pt.edgeTess[3] = tessLevel;
-    
-    // 내부(Inside) 분할 계수 (X, Y 방향)
-    pt.insideTess[0] = tessLevel;
-    pt.insideTess[1] = tessLevel;
-    
+    float insideTess = CalcTessFactor(centerPos);
+    pt.insideTess[0] = insideTess;
+    pt.insideTess[1] = insideTess;
+
     return pt;
 } // CalcHSPatchConstants
 
-// -----------------------------------------------------------------------------
-// Hull Shader (제어점마다 한 번 실행 - 즉, 패치당 4번)
-// -----------------------------------------------------------------------------
 [domain("quad")] // 4각형 패치 사용
 [partitioning("fractional_even")] // 부드러운 LOD 전환을 위해 소수점 분할 사용
 [outputtopology("triangle_ccw")] // 최종 출력은 시계방향 삼각형
@@ -87,7 +81,6 @@ HS_OUT main(
 {
     HS_OUT output;
     
-    // 제어점 데이터를 그대로 통과시킵니다.
     output.posW = patch[i].posW;
     output.uv = patch[i].uv;
     

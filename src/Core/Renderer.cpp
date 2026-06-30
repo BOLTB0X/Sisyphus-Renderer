@@ -170,23 +170,10 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
- //   Ground::InitParams groundInitParams;
- //   groundInitParams.device = device;
- //   groundInitParams.hwnd = hwnd;
-	//groundInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
-	//groundInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_COL)->GetSRV();
-	//groundInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::GROUND_NOR)->GetSRV();
-	//groundInitParams.linearSampler = linerWrapSampler;
-
- //   if (!m_Ground->Init(groundInitParams)) {
- //       return false;
- //   }
-
     Terrain::InitParams terrainInitParams;
     terrainInitParams.device = device;
     terrainInitParams.hwnd = hwnd;
     terrainInitParams.heightMapTex = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true);
-    terrainInitParams.colSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_COL)->GetSRV();
     terrainInitParams.norSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_RNOL)->GetSRV();
     terrainInitParams.diffSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_RDIFF)->GetSRV();
     terrainInitParams.grassSRV = m_TextureMgr->GetTexture(device, context, PathConstants::TERRAIN_GRASS)->GetSRV();
@@ -390,8 +377,6 @@ bool Renderer::Render(float deltaTime) {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
-    //m_Rakshasa->Animate(deltaTime);
-
     ShadowPass(context, states);
     MainPass(context, states);
     CompositePass(context, states);
@@ -411,26 +396,6 @@ void Renderer::UpdateModelTransform() {
     XMFLOAT3 pos = m_Stone->GetPosition();
     float terrainY = m_Terrain->GetHeightAt(pos.x, pos.z);
     m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
-
-    //XMFLOAT3 pos = m_Stone->GetPosition();
-    //float terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    //m_Stone->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
-
-    //pos = m_StonePillar->GetPosition();
-    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    //m_StonePillar->SetPosition(pos.x, terrainY + 20.0f, pos.z);
-
-    //pos = m_Arca->GetPosition();
-    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    //m_Arca->SetPosition(pos.x, terrainY + 20.0f, pos.z);
-
-    //pos = m_Rakshasa->GetPosition();
-    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    //m_Rakshasa->SetPosition(pos.x, terrainY + 1.0f, pos.z);
-
-    //pos = m_Tree->GetPosition();
-    //terrainY = m_Ground->GetHeightAt(pos.x, pos.z);
-    //m_Tree->SetPosition(pos.x, terrainY + STONE_TRANSFORM_OFFSET, pos.z);
 } // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -441,35 +406,15 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
 	ShadowMap::RenderParams renderParams;
 
     DirectX::XMFLOAT3 shadowFocus = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    DirectX::XMVECTOR p2 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
-    DirectX::XMStoreFloat3(&shadowFocus, p2);
+    DirectX::XMVECTOR p1 = DirectX::XMLoadFloat3(&m_Stone->GetPosition());
+    DirectX::XMStoreFloat3(&shadowFocus, p1);
 
     m_DirectionalLight->UpdateObjectShadow(shadowFocus);
 
     DirectX::XMMATRIX sharedView = m_DirectionalLight->GetObjectViewMatrix();
     DirectX::XMMATRIX sharedProj = m_DirectionalLight->GetObjectProjection();
 
-    //if (m_Tree) {
-    //    TransparentActor::RenderShadowParams shadowParams;
-    //    shadowParams.shadowMap = m_ObjectShadowMap.get();
-
-    //    renderParams.viewMatrix = sharedView;
-    //    renderParams.projectionMatrix = sharedProj;
-    //    renderParams.worldMatrix = m_Tree->GetWorldMatrix();
-    //    shadowParams.shadowParams = &renderParams;
-    //    shadowParams.states = states;
-
-    //    m_Tree->RenderShadow(context, shadowParams);
-    //}
-
-    //if (m_Arca) {
-    //    renderParams.viewMatrix = sharedView;
-    //    renderParams.projectionMatrix = sharedProj;
-    //    renderParams.worldMatrix = m_Arca->GetWorldMatrix();
-    //    m_ObjectShadowMap->RenderOpaque(context, renderParams);
-    //    m_Arca->DrawIndexed(context);
-    //}
-
+    // 붙루명
     if (m_Stone) {
         renderParams.viewMatrix = sharedView;
         renderParams.projectionMatrix = sharedProj;
@@ -480,49 +425,11 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
         m_Stone->DrawIndexed(context);
     }
     
-    /*if (m_Rakshasa) {
-       SkinnedActor::RenderShadowParams shadowParams;
-
-       renderParams.viewMatrix = sharedView;
-       renderParams.projectionMatrix = sharedProj;
-       renderParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
-       renderParams.isSkinned = true;
-       shadowParams.shadowMap = m_ObjectShadowMap.get();
-       shadowParams.shadowParams = &renderParams;
-       shadowParams.states = states;
-
-       m_Rakshasa->RenderShadow(context,shadowParams);
-    }*/
-
     context->OMSetRenderTargets(1, &m_nullRTV, m_TerrainShadowMap->GetDSV());
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
 
-    //if (m_StonePillar) {
-    //    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-    //    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
-    //    renderParams.worldMatrix = m_StonePillar->GetScalingWorldMatrix();
-    //    m_TerrainShadowMap->RenderOpaque(context, renderParams);
-    //    m_StonePillar->DrawIndexed(context);
-    //}
-
-    //if (m_Ground) {
-    //    renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-    //    renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
-    //    renderParams.worldMatrix = m_Ground->GetWorldMatrix();
-    //    renderParams.isSkinned = false;
-    //    m_TerrainShadowMap->RenderOpaque(context, renderParams);
-    //    m_Ground->DrawIndexed(context);
-    //}
-
-    if (m_Terrain) {
-        renderParams.viewMatrix = m_DirectionalLight->GetViewMatrix();
-        renderParams.projectionMatrix = m_DirectionalLight->GetProjection();
-        renderParams.worldMatrix = m_Ground->GetWorldMatrix();
-        renderParams.isSkinned = false;
-        m_TerrainShadowMap->RenderOpaque(context, renderParams);
-        m_Terrain->RenderShadow(context);
-    }
+    // 부분 투명 
 
     context->OMSetRenderTargets(0, nullptr, nullptr);
     context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_nullSRV);
@@ -547,7 +454,6 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
 
     UpdateCommonShaderBuffer(context, states);
  
-    //DrawGround(context, states);
     DrawTerrain(context, states);
 
     const DirectX::XMFLOAT3& camPos = m_Camera->GetPosition();
@@ -562,30 +468,6 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
         submitParams.shaderID = static_cast<uint16_t>(ShaderID::Stone);
         m_Stone->Submit(submitParams);
     }
-
-    //if (m_StonePillar) {
-    //    submitParams.worldMatrix = m_StonePillar->GetWorldMatrix();
-    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::StonePillar);
-    //    m_StonePillar->Submit(submitParams);
-    //}
-
-    //if (m_Arca) {
-    //    submitParams.worldMatrix = m_Arca->GetWorldMatrix();
-    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Arca);
-    //    m_Arca->Submit(submitParams);
-    //}
-
-    //if (m_Tree) {
-    //    submitParams.worldMatrix = m_Tree->GetWorldMatrix();
-    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Tree);
-    //    m_Tree->Submit(submitParams);
-    //}
-
-    //if (m_Rakshasa) {
-    //    submitParams.worldMatrix = m_Rakshasa->GetWorldMatrix();
-    //    submitParams.shaderID = static_cast<uint16_t>(ShaderID::Rakshasa);
-    //    m_Rakshasa->Submit(submitParams);
-    //}
 
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
@@ -860,34 +742,13 @@ void Renderer::InitDefaultMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceCont
         return;
     }
     else {
-        m_Stone->SetPosition(20.0f, 0.0f, 20.0f);
+        m_Stone->SetPosition(20.0f, 0.0f, 0.0f);
 		m_Stone->SetScale(10.0f, 10.0f, 10.0f);
     }
-
-    /*initParams.path = STONE_PILLAR;
-    initParams.PSPath = STONE_PILLAR_PS;
-
-    if (!m_StonePillar->Init(initParams)) {
-        return;
-    }
-    else {
-        m_StonePillar->SetPosition(300.0f, 0.0f, -500.0f);
-        m_StonePillar->SetScale(300.0f, 500.0f, 300.0f);
-    }
-
-    initParams.path = ARCA;
-    initParams.PSPath = ARCA_PS;
-    if (!m_Arca->Init(initParams)) {
-        return;
-    }
-    else {
-        m_Arca->SetPosition(70.0f, 0.0f, -50.0f);
-        m_Arca->SetScale(30.0f, 30.0f, 30.0f);
-    }*/
 } // InitDefaultMaya
 
 void Renderer::InitTransparentMaya(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context, ID3D11SamplerState* linerWrapSampler) {
-    /*TransparentActor::InitParams treeInitParam;
+    TransparentActor::InitParams treeInitParam;
     treeInitParam.device = device;
     treeInitParam.context = context;
     treeInitParam.hwnd = hwnd;
@@ -900,8 +761,8 @@ void Renderer::InitTransparentMaya(HWND hwnd, ID3D11Device* device, ID3D11Device
         return;
     }
     else {
-        m_Tree->SetPosition(-60.0f, 0.0f, -70.0f);
-    }*/
+        m_Tree->SetPosition(-90.0f, 0.0f, -70.0f);
+    }
 } // InitTransparentMaya
 
 void Renderer::InitWidgets() {

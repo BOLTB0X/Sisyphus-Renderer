@@ -11,12 +11,11 @@
 #include "Helpers/MathHelper.h"
 
 #define TEX_HEIGHTMAP_SLOT  0
-#define TEX_COL_SLOT        2
-#define TEX_NOR_SLOT        3
-#define TEX_SAND_SLOT       4
-#define TEX_GRASS_SLOT      5
-#define TEX_DIFF_SLOT       6
-#define TEX_SNOW_SLOT       7
+#define TEX_NOR_SLOT        2
+#define TEX_SAND_SLOT       3
+#define TEX_GRASS_SLOT      4
+#define TEX_DIFF_SLOT       5
+#define TEX_SNOW_SLOT       6
 #define LINEAR_SAMPLER_SLOT 0
 #define BUFFER_SLOT_WORLD   2
 #define BUFFER_SLOT_TESS    3
@@ -32,7 +31,6 @@ Terrain::Terrain() {
     m_patchCountX = 32;
     m_patchCountZ = 32;
     m_patchSize = 100.0f; // 패치 1개의 크기
-    m_colSRV = nullptr;
     m_norSRV = nullptr;
     m_sandSRV = nullptr;
     m_grassSRV = nullptr;
@@ -42,7 +40,6 @@ Terrain::Terrain() {
 } // Terrain
 
 Terrain::~Terrain() {
-    m_colSRV = nullptr;
     m_norSRV = nullptr;
     m_sandSRV = nullptr;
     m_grassSRV = nullptr;
@@ -55,7 +52,6 @@ bool Terrain::Init(const InitParams& params) {
     if (params.device == nullptr || params.heightMapTex == nullptr) return false;
 
     m_heightMap = params.heightMapTex;
-    m_colSRV = params.colSRV;
     m_norSRV = params.norSRV;
     m_sandSRV = params.sandSRV;
     m_grassSRV = params.grassSRV;
@@ -172,7 +168,6 @@ void Terrain::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->DSSetSamplers(LINEAR_SAMPLER_SLOT, 1, &m_linearSampler);
     context->PSSetSamplers(LINEAR_SAMPLER_SLOT, 1, &m_linearSampler);
 
-    context->PSSetShaderResources(TEX_COL_SLOT, 1, &m_colSRV);
     context->PSSetShaderResources(TEX_NOR_SLOT, 1, &m_norSRV);
     context->PSSetShaderResources(TEX_SAND_SLOT, 1, &m_sandSRV);
     context->PSSetShaderResources(TEX_GRASS_SLOT, 1, &m_grassSRV);
@@ -186,7 +181,6 @@ void Terrain::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 기본값으로 복구
 
     ID3D11ShaderResourceView* nullSRV = nullptr;
-    context->PSSetShaderResources(TEX_COL_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_NOR_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_SAND_SLOT, 1, &nullSRV);
     context->PSSetShaderResources(TEX_GRASS_SLOT, 1, &nullSRV);
