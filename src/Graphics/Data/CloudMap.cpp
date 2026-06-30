@@ -46,9 +46,8 @@ void CloudMap::Generate(ID3D11DeviceContext* context) {
     context->CSSetUnorderedAccessViews(MAP_SLOT, 1, &nullUAV, nullptr);
 
     m_resultRT->GenerateMips(context);
-} // Generate
+} // GenerateVolume
 
 ID3D11ShaderResourceView* CloudMap::GetSRV() {
     return m_resultRT->GetMippedSRV();
-    //return m_resultRT->GetSRV();
 } // GetSRV

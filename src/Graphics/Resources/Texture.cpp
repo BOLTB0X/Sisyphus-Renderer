@@ -51,3 +51,10 @@ int Texture::GetWidth() const {
 int Texture::GetHeight() const {
     return m_height;
 } // GetHeight
+
+void Texture::SetFromGPU(ID3D11ShaderResourceView* srv, int w, int h, const std::vector<float>& cpuData) {
+    m_srv = srv;
+    m_width = w;
+    m_height = h;
+    m_cpuHeightPixels = cpuData;
+} // SetFromGPU

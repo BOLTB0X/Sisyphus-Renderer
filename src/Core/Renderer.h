@@ -31,6 +31,7 @@ class MayaActor;
 class SkinnedActor;
 class RigidActor;
 class WaterComposite;
+class Terrain;
 
 class Renderer {
 public:
@@ -57,6 +58,7 @@ private:
     void PostProcessingPass(ID3D11DeviceContext*, D3D11State*);
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
+    void DrawTerrain(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 	void DrawModel(ID3D11DeviceContext*, D3D11State*);
     void DrawSkyBox(ID3D11DeviceContext*, D3D11State*, bool isReflection = false);
@@ -70,7 +72,6 @@ private:
     void InitDefaultMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
     void InitTransparentMaya(HWND, ID3D11Device*, ID3D11DeviceContext*, ID3D11SamplerState*);
     void InitWidgets();
-
 
 private:
     static RendererState                 m_RendererState;
@@ -101,6 +102,7 @@ private:
 	std::unique_ptr<SkinnedActor>        m_Rakshasa;
 	std::unique_ptr<RigidActor>          m_LowpolyPlayer;
 	std::unique_ptr<WaterComposite>      m_WaterComposite;
+	std::unique_ptr<Terrain>             m_Terrain;
 
     std::shared_ptr<TextureManager>      m_TextureMgr;
     std::shared_ptr<ImGuiManager>        m_ImGuiMgr;

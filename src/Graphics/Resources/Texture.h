@@ -16,9 +16,12 @@ public:
     int                       GetWidth() const;
 	int 					  GetHeight() const;
 
+    void                      SetFromGPU(ID3D11ShaderResourceView*, int, int, const std::vector<float>&);
+
 private:
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_srv;
     std::vector<unsigned char>                       m_cpuPixels;
+    std::vector<float>                               m_cpuHeightPixels;
     int                                              m_width;
     int                                              m_height;
 }; // Texture

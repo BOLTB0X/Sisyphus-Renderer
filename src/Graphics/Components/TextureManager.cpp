@@ -16,7 +16,7 @@ using namespace SharedConstants;
 TextureManager::TextureManager() {
     m_Textures = std::unordered_map<std::string, std::shared_ptr<Texture>>();
     m_VolumeTextures = std::unordered_map<std::string, std::shared_ptr<VolumeTexture>>();
-    m_PerlinWorleyGenerator = std::make_unique<NoiseGenerator>();
+    m_PerlinGenerator = std::make_unique<NoiseGenerator>();
     m_WorleyGenerator = std::make_unique<NoiseGenerator>();
 } // TextureManager
 
@@ -30,7 +30,6 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	LoadTexture(device, context, PathConstants::NOISE_2D);
 	LoadTexture(device, context, PathConstants::HEIGHT, true);
 	LoadTexture(device, context, PathConstants::GRASS);
-	//LoadTexture(device, context, PathConstants::FARAWAY_GRASS);
 	LoadTexture(device, context, PathConstants::GROUND_COL);
 	LoadTexture(device, context, PathConstants::GROUND_NOR);
 
@@ -38,15 +37,12 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	LoadTexture(device, context, PathConstants::WATER_WAVE_NOR);
 	LoadTexture(device, context, PathConstants::FLOW_MAP);
 
-    NoiseGenerator::InitParams perlinParams;
-    perlinParams.device = device;
-    perlinParams.hwnd = hwnd;
-    perlinParams.path = PathConstants::PERLINE_WORLEY_CS;
-    perlinParams.groupSize = 8;
-
-    if (!m_PerlinWorleyGenerator->Init(perlinParams)) {
-        return false;
-    }
+	LoadTexture(device, context, PathConstants::TERRAIN_COL);
+	LoadTexture(device, context, PathConstants::TERRAIN_RNOL);
+	LoadTexture(device, context, PathConstants::TERRAIN_RDIFF);
+	LoadTexture(device, context, PathConstants::TERRAIN_GRASS);
+	LoadTexture(device, context, PathConstants::TERRAIN_SNOW);
+	LoadTexture(device, context, PathConstants::TERRAIN_SAND);
 
     NoiseGenerator::InitParams worleyParams;
     worleyParams.device = device;
@@ -60,8 +56,16 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
     CreateVolumeTexture(device, PathConstants::KEY_WORLEY_NOISE, 32, 32, 32, DXGI_FORMAT_R16G16B16A16_FLOAT);
     CreateCloudNoise(context, PathConstants::KEY_WORLEY_NOISE, m_WorleyGenerator.get(), 32.0f);
 
-    CreateVolumeTexture(device, PathConstants::KEY_PERLIN_NOISE, 128, 128, 128, DXGI_FORMAT_R16G16B16A16_FLOAT);
-    CreateCloudNoise(context, PathConstants::KEY_PERLIN_NOISE, m_PerlinWorleyGenerator.get(), 128.0f);
+    NoiseGenerator::InitParams perlinParams;
+    perlinParams.device = device;
+    perlinParams.hwnd = hwnd;
+    perlinParams.path = PathConstants::PERLINE_CS;
+    perlinParams.groupSize = 8;
+
+    if (!m_PerlinGenerator->Init(perlinParams)) {
+        return false;
+    }
+
     return true;
 } // Init
 
@@ -92,11 +96,11 @@ void TextureManager::CreateCloudNoise(ID3D11DeviceContext* context, const std::s
     auto volumeTex = GetVolumeTexture(name);
 
     if (volumeTex && generator) {
-        NoiseGenerator::GenerateParams params;
+        NoiseGenerator::Generate3DParams params;
         params.target = volumeTex.get();
         params.resolution = DirectX::XMFLOAT3(resolution, resolution, resolution);
 
-        generator->Generate(context, params);
+        generator->GenerateVolume(context, params);
         context->GenerateMips(volumeTex->GetSRV());
     }
 } // CreateCloudNoise

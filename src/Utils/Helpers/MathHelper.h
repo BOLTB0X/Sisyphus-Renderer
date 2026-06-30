@@ -29,6 +29,11 @@ namespace MathHelper { // 기본 수학 함수
             return value;
     } // clamp
 
+    template <typename T>
+    inline T lerp(T a, T b, T t) {
+        return (1 - t) * a + t * b;
+    }
+
 } // 기본 수학 함수
 
 namespace MathHelper { // 행렬 상수

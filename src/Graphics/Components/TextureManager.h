@@ -32,7 +32,7 @@ private:
 private:
     std::unordered_map<std::string, std::shared_ptr<Texture>>       m_Textures;
     std::unordered_map<std::string, std::shared_ptr<VolumeTexture>> m_VolumeTextures;
-    std::unique_ptr<NoiseGenerator>                                 m_PerlinWorleyGenerator;
+    std::unique_ptr<NoiseGenerator>                                 m_PerlinGenerator;
     std::unique_ptr<NoiseGenerator>                                 m_WorleyGenerator;
     std::mutex                                                      m_mutex;
 }; // TexturesManager
