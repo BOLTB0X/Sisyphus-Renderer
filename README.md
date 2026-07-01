@@ -44,6 +44,13 @@
   레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 (현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리) 을 진행
 </p>
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B5%AC%EB%A6%84%EB%B6%84%ED%8F%AC.gif?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EB%B9%9B%EC%97%90%EB%94%B0%EB%A5%B8%20%EA%B5%AC%EB%A6%84%EC%83%89%EC%83%81.gif?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong> 분포 및 광원 위치에 따른 색상변화 </strong></p>
+</div>
+
 ---
 ## [파이프라인 구조도]
 
