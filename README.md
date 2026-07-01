@@ -11,8 +11,8 @@
 </p>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/11Volumetric_2_%EC%8B%A4%EB%B2%84%EB%9D%BC%EC%9D%B4%EB%8B%9D02.png?raw=true" width="450" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/12Volumetric_2_%EC%B0%A8%ED%8F%90%ED%99%95%EC%9D%B802.png?raw=true" width="450" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/11Volumetric_2_%EC%8B%A4%EB%B2%84%EB%9D%BC%EC%9D%B4%EB%8B%9D02.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/12Volumetric_2_%EC%B0%A8%ED%8F%90%ED%99%95%EC%9D%B802.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>실버라이닝 및 파우더에 따른 빛 조절</strong></p>
 </div>
@@ -268,8 +268,8 @@ Renderer::MainPass()
 
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="450" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/11Volumetric_2_%EC%8B%A4%EB%B2%84%EB%9D%BC%EC%9D%B4%EB%8B%9D03.png?raw=true" width="450" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/11Volumetric_2_%EC%8B%A4%EB%B2%84%EB%9D%BC%EC%9D%B4%EB%8B%9D03.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong> 1.0 | 2.0 </strong></p>
 </div>
