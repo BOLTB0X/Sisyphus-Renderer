@@ -21,7 +21,6 @@ float PerlinNoise(float2 p)
     float2 pi = floor(p); // 정수부
     float2 pf = frac(p); // 소수부
 
-    // 부드러운 보간을 위한 Smoothstep (3x^2 - 2x^3)
     float2 w = pf * pf * (3.0f - 2.0f * pf);
 
     float n00 = dot(Hash22(pi + float2(0.0f, 0.0f)), pf - float2(0.0f, 0.0f));

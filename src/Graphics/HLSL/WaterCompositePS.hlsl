@@ -153,71 +153,64 @@ float3 RaymarchSSR(float3 waterWorldPos, float3 worldNormal, float3 viewDir, flo
 float3 RaymarchSSR2(float3 waterWorldPos, float3 worldNormal, float3 viewDir, float2 screenUV)
 {
     float3 reflectDir = reflect(-viewDir, worldNormal);
-
-    float3 viewPos0 = mul(float4(waterWorldPos, 1.0f), VIEW).xyz;
-    float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
-
-    // 기존과 동일한 총 추적 거리 예산 유지
-    float rayLength = STEP_SIZE * RAY_MAX_STEP_SIZE;
-    float3 viewPos1 = viewPos0 + viewReflectDir * rayLength;
-
-    float4 clip0 = mul(float4(viewPos0, 1.0f), PROJ);
-    float4 clip1 = mul(float4(viewPos1, 1.0f), PROJ);
-
-    if (clip0.w <= 0.0001f || clip1.w <= 0.0001f)
+    
+    if (reflectDir.y < 0.0f)
     {
-        float2 skyUV0 = screenUV;
-        skyUV0.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
-        return SceneMap.SampleLevel(LinearSampler, skyUV0, 0).rgb;
+        reflectDir.y = -reflectDir.y;
+        reflectDir = normalize(reflectDir);
     }
 
-    float2 uv0 = (clip0.xy / clip0.w) * float2(0.5f, -0.5f) + 0.5f;
-    float2 uv1 = (clip1.xy / clip1.w) * float2(0.5f, -0.5f) + 0.5f;
+    float3 viewPos = mul(float4(waterWorldPos, 1.0f), VIEW).xyz;
+    float3 viewReflectDir = normalize(mul(reflectDir, (float3x3) VIEW));
 
-    float2 px0 = uv0 * resolution;
-    float2 px1 = uv1 * resolution;
-    float2 pxDelta = px1 - px0;
-
-    int stepCount = (int) clamp(max(abs(pxDelta.x), abs(pxDelta.y)), 1.0f, (float) RAY_MAX_STEP_SIZE);
-    float2 pixelStep = pxDelta / stepCount;
-
+    float stepSize = 0.5f;
+    float3 currentRayPos = viewPos;
     bool isHit = false;
     float2 hitUV = 0.0f;
-    float2 currentPixel = px0;
+    float rayDistance = 0.0f;
 
     [loop]
-    for (int i = 0; i < stepCount; ++i)
+    for (int i = 0; i < RAY_MAX_STEP_SIZE; ++i)
     {
-        currentPixel += pixelStep;
-        float2 marchUV = currentPixel / resolution;
+        currentRayPos += viewReflectDir * stepSize;
+        rayDistance += stepSize;
 
+        // 현재 레이 위치를 화면 UV로 변환
+        float4 clipPos = mul(float4(currentRayPos, 1.0f), PROJ);
+        if (clipPos.w < 0.0001f)
+            break; // 카메라 뒤로 넘어감
+
+        float2 marchUV = clipPos.xy / clipPos.w * 0.5f + 0.5f;
+        marchUV.y = 1.0f - marchUV.y;
+
+        // 화면 밖으로 나가면 탐색 종료
         if (marchUV.x < 0.0f || marchUV.x > 1.0f || marchUV.y < 0.0f || marchUV.y > 1.0f)
             break;
 
-        float t = saturate((float) (i + 1) / stepCount);
+        float rawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
+        
+        if (rawDepth >= 0.9999f) 
+            break;
 
-        float invW = lerp(1.0f / clip0.w, 1.0f / clip1.w, t);
-        float rayViewZ = lerp(viewPos0.z / clip0.w, viewPos1.z / clip1.w, t) / invW;
-
-        float sampleRawDepth = SceneDepthMap.SampleLevel(LinearSampler, marchUV, 0).r;
-        float sampleSceneZ = depth_to_meter(sampleRawDepth, PROJ);
-
-        float zDiff = rayViewZ - sampleSceneZ;
-        float adaptiveThickness = max(THICKNESS, abs(rayLength / stepCount));
+        float sceneZ = depth_to_meter(rawDepth, PROJ);
+        float zDiff = currentRayPos.z - sceneZ;
+        float adaptiveThickness = 0.2f + rayDistance * 0.05f;
 
         if (zDiff > 0.0f && zDiff < adaptiveThickness)
         {
+            // 카메라를 등진 뒷면 지형인지 확인
             float3 hitNormal = SceneNormalMap.SampleLevel(LinearSampler, marchUV, 0).rgb * 2.0f - 1.0f;
             hitNormal = normalize(hitNormal);
-            if (dot(reflectDir, hitNormal) > 0.0f)
-                continue;
-
-            hitUV = marchUV;
-            isHit = true;
-            break;
+            if (dot(reflectDir, hitNormal) <= 0.0f)
+            {
+                hitUV = marchUV;
+                isHit = true;
+                break;
+            }
         }
+        stepSize *= 1.1f;
     }
-
+    
     if (isHit)
     {
         return SceneMap.SampleLevel(LinearSampler, hitUV, 0).rgb;
@@ -225,7 +218,8 @@ float3 RaymarchSSR2(float3 waterWorldPos, float3 worldNormal, float3 viewDir, fl
     else
     {
         float2 skyUV = screenUV;
-        skyUV.y = saturate(1.0f - screenUV.y + reflectDir.y * 0.5f);
+        skyUV.y = clamp(0.2f - reflectDir.y * 0.15f, 0.05f, 0.4f);
+        
         return SceneMap.SampleLevel(LinearSampler, skyUV, 0).rgb;
     }
 } // RaymarchSSR2
@@ -309,8 +303,9 @@ float4 main(PS_IN input) : SV_TARGET
 
         float3 refractColor = SceneMap.SampleLevel(LinearSampler, refractUV, 0).rgb;
         refractColor = lerp(waterColor, refractColor, depthFactor);
-
-        float3 reflectColor = RaymarchSSR2(waterWorldPos, worldNormal, viewDir, input.uv);
+        
+        float3 ssrNormal = normalize(lerp(float3(0.0f, 1.0f, 0.0f), worldNormal, 0.3f));
+        float3 reflectColor = RaymarchSSR2(waterWorldPos, ssrNormal, viewDir, input.uv);
 
         float3 sunHighlight = GetSunHighlight(input.uv, worldNormal, localNormal, viewDir);
         float shadowFactor = GetWaterShadow(waterWorldPos);
