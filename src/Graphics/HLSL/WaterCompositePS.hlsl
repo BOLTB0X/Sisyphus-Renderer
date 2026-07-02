@@ -31,14 +31,14 @@ cbuffer ResolutionBuffer : register(b2)
 
 cbuffer WaterBuffer : register(b3)
 {
-    float waterHeight;
+    float  waterHeight;
     float3 wPadding1;
     
     float3 waterColorShallow;
-    float wPadding2;
+    float  wPadding2;
     
     float3 waterColorDeep;
-    float wPadding3;
+    float  wPadding3;
     
     float waterDistortion;
     float reflectivity;
@@ -48,7 +48,7 @@ cbuffer WaterBuffer : register(b3)
     float2 lightUV;
     float2 wPadding4;
     
-    int raymarchMaxStep;
+    int   raymarchMaxStep;
     float stepSize;
     float thickness;
     float wPadding5;

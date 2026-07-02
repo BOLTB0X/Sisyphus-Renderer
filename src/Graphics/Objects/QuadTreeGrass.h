@@ -11,7 +11,7 @@
 
 class Frustum;
 
-class Grass {
+class QuadTreeGrass {
 public:
     struct InitParams {
         ID3D11Device*             device;
@@ -33,8 +33,8 @@ public:
     }; // RenderParams
 
 public:
-    Grass();
-    ~Grass();
+    QuadTreeGrass();
+    ~QuadTreeGrass();
 
     bool Init(const InitParams&);
     void Render(ID3D11DeviceContext*, const RenderParams&);
@@ -80,9 +80,12 @@ private:
     Microsoft::WRL::ComPtr<ID3D11InputLayout>    m_farLayout;
     Microsoft::WRL::ComPtr<ID3D11Buffer>         m_quadVertexBuffer;
 
+    Microsoft::WRL::ComPtr<ID3D11Buffer>         m_instanceBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>         m_argsBuffer;
+
     ID3D11ShaderResourceView*                    m_grassSRV;
     ID3D11SamplerState*                          m_linearSampler;
 
     GrassBuffer                                  m_grassData;
     GrassBuffer                                  m_prevGrassData;
-}; // Grass
+}; // QuadTreeGrass

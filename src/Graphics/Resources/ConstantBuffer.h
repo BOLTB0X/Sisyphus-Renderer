@@ -127,4 +127,19 @@ namespace ConstantBuffer {
         }
     }; // TessellationControlBuffer
 
+
+    struct PlacementBuffer {
+        DirectX::XMFLOAT3 cameraPos;
+        float             waterLevel;
+
+        float             terrainWidth;
+        float             terrainDepth;
+        float             grassDensity;
+        float             treeDensity;
+
+        float             dist;
+        float             heightScale;
+		DirectX::XMFLOAT2 padding;
+    }; // PlacementBuffer
+
 } // ConstantBuffer

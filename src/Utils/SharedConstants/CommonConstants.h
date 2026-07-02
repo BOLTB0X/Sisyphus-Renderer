@@ -14,7 +14,7 @@ namespace SharedConstants {
         static int   GRASS_SEED_STEP        = 3;
         static float GRASS_PER_TRIANGLE     = 6;
 
-		static float WATER_HEIGHT = 30.0f;
+		static float WATER_HEIGHT = 14.0f;
 		static float WATER_SCALE = 800000.0f;
 		static int   GRID_DENISTY = 3;
 	} // CommonConstants

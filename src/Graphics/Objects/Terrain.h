@@ -54,6 +54,8 @@ public:
     void              OnGui();
     DirectX::XMMATRIX GetWorldMatrix();
     float             GetHeightAt(float, float) const;
+    float             GetWidth() const;
+    float             GetDepth() const;            
 
 private:
     struct HeightScaleBuffer {
@@ -73,8 +75,8 @@ private:
         float             uv_tiling;
         DirectX::XMFLOAT3 padding;
 
-        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(140.0f),
-            uv_tiling(37.0f), padding(0.0f, 0.0f, 0.0f) {
+        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(100.0f),
+            uv_tiling(30.0f), padding(0.0f, 0.0f, 0.0f) {
         } // TerrainBlendingBuffer
     }; // TerrainBlendingBuffer
 

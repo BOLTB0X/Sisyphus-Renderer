@@ -90,6 +90,6 @@ DS_OUT main(
     output.posW = finalPosW;
     output.uv = finalUV;
     output.height = finalPosL.y;
-
+    
     return output;
 } // main

@@ -28,20 +28,20 @@ ID3D11ShaderResourceView* Texture::GetSRV() const {
 } // GetSRV
 
 float Texture::GetPixelHeight(int x, int y) const {
-    if (m_cpuPixels.empty() || m_width == 0 || m_height == 0) {
-        return 0.0f;
+    if (!m_cpuHeightPixels.empty()) {
+        x = max(0, std::min(x, m_width - 1));
+        y = max(0, std::min(y, m_height - 1));
+
+        return m_cpuHeightPixels[y * m_width + x];
     }
 
-    x = max(0, std::min(x, m_width - 1));
-    y = max(0, std::min(y, m_height - 1));
+    if (!m_cpuPixels.empty()) {
+        x = max(0, std::min(x, m_width - 1));
+        y = max(0, std::min(y, m_height - 1));
 
-    // R8G8B8A8 포맷이므로 픽셀당 4바이트씩 건너뜀
-    // 흑백 높이맵이므로
-    int i = ((y * m_width) + x) * 4;
-
-    if (i >= m_cpuPixels.size()) return 0.0f;
-
-    return static_cast<float>(m_cpuPixels[i]) / 255.0f;
+        int i = ((y * m_width) + x) * 4;
+        return static_cast<float>(m_cpuPixels[i]) / 255.0f;
+    }
 } // GetPixelHeight
 
 int Texture::GetWidth() const {

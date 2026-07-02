@@ -60,8 +60,8 @@ namespace SharedConstants {
 
         // Cloud
 		static constexpr float             CLOUD_RADIUS = 710000.0f;
-        static constexpr float             CLOUD_BOTTOM = 2350.0f;
-        static constexpr float             CLOUD_TOP = 3350.0f;
+        static constexpr float             CLOUD_BOTTOM = 5350.0f;
+        static constexpr float             CLOUD_TOP = 6350.0f;
 
 		static constexpr float             CLOUD_COVERAGE = 0.52f;
         static constexpr float             CLOUD_BASE_SCALE = 0.51f;
@@ -108,11 +108,14 @@ namespace SharedConstants {
         static constexpr DirectX::XMFLOAT3 WATER_COLOR_DEEP = { 0.01f, 0.05f, 0.15f };
 
         static constexpr float             WATER_DISTORTION = 0.01f;
-        static constexpr float             WATER_REFLECTIVITY = 0.2f;
+        static constexpr float             WATER_REFLECTIVITY = 0.6f;
         static constexpr float             WATER_DENSITY = 0.4f;
         static constexpr float             SUN_SHINIESS = 400.0f;
 
-        static constexpr float             HEIGHT_SCALE = 130.0f;
+        static constexpr float             HEIGHT_SCALE = 1200.0f;
+        static constexpr float             GRASS_DENSITY = 0.7f;
+        static constexpr float             TREE_DENSITY = 0.05f;
+
 
     } // BuffersConstants
 }

@@ -199,7 +199,7 @@ void Terrain::RenderShadow(ID3D11DeviceContext* context) {
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->HSSetShader(m_hullShader.Get(), nullptr, 0);
     context->DSSetShader(m_domainShader.Get(), nullptr, 0);
-    context->PSSetShader(nullptr, nullptr, 0); // 뎁스만 쓸 때는 PS가 필요 없음
+    context->PSSetShader(nullptr, nullptr, 0);
 
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
     context->DrawIndexed(m_indexCount, 0, 0);
@@ -210,7 +210,7 @@ void Terrain::RenderShadow(ID3D11DeviceContext* context) {
 
 void Terrain::OnGui() {
     if (ImGui::CollapsingHeader("Terrain Settings")) {
-        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 500.0f);
+        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 2000.0f);
 
         ImGui::SliderFloat("Water Level", &m_terrainBlending.waterLevel, 0.0f, 50.0f);
         ImGui::SliderFloat("Transition Zone", &m_terrainBlending.transZone, 0.1f, 10.0f);
@@ -290,3 +290,6 @@ float Terrain::GetHeightAt(float worldX, float worldZ) const {
     float height = m_heightMap->GetPixelHeight(texX, texY);
     return height * m_heightSacleData.heightScale;
 } // GetHeightAt
+
+float Terrain::GetWidth() const { return m_patchCountX * m_patchSize; }
+float Terrain::GetDepth() const { return m_patchCountZ * m_patchSize; }
