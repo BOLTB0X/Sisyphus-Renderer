@@ -142,4 +142,19 @@ namespace ConstantBuffer {
 		DirectX::XMFLOAT2 padding;
     }; // PlacementBuffer
 
+    struct DrawInstancedIndirectArgs {
+        UINT VertexCountPerInstance;
+        UINT InstanceCount;
+        UINT StartVertexLocation;
+        UINT StartInstanceLocation;
+    }; // DrawInstancedIndirectArgs
+
+    struct DrawIndexedInstancedIndirectArgs {
+        UINT IndexCountPerInstance;
+        UINT InstanceCount;
+        UINT StartIndexLocation;
+        INT  BaseVertexLocation;
+        UINT StartInstanceLocation;
+    }; // DrawIndexedInstancedIndirectArgs
+
 } // ConstantBuffer

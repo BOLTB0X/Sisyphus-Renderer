@@ -44,7 +44,7 @@ namespace SharedConstants {
         static const std::wstring GRASS_GS = L"HLSL/GrassGS.hlsl";
         static const std::wstring GRASS_PS = L"HLSL/GrassPS.hlsl";
 
-        static const std::wstring GRASS_PLACEMENT_CS = L"HLSL/PlacementCS.hlsl";
+        static const std::wstring GRASS_PLACEMENT_CS = L"HLSL/PlacementSeedCS.hlsl";
         static const std::wstring QUAD_TREE_GRASS_FAR_VS = L"HLSL/QuadTreeGrassFarVS.hlsl";
         static const std::wstring GRASS_FAR_PS = L"HLSL/GrassFarPS.hlsl";
         static const std::wstring PLACE_GRASS_VS = L"HLSL/PlaceGrassVS.hlsl";
@@ -62,6 +62,11 @@ namespace SharedConstants {
         static const std::wstring TERRAIN_PS = L"HLSL/TerrainPS.hlsl";
         static const std::wstring TERRAIN_HS = L"HLSL/TerrainHS.hlsl";
         static const std::wstring TERRAIN_DS = L"HLSL/TerrainDS.hlsl";
+
+        static const std::wstring INSTANCED_VS = L"HLSL/InstancedVS.hlsl";
+        static const std::wstring INSTANCED_DEPTH_VS = L"HLSL/InstancedDepthVS.hlsl";
+        static const std::wstring INSTANCED_TRANSPARENT_DEPTH_VS = L"HLSL/InstancedTransparentDepthVS.hlsl";
+        static const std::wstring TERRAIN_DEPTH_DS = L"HLSL/TerrainDepthDS.hlsl";
 
         static const std::string STONE = "assets/Stone/Stone.fbx";
         static const std::string TREE = "assets/Tree/TreeGen.fbx";

@@ -1,5 +1,5 @@
 #include "Pch.h"
-#include "Objects/TransparentActor.h"
+#include "InstancingActor.h"
 // Core
 #include "Core/RenderQueue.h"
 // D3D11
@@ -14,7 +14,6 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
 // define
-#define TRANSFORM_OFFSET       10.0f
 #define WORLD_BUFFER_SLOT      2
 #define CHECK_LEAF_BUFFER_SLOT 3
 #define ABEDO_TEXTURE_SLOT     0
@@ -22,22 +21,27 @@
 #define ROUGHNESS_TEXTURE_SLOT 2
 #define OPACITY_TEXTURE_SLOT   3
 #define SSS_TEXTURE_SLOT       4
+#define INS_TEXTURE_SLOT       5
 
 using namespace DirectX;
 using namespace SharedConstants;
 using namespace ConstantBuffer;
 
-TransparentActor::TransparentActor() : AssimpModel(), ActorObject() {
+InstancingActor::InstancingActor() : AssimpModel(), ActorObject() {
     m_linerSampler = nullptr;
-	m_checkTranspData = CheckTransparentBuffer();
+    m_checkTranspData = CheckTransparentBuffer();
     m_leafKeywords = { "ClusterB", "ClusterB2" };
-} // TransparentActor
+    m_instanceSRV = nullptr;
+    m_instanceUAV = nullptr;
+} // InstancedTreeActor 
 
-TransparentActor::~TransparentActor() {
+InstancingActor::~InstancingActor() {
     m_linerSampler = nullptr;
+    m_instanceSRV = nullptr;
+    m_instanceUAV = nullptr;
 } // ~TransparentActor
 
-bool TransparentActor::Init(const InitParams& params) {
+bool InstancingActor::Init(const InitParams& params) {
     if (params.device == nullptr || params.context == nullptr) {
         return false;
     }
@@ -53,83 +57,42 @@ bool TransparentActor::Init(const InitParams& params) {
 
     m_linerSampler = params.linerSampler;
 
-    SetScale(TRANSFORM_OFFSET, TRANSFORM_OFFSET, TRANSFORM_OFFSET);
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        D3D11_BUFFER_DESC argsDesc = {};
+        argsDesc.Usage = D3D11_USAGE_DEFAULT;
+        argsDesc.ByteWidth = 20;
+        argsDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+        argsDesc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+
+        UINT indexCount = m_meshes[i]->GetIndexCount();
+
+        UINT argsInit[5] = { indexCount, 0, 0, 0, 0 };
+
+        D3D11_SUBRESOURCE_DATA initData = {};
+        initData.pSysMem = argsInit;
+
+        Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+        params.device->CreateBuffer(&argsDesc, &initData, buffer.GetAddressOf());
+        m_argsBuffers.push_back(buffer);
+    }
+
     return true;
 } // Init
 
-void TransparentActor::Render(ID3D11DeviceContext* context, const RenderParams& params) {
-    auto BindTexture = [&](ID3D11ShaderResourceView* srv, UINT slot) {
-        if (srv) {
-            context->PSSetShaderResources(slot, 1, &srv);
-        }
-        else {
-            ID3D11ShaderResourceView* nullSRV = nullptr;
-            context->PSSetShaderResources(slot, 1, &nullSRV);
-        }
-    }; // BindTexture
-
-    if (!context || !params.states) {
-        return;
-	}
-
-    m_worldData.world = XMMatrixTranspose(params.world);
-    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
-        DebugHelper::DebugPrint("world buffer 문제");
+void InstancingActor::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
+    if (!context || !params.shadowMap || !params.shadowParams || !params.states
+        || !params.instanceSRV || !params.instanceUAV) {
         return;
     }
 
-    context->VSSetConstantBuffers(WORLD_BUFFER_SLOT, 1, m_worldBuffer.GetAddressOf());
-    context->IASetInputLayout(m_layout.Get());
-    context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
+    m_instanceSRV = params.instanceSRV;
+    params.shadowParams->isInstanced = true;
+    params.shadowParams->worldMatrix = GetWorldMatrix();
 
-    if (m_linerSampler) {
-        context->PSSetSamplers(0, 1, &m_linerSampler);
-    }
-
-    for (const auto& mesh : m_meshes) {
-        unsigned int matIndex = mesh->GetMaterialIndex();
-
-        if (matIndex >= m_materials.size()) {
-            continue;
-        }
-        
-        const auto& mat = m_materials[matIndex];
-        context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
-        
-        m_checkTranspData.isLeaf = IsTransparentMaterial(mat.name) ? 1 : 0;
-        if (!ShaderHelper::UpdateConstantBuffer(context, m_checkLeafBuffer.Get(), m_checkTranspData)) {
-            return;
-        }
-        
-        context->PSSetConstantBuffers(CHECK_LEAF_BUFFER_SLOT, 1, m_checkLeafBuffer.GetAddressOf());
-        
-        if (m_checkTranspData.isLeaf) {
-            context->RSSetState(params.states->GetCullNone());
-            context->OMSetBlendState(params.states->GetBlendState(), nullptr, 0xFFFFFFFF);
-        }
-        else {
-            context->RSSetState(params.states->GetCullBackState());
-            context->OMSetBlendState(params.states->GetNoBlendState(), nullptr, 0xFFFFFFFF);
-        }
-
-        BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
-        BindTexture(mat.normal ? mat.normal->GetSRV() : nullptr, NORMAL_TEXTURE_SLOT);
-        BindTexture(mat.roughness ? mat.roughness->GetSRV() : nullptr, ROUGHNESS_TEXTURE_SLOT);
-        BindTexture(mat.alpha ? mat.alpha->GetSRV() : nullptr, OPACITY_TEXTURE_SLOT);
-        BindTexture(mat.subsurface ? mat.subsurface->GetSRV() : nullptr, SSS_TEXTURE_SLOT);
-        mesh->RenderBuffer(context);
-
-    } // for
-    m_RenderCount++;
-} // Render
-
-void TransparentActor::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
-    if (!context || !params.shadowMap || !params.shadowParams || !params.states) {
-        return;
-    }
-
-    for (const auto& mesh : m_meshes) {
-        unsigned int matIndex = mesh->GetMaterialIndex();
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        PBRMesh* currentMesh = m_meshes[i].get();
+        ID3D11Buffer* currentArgsBuffer = m_argsBuffers[i].Get();
+        unsigned int matIndex = currentMesh->GetMaterialIndex();
         if (matIndex >= m_materials.size()) continue;
 
         const auto& mat = m_materials[matIndex];
@@ -138,34 +101,49 @@ void TransparentActor::RenderShadow(ID3D11DeviceContext* context, const RenderSh
         params.shadowParams->alphaSRV = mat.alpha ? mat.alpha->GetSRV() : nullptr;
 
         if (isLeafMesh) {
-            context->RSSetState(params.states->GetCullNone());
+            context->RSSetState(params.states->GetShadowCullNoneState());
             context->OMSetBlendState(params.states->GetBlendState(), nullptr, 0xFFFFFFFF);
-
             params.shadowMap->RenderTransparent(context, *params.shadowParams);
         }
         else {
-            context->RSSetState(params.states->GetCullBackState());
+            context->RSSetState(params.states->GetShadowCullBackState());
             context->OMSetBlendState(params.states->GetNoBlendState(), nullptr, 0xFFFFFFFF);
-
             params.shadowMap->RenderOpaque(context, *params.shadowParams);
         }
 
-        mesh->RenderBuffer(context);
+        context->VSSetShaderResources(INS_TEXTURE_SLOT, 1, &m_instanceSRV);
+        context->CopyStructureCount(currentArgsBuffer, 4, params.instanceUAV);
+
+        currentMesh->RenderInstancedBuffer(context, currentArgsBuffer);
+
+        if (isLeafMesh) {
+            ID3D11ShaderResourceView* nullSRV = nullptr;
+            context->PSSetShaderResources(0, 1, &nullSRV);
+        }
     }
+
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    context->VSSetShaderResources(INS_TEXTURE_SLOT, 1, &nullSRV);
 } // RenderShadow
 
-void TransparentActor::Submit(const SubmitParams& params) {
-    if (!params.opaqueQueue || !params.states) return;
+void InstancingActor::Submit(const SubmitParams& params) {
+    if (!params.opaqueQueue || !params.states || !params.instanceSRV) {
+        return;
+    }
 
-    DirectX::XMVECTOR posVec = DirectX::XMLoadFloat3(&m_transform.GetPosition());
-    DirectX::XMVECTOR camVec = DirectX::XMLoadFloat3(&params.cameraPosition);
-    float distance = DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(posVec, camVec)));
+    m_instanceSRV = params.instanceSRV;
+    m_instanceUAV = params.InstanceUAV;
 
-    m_worldData.world = DirectX::XMMatrixTranspose(params.worldMatrix);
+    XMVECTOR posVec = XMLoadFloat3(&m_transform.GetPosition());
+    XMVECTOR camVec = XMLoadFloat3(&params.cameraPosition);
+    float distance = XMVectorGetX(XMVector3Length(XMVectorSubtract(posVec, camVec)));
+
+    m_worldData.world = XMMatrixTranspose(params.worldMatrix);
     ConstantBuffer::WorldBuffer snapshotWorldData = m_worldData;
 
     for (size_t i = 0; i < m_meshes.size(); ++i) {
         PBRMesh* currentMesh = m_meshes[i].get();
+        ID3D11Buffer* currentArgsBuffer = m_argsBuffers[i].Get();
         unsigned int matIndex = currentMesh->GetMaterialIndex();
         if (matIndex >= m_materials.size()) continue;
 
@@ -176,7 +154,7 @@ void TransparentActor::Submit(const SubmitParams& params) {
         cmd.ps = m_pixelShader.Get();
         cmd.sortKey = GenerateSortKey(params.shaderID, static_cast<uint16_t>(matIndex), distance);
 
-        cmd.execute = [this, currentMesh, matIndex, isLeaf, states = params.states](ID3D11DeviceContext* context) {
+        cmd.execute = [this, currentMesh, matIndex, isLeaf, currentArgsBuffer, states = params.states](ID3D11DeviceContext* context) {
 
             ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData);
             context->VSSetConstantBuffers(WORLD_BUFFER_SLOT, 1, m_worldBuffer.GetAddressOf());
@@ -197,6 +175,7 @@ void TransparentActor::Submit(const SubmitParams& params) {
             }
 
             context->IASetInputLayout(m_layout.Get());
+            context->VSSetShaderResources(INS_TEXTURE_SLOT, 1, &m_instanceSRV);
             if (m_linerSampler) {
                 context->PSSetSamplers(0, 1, &m_linerSampler);
             }
@@ -209,7 +188,7 @@ void TransparentActor::Submit(const SubmitParams& params) {
                     ID3D11ShaderResourceView* nullSRV = nullptr;
                     context->PSSetShaderResources(slot, 1, &nullSRV);
                 }
-            };
+                };
 
             const auto& mat = m_materials[matIndex];
             BindTexture(mat.albedo ? mat.albedo->GetSRV() : nullptr, ABEDO_TEXTURE_SLOT);
@@ -218,9 +197,14 @@ void TransparentActor::Submit(const SubmitParams& params) {
             BindTexture(mat.alpha ? mat.alpha->GetSRV() : nullptr, OPACITY_TEXTURE_SLOT);
             BindTexture(mat.subsurface ? mat.subsurface->GetSRV() : nullptr, SSS_TEXTURE_SLOT);
 
-            currentMesh->RenderBuffer(context);
+            context->CopyStructureCount(currentArgsBuffer, 4, m_instanceUAV);
+
+            currentMesh->RenderInstancedBuffer(context, currentArgsBuffer);
+
+            ID3D11ShaderResourceView* nullSRV = nullptr;
+            context->VSSetShaderResources(INS_TEXTURE_SLOT, 1, &nullSRV);
             m_RenderCount++;
-            };
+        };
 
         if (isLeaf && params.transparentQueue) {
             params.transparentQueue->Submit(cmd);
@@ -231,7 +215,7 @@ void TransparentActor::Submit(const SubmitParams& params) {
     }
 } // Submit
 
-void TransparentActor::OnGui() {
+void InstancingActor::OnGui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.3f, 0.1f, 0.1f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.5f, 0.2f, 0.2f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
@@ -240,6 +224,9 @@ void TransparentActor::OnGui() {
         ImGui::PopStyleColor(3);
 
         ImGui::Indent();
+        ImGui::Spacing();
+
+        ImGui::Text("RenderCount: %u", m_RenderCount);
         ImGui::Spacing();
 
         ImGui::TextDisabled("Resource Info");
@@ -290,12 +277,12 @@ void TransparentActor::OnGui() {
     }
 } // OnGui
 
-XMMATRIX TransparentActor::GetWorldMatrix() {
+XMMATRIX InstancingActor::GetWorldMatrix() {
     XMMATRIX correction = XMMatrixRotationX(XMConvertToRadians(90.0f));
     return correction * m_transform.GetWorldMatrix();
 } // GetWorldMatrix
 
-bool TransparentActor::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
+bool InstancingActor::InitShader(ID3D11Device* device, HWND hwnd, const std::wstring& vsPath, const std::wstring& psPath) {
     using namespace ShaderHelper;
 
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
@@ -326,7 +313,7 @@ bool TransparentActor::InitShader(ID3D11Device* device, HWND hwnd, const std::ws
     return true;
 } // InitShader
 
-bool TransparentActor::IsTransparentMaterial(const std::string& materialName) const {
+bool InstancingActor::IsTransparentMaterial(const std::string& materialName) const {
     for (const auto& keyword : m_leafKeywords) {
         if (materialName.find(keyword) != std::string::npos) {
             return true;

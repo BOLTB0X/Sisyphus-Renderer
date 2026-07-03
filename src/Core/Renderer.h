@@ -33,6 +33,7 @@ class RigidActor;
 class WaterComposite;
 class Terrain;
 class GPUGrass;
+class InstancingActor;
 
 class Renderer {
 public:
@@ -59,6 +60,7 @@ private:
     void PostProcessingPass(ID3D11DeviceContext*, D3D11State*);
 
     void UpdateCommonShaderBuffer(ID3D11DeviceContext*, D3D11State*);
+    void UpdatePlacement(ID3D11DeviceContext*);
     void DrawTerrain(ID3D11DeviceContext*, D3D11State*);
     void DrawGround(ID3D11DeviceContext*, D3D11State*);
 	void DrawModel(ID3D11DeviceContext*, D3D11State*);
@@ -106,6 +108,7 @@ private:
 	std::unique_ptr<WaterComposite>      m_WaterComposite;
 	std::unique_ptr<Terrain>             m_Terrain;
 	std::unique_ptr<GPUGrass>            m_GPUGrass;
+	std::unique_ptr<InstancingActor>     m_InstancingActor;
 
     std::shared_ptr<TextureManager>      m_TextureMgr;
     std::shared_ptr<ImGuiManager>        m_ImGuiMgr;

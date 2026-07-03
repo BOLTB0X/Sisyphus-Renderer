@@ -114,7 +114,7 @@ namespace SharedConstants {
 
         static constexpr float             HEIGHT_SCALE = 1200.0f;
         static constexpr float             GRASS_DENSITY = 0.7f;
-        static constexpr float             TREE_DENSITY = 0.05f;
+        static constexpr float             TREE_DENSITY = 0.005f;
 
 
     } // BuffersConstants

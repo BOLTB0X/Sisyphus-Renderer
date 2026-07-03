@@ -14,6 +14,8 @@ public:
     ID3D11RasterizerState*   GetCullBackState() const;
     ID3D11RasterizerState*   GetCullNone() const;
     ID3D11RasterizerState*   GetCullFrontState() const;
+    ID3D11RasterizerState*   GetShadowCullBackState() const;
+    ID3D11RasterizerState*   GetShadowCullNoneState() const;
     ID3D11DepthStencilState* GetDepthState() const;
     ID3D11DepthStencilState* GetDepthNone() const;
     ID3D11DepthStencilState* GetDepthLessEqual() const;
@@ -25,6 +27,7 @@ public:
     ID3D11SamplerState*      GetPointClampSamplerState() const;
     ID3D11BlendState*        GetBlendState() const;
     ID3D11BlendState*        GetNoBlendState() const;
+
 
 private:
     bool InitCullBack(ID3D11Device*);
@@ -41,12 +44,16 @@ private:
                      ID3D11SamplerState**);
     bool InitShadowSampler(ID3D11Device*);
     bool InitBlendState(ID3D11Device*);
+    bool InitShadowCullBack(ID3D11Device*);
+    bool InitShadowCullNone(ID3D11Device*);
 
 private:
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullBackState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_wireframeState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullNoneState;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_cullFrontState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_shadowCullBackState;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState>   m_shadowCullNoneState;
 
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthStencilState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthNoneState;

@@ -46,6 +46,10 @@ public:
     void RenderFar(ID3D11DeviceContext*);
     void OnGui();
 
+    ID3D11Buffer*              GetTreeArgsBuffer() const;
+    ID3D11ShaderResourceView*  GetTreeInstanceSRV() const;
+    ID3D11UnorderedAccessView* GetTreeInstanceUAV() const;
+
 private:
     struct GrassBuffer {
         float             width;
@@ -73,12 +77,12 @@ private:
         DirectX::XMFLOAT3 position;
         float             scale;
         DirectX::XMFLOAT3 normal;
-        float             type; // 0: QuadTreeGrass, 1: GrassFar, 2: Tree 
+        float             type; // 0: Grass, 1: GrassFar, 2: Tree 
     }; // InstanceBuffer
 
     struct IndirectArgs {
         UINT VertexCountPerInstance; // 모델의 버텍스 개수
-        UINT InstanceCount;          // CS가 찾은 잔디/나무의 개수
+        UINT InstanceCount;
         UINT StartVertexLocation;    // 0
         UINT StartInstanceLocation;  // 0
     }; // IndirectArgs
@@ -99,6 +103,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D11ComputeShader>       m_placementComputeShader;
     Microsoft::WRL::ComPtr<ID3D11Buffer>              m_placementBuffer;
 
+    Microsoft::WRL::ComPtr<ID3D11Buffer>              m_treeInstanceBuffer;
+    Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> m_treeInstanceUAV;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_treeInstanceSRV;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>              m_treeArgsBuffer;
+
     Microsoft::WRL::ComPtr<ID3D11Buffer>              m_grassInstanceBuffer;
     Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> m_grassInstanceUAV;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_grassInstanceSRV;
@@ -109,7 +118,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  m_grassFarInstanceSRV;
     Microsoft::WRL::ComPtr<ID3D11Buffer>              m_grassFarArgsBuffer;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer>             m_worldBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>              m_worldBuffer;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>              m_grassBuffer;
     ID3D11ShaderResourceView*                         m_grassSRV;

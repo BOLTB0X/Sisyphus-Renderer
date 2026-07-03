@@ -56,7 +56,11 @@ bool ShadowMap::RenderOpaque(ID3D11DeviceContext* context, const RenderParams& p
     
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());
 
-    if (params.isSkinned) {
+    if (params.isInstanced) {
+        context->IASetInputLayout(m_instancedDepthLayout.Get());
+        context->VSSetShader(m_instancedDepthVertexShader.Get(), nullptr, 0);
+    }
+    else if (params.isSkinned) {
         context->IASetInputLayout(m_skinnedDepthLayout.Get());
         context->VSSetShader(m_skinnedDepthVertexShader.Get(), nullptr, 0);
     }
@@ -68,7 +72,7 @@ bool ShadowMap::RenderOpaque(ID3D11DeviceContext* context, const RenderParams& p
     context->PSSetShader(nullptr, nullptr, 0);
 
     return true;
-} // Render
+} // RenderOpaque
 
 bool ShadowMap::RenderTransparent(ID3D11DeviceContext* context, const RenderParams& params) {
     if (!context) {
@@ -84,10 +88,14 @@ bool ShadowMap::RenderTransparent(ID3D11DeviceContext* context, const RenderPara
     }
 
     context->PSSetSamplers(0, 1, &params.linearSampler);
-
     context->VSSetConstantBuffers(0, 1, m_matrixBuffer.GetAddressOf());
 
-    if (params.isSkinned) {
+    if (params.isInstanced) {
+        context->IASetInputLayout(m_instancedTransparentDepthLayout.Get());
+        context->VSSetShader(m_instancedTransparentDepthVertexShader.Get(), nullptr, 0);
+        context->PSSetShader(m_transparentDepthPixelShader.Get(), nullptr, 0);
+    }
+    else if (params.isSkinned) {
         context->IASetInputLayout(m_skinnedDepthLayout.Get());
         context->VSSetShader(m_skinnedDepthVertexShader.Get(), nullptr, 0);
         context->PSSetShader(m_transparentDepthPixelShader.Get(), nullptr, 0);
@@ -157,6 +165,26 @@ bool ShadowMap::InitShader(ID3D11Device* device, HWND hwnd) {
     if (!InitVertexShader(device, hwnd,
         PathConstants::SKINNED_DEPTH_VS,
         layoutDesc3, ARRAYSIZE(layoutDesc3), m_skinnedDepthVertexShader.GetAddressOf(), m_skinnedDepthLayout.GetAddressOf())) {
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC instancedDepthLayoutDesc[] = {
+    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    if (!InitVertexShader(device, hwnd, PathConstants::INSTANCED_DEPTH_VS,
+        instancedDepthLayoutDesc, ARRAYSIZE(instancedDepthLayoutDesc),
+        m_instancedDepthVertexShader.GetAddressOf(), m_instancedDepthLayout.GetAddressOf())) {
+        return false;
+    }
+
+    D3D11_INPUT_ELEMENT_DESC instancedTransparentLayoutDesc[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    if (!InitVertexShader(device, hwnd, PathConstants::INSTANCED_TRANSPARENT_DEPTH_VS,
+        instancedTransparentLayoutDesc, ARRAYSIZE(instancedTransparentLayoutDesc),
+        m_instancedTransparentDepthVertexShader.GetAddressOf(), m_instancedTransparentDepthLayout.GetAddressOf())) {
         return false;
     }
 

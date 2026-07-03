@@ -31,16 +31,19 @@ public:
     }; // InitParams
 
     struct SubmitParams {
-        RenderQueue*      opaqueQueue;
-        RenderQueue*      transparentQueue;
-        DirectX::XMFLOAT3 cameraPosition;
-        DirectX::XMMATRIX worldMatrix;
-        uint16_t          shaderID;
-        D3D11State*       states;
+        RenderQueue*               opaqueQueue;
+        RenderQueue*               transparentQueue;
+        DirectX::XMFLOAT3          cameraPosition;
+        DirectX::XMMATRIX          worldMatrix;
+        uint16_t                   shaderID;
+        D3D11State*                states;
+        ID3D11ShaderResourceView*  instanceSRV;
+        ID3D11UnorderedAccessView* InstanceUAV;
+        ID3D11Buffer*              indirectArgsBuffer;
 
         SubmitParams() : opaqueQueue(nullptr), transparentQueue(nullptr),
             cameraPosition(0.0f, 0.0f, 0.0f), worldMatrix(DirectX::XMMatrixIdentity()),
-            shaderID(0), states(nullptr) {
+            shaderID(0), states(nullptr), instanceSRV(nullptr), InstanceUAV(nullptr), indirectArgsBuffer(nullptr) {
         }
     }; // SubmitParams
 

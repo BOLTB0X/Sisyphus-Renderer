@@ -3,17 +3,19 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/DebugHelper.h"
 #include "SharedConstants/PathConstants.h"
+#include "SharedConstants/CommonConstants.h"
+// dx11
 #include <d3dcompiler.h>
 
 // define
-#define GRASS_BUFFER_SLOT  3
-#define PLACE_BUFFER_SLOT  4
-#define WORLD_BUFFER_SLOT  5
-#define GRASS_TEXTURE_SLOT 0
-#define GRASS_SAMPLER_SLOT 0
-#define QUAD_VERTEX_COUNT  4
-#define TEX_HEIGHT_SLOT    0
-#define TEX_NORMAL_SLOT    1
+#define GRASS_BUFFER_SLOT   3
+#define PLACE_BUFFER_SLOT   4
+#define WORLD_BUFFER_SLOT   5
+#define GRASS_TEXTURE_SLOT  0
+#define GRASS_SAMPLER_SLOT  0
+#define QUAD_VERTEX_COUNT   4
+#define TEX_HEIGHT_SLOT     0
+#define TEX_NORMAL_SLOT     1
 #define MAX_GRASS_INSTANCES 1000000
 
 using namespace DirectX;
@@ -56,12 +58,12 @@ void GPUGrass::ComputePlacement(ID3D11DeviceContext* context, const RenderParams
         return;
     }
 
-    if (!ShaderHelper::UpdateConstantBuffer(context, m_placementBuffer.Get(), params.placementData)) {
+    if (!UpdateConstantBuffer(context, m_placementBuffer.Get(), params.placementData)) {
         return;
     }
     context->CSSetConstantBuffers(PLACE_BUFFER_SLOT, 1, m_placementBuffer.GetAddressOf());
 
-    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), XMMatrixTranspose(params.world))) {
+    if (!UpdateConstantBuffer(context, m_worldBuffer.Get(), XMMatrixTranspose(params.world))) {
         return;
     }
     context->CSSetConstantBuffers(WORLD_BUFFER_SLOT, 1, m_worldBuffer.GetAddressOf());
@@ -77,9 +79,9 @@ void GPUGrass::ComputePlacement(ID3D11DeviceContext* context, const RenderParams
 
     // UAV 바인딩
     // initialCount를 0으로 설정하여 버퍼를 매 프레임 비워줌
-    ID3D11UnorderedAccessView* uavs[] = { m_grassInstanceUAV.Get(), m_grassFarInstanceUAV.Get() };
-    UINT initialCounts[] = { 0, 0 };
-    context->CSSetUnorderedAccessViews(0, 2, uavs, initialCounts);
+    ID3D11UnorderedAccessView* uavs[] = { m_grassInstanceUAV.Get(), m_grassFarInstanceUAV.Get(), m_treeInstanceUAV.Get() };
+    UINT initialCounts[] = { 0, 0, 0 };
+    context->CSSetUnorderedAccessViews(0, 3, uavs, initialCounts);
 
     // 지형 크기에 맞게 Dispatch
     UINT groupX = static_cast<UINT>(params.placementData.terrainWidth) / 8;
@@ -93,11 +95,12 @@ void GPUGrass::ComputePlacement(ID3D11DeviceContext* context, const RenderParams
 	context->CSSetShaderResources(TEX_HEIGHT_SLOT, 1, &nullSRV);
 	context->CSSetShaderResources(TEX_NORMAL_SLOT, 1, &nullSRV);
 
-    ID3D11UnorderedAccessView* nullUAVs[] = { nullptr, nullptr };
-    context->CSSetUnorderedAccessViews(0, 2, nullUAVs, nullptr);
+    ID3D11UnorderedAccessView* nullUAVs[] = { nullptr, nullptr, nullptr };
+    context->CSSetUnorderedAccessViews(0, 3, nullUAVs, nullptr);
 
     context->CopyStructureCount(m_grassArgsBuffer.Get(), 4, m_grassInstanceUAV.Get());
     context->CopyStructureCount(m_grassFarArgsBuffer.Get(), 4, m_grassFarInstanceUAV.Get());
+    context->CopyStructureCount(m_treeArgsBuffer.Get(), 4, m_treeInstanceUAV.Get());
 } // ComputePlacement
 
 void GPUGrass::RenderNear(ID3D11DeviceContext* context) {
@@ -113,21 +116,16 @@ void GPUGrass::RenderNear(ID3D11DeviceContext* context) {
     context->IASetInputLayout(nullptr);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    // 셰이더 세팅
     context->VSSetShader(m_nearVertexShader.Get(), nullptr, 0);
     context->GSSetShader(m_nearGeometryShader.Get(), nullptr, 0);
     context->PSSetShader(m_nearPixelShader.Get(), nullptr, 0);
 
-    // 인스턴스 데이터를 VS(또는 GS)에서 읽을 수 있게 SRV로 바인딩
     context->VSSetShaderResources(1, 1, m_grassInstanceSRV.GetAddressOf());
-
-    // 텍스처 세팅
     context->PSSetShaderResources(GRASS_TEXTURE_SLOT, 1, &m_grassSRV);
     context->PSSetSamplers(GRASS_SAMPLER_SLOT, 1, &m_linearSampler);
 
     context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
 
-    // 정리
     ID3D11ShaderResourceView* nullSRV = nullptr;
     context->VSSetShaderResources(1, 1, &nullSRV);
     context->GSSetShader(nullptr, nullptr, 0);
@@ -176,10 +174,20 @@ void GPUGrass::OnGui() {
     ImGui::Spacing();
 } // OnGui
 
-bool GPUGrass::InitShader(ID3D11Device* device, HWND hwnd)
-{
+ID3D11Buffer* GPUGrass::GetTreeArgsBuffer() const {
+    return m_treeArgsBuffer.Get();
+} // GetTreeArgsBuffer
+
+ID3D11ShaderResourceView* GPUGrass::GetTreeInstanceSRV() const {
+    return m_treeInstanceSRV.Get();
+} // GetTreeInstanceSRV
+
+ID3D11UnorderedAccessView* GPUGrass::GetTreeInstanceUAV() const {
+    return m_treeInstanceUAV.Get();
+} // GetTreeInstanceUAV
+
+bool GPUGrass::InitShader(ID3D11Device* device, HWND hwnd) {
     if (!InitComputingShader(device, hwnd, PathConstants::GRASS_PLACEMENT_CS, m_placementComputeShader.GetAddressOf())) {
-        DebugPrint("GPUGrass: PlacementCS 초기화 실패");
         return false;
     }
 
@@ -196,12 +204,10 @@ bool GPUGrass::InitShader(ID3D11Device* device, HWND hwnd)
     }
 
     if (!InitGeometryShader(device, hwnd, PathConstants::GRASS_GS, m_nearGeometryShader.GetAddressOf())) {
-        DebugPrint("GPUGrass: NearGS 초기화 실패");
         return false;
     }
 
     if (!InitPixelShader(device, hwnd, PathConstants::GRASS_PS, m_nearPixelShader.GetAddressOf())) {
-        DebugPrint("GPUGrass: NearPS 초기화 실패");
         return false;
     }
 
@@ -218,21 +224,17 @@ bool GPUGrass::InitShader(ID3D11Device* device, HWND hwnd)
     }
 
     if (!InitPixelShader(device, hwnd, PathConstants::GRASS_FAR_PS, m_farPixelShader.GetAddressOf())) {
-        DebugPrint("GPUGrass: FarPS 초기화 실패");
         return false;
     }
 
     if (!InitConstantBuffer<ConstantBuffer::PlacementBuffer>(device, m_placementBuffer.GetAddressOf())) {
-        DebugPrint("GPUGrass: PlacementCB 초기화 실패");
         return false;
     }
     if (!InitConstantBuffer<GrassBuffer>(device, m_grassBuffer.GetAddressOf())) {
-        DebugPrint("GPUGrass: GrassCB 초기화 실패");
         return false;
     }
 
     if (!InitConstantBuffer<ConstantBuffer::WorldBuffer>(device, m_worldBuffer.GetAddressOf())) {
-        DebugPrint("GPUGrass: WorldCB 초기화 실패");
         return false;
     }
 
@@ -260,6 +262,10 @@ bool GPUGrass::InitBuffers(ID3D11Device* device) {
         return false;
     }
 
+    if (FAILED(device->CreateBuffer(&instanceDesc, nullptr, m_treeInstanceBuffer.GetAddressOf()))) {
+        return false;
+    }
+
     // UAV 생성
     D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -269,6 +275,7 @@ bool GPUGrass::InitBuffers(ID3D11Device* device) {
 
     device->CreateUnorderedAccessView(m_grassInstanceBuffer.Get(), &uavDesc, m_grassInstanceUAV.GetAddressOf());
     device->CreateUnorderedAccessView(m_grassFarInstanceBuffer.Get(), &uavDesc, m_grassFarInstanceUAV.GetAddressOf());
+    device->CreateUnorderedAccessView(m_treeInstanceBuffer.Get(), &uavDesc, m_treeInstanceUAV.GetAddressOf());
 
     // SRV 생성
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -278,23 +285,24 @@ bool GPUGrass::InitBuffers(ID3D11Device* device) {
 
     device->CreateShaderResourceView(m_grassInstanceBuffer.Get(), &srvDesc, m_grassInstanceSRV.GetAddressOf());
     device->CreateShaderResourceView(m_grassFarInstanceBuffer.Get(), &srvDesc, m_grassFarInstanceSRV.GetAddressOf());
+    device->CreateShaderResourceView(m_treeInstanceBuffer.Get(), &srvDesc, m_treeInstanceSRV.GetAddressOf());
 
     // Indirect Args Buffer 생성
     // DrawInstancedIndirect용 파라미터 보관
     D3D11_BUFFER_DESC argsDesc = {};
     argsDesc.Usage = D3D11_USAGE_DEFAULT;
-    argsDesc.ByteWidth = sizeof(IndirectArgs);
     argsDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
     argsDesc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS; // 핵심 플래그
 
-    IndirectArgs nearArgsInit = { 1, 0, 0, 0 };
+    argsDesc.ByteWidth = sizeof(DrawInstancedIndirectArgs);
+    DrawInstancedIndirectArgs nearArgsInit = { QUAD_VERTEX_COUNT, 0, 0, 0 };
     D3D11_SUBRESOURCE_DATA nearData = {};
     nearData.pSysMem = &nearArgsInit;
     if (FAILED(device->CreateBuffer(&argsDesc, &nearData, m_grassArgsBuffer.GetAddressOf()))) {
         return false;
     }
 
-    IndirectArgs farArgsInit = { QUAD_VERTEX_COUNT, 0, 0, 0 };
+    DrawInstancedIndirectArgs farArgsInit = { QUAD_VERTEX_COUNT, 0, 0, 0 };
     D3D11_SUBRESOURCE_DATA farData = {};
     farData.pSysMem = &farArgsInit;
     if (FAILED(device->CreateBuffer(&argsDesc, &farData, m_grassFarArgsBuffer.GetAddressOf()))) {

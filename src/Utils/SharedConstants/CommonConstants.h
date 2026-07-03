@@ -17,5 +17,7 @@ namespace SharedConstants {
 		static float WATER_HEIGHT = 14.0f;
 		static float WATER_SCALE = 800000.0f;
 		static int   GRID_DENISTY = 3;
+
+		static UINT  TREE_COUNT = 30;
 	} // CommonConstants
 }

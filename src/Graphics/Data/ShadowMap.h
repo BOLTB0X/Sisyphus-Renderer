@@ -24,13 +24,15 @@ public:
         ID3D11ShaderResourceView* alphaSRV;
         ID3D11SamplerState*       linearSampler;
         bool                      isSkinned;
+        bool                      isInstanced;
 
         RenderParams() : worldMatrix(DirectX::XMMatrixIdentity()),
             viewMatrix(DirectX::XMMatrixIdentity()),
             projectionMatrix(DirectX::XMMatrixIdentity()),
             alphaSRV(nullptr),
             linearSampler(nullptr),
-            isSkinned(false) {
+            isSkinned(false),
+            isInstanced(false) {
         }
     }; // RenderParams
 
@@ -65,6 +67,12 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_skinnedDepthVertexShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_skinnedDepthLayout;
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_instancedDepthVertexShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_instancedDepthLayout;
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_instancedTransparentDepthVertexShader;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_instancedTransparentDepthLayout;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_matrixBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_checkLeafBuffer;

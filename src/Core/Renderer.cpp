@@ -11,6 +11,7 @@
 #include "Objects/RigidActor.h"
 #include "Objects/Terrain.h"
 #include "Objects/GPUGrass.h"
+#include "Objects/InstancingActor.h"
 // Components
 #include "Components/DirectionalLight.h"
 #include "Components/Camera.h"
@@ -46,7 +47,7 @@
 #include "SharedConstants/ShadowConstants.h"
 #include "SharedConstants/CommonConstants.h"
 // define
-#define STONE_TRANSFORM_OFFSET 8.0f
+#define STONE_TRANSFORM_OFFSET 10.0f
 #define OBJECT_SHADOW_SLOT     10
 #define TERRAIN_SHADOW_SLOT    11
 #define SAMPLER_SHADOW_SLOT    5
@@ -88,6 +89,7 @@ Renderer::Renderer() {
     m_WaterComposite = std::make_unique<WaterComposite>();
     m_Terrain = std::make_unique<Terrain>();
     m_GPUGrass = std::make_unique<GPUGrass>();
+	m_InstancingActor = std::make_unique<InstancingActor>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -193,6 +195,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     grassInitParams.linearSampler = linerWrapSampler;
     if (!m_GPUGrass->Init(grassInitParams)) {
         DebugPrint("GPUGrass 초기화 실패");
+        return false;
+    }
+
+	InstancingActor::InitParams instancingInitParams;
+	instancingInitParams.device = device;
+	instancingInitParams.context = context;
+	instancingInitParams.hwnd = hwnd;
+	instancingInitParams.textMgr = m_TextureMgr;
+    instancingInitParams.path = TREE;
+    instancingInitParams.VSPath = INSTANCED_VS;
+    instancingInitParams.PSPath = TREE_PS;
+    instancingInitParams.linerSampler = linerWrapSampler;
+    if (!m_InstancingActor->Init(instancingInitParams)) {
+        DebugPrint("InstancingActor 초기화 실패");
         return false;
     }
 
@@ -389,6 +405,7 @@ bool Renderer::Render(float deltaTime) {
     auto context = m_D3D11Mgr->GetDeviceContext();
     auto states  = m_D3D11Mgr->GetStates();
 
+    UpdatePlacement(context);
     ShadowPass(context, states);
     MainPass(context, states);
     CompositePass(context, states);
@@ -411,8 +428,12 @@ void Renderer::UpdateModelTransform() {
 } // UpdateModelTransform
 
 void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_nullSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &m_nullSRV);
+
     context->OMSetRenderTargets(1, &m_nullRTV, m_ObjectShadowMap->GetDSV());
     m_ObjectShadowMap->ClearShadowDepth(context);
+
     context->RSSetViewports(1, &m_ObjectShadowMap->GetViewport());
 
 	ShadowMap::RenderParams renderParams;
@@ -441,7 +462,32 @@ void Renderer::ShadowPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_TerrainShadowMap->ClearShadowDepth(context);
     context->RSSetViewports(1, &m_TerrainShadowMap->GetViewport());
 
-    // 부분 투명 
+    m_DirectionalLight->Update();
+    DirectX::XMMATRIX wideView = m_DirectionalLight->GetViewMatrix();
+    DirectX::XMMATRIX wideProj = m_DirectionalLight->GetProjection();
+
+    if (m_Terrain) {
+		Terrain::RenderShadowParams terrainShadowParams;
+		terrainShadowParams.lightView = wideView;
+		terrainShadowParams.lightProj = wideProj;
+        terrainShadowParams.states = states;
+        m_Terrain->RenderShadow(context, terrainShadowParams);
+    }
+
+    if (m_InstancingActor && m_GPUGrass) {
+        InstancingActor::RenderShadowParams treeShadowParams;
+        treeShadowParams.shadowMap = m_TerrainShadowMap.get();
+        treeShadowParams.states = states;
+        treeShadowParams.instanceSRV = m_GPUGrass->GetTreeInstanceSRV();
+        treeShadowParams.instanceUAV = m_GPUGrass->GetTreeInstanceUAV();
+
+        ShadowMap::RenderParams treeRenderParams;
+        treeRenderParams.viewMatrix = wideView;
+        treeRenderParams.projectionMatrix = wideProj;
+        treeShadowParams.shadowParams = &treeRenderParams;
+
+        m_InstancingActor->RenderShadow(context, treeShadowParams);
+    }
 
     context->OMSetRenderTargets(0, nullptr, nullptr);
     context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &m_nullSRV);
@@ -468,22 +514,6 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
  
     DrawTerrain(context, states);
 
-    if (m_GPUGrass && m_Terrain) {
-        GPUGrass::RenderParams placeParams;
-        placeParams.placementData.terrainWidth = m_Terrain->GetWidth();
-        placeParams.placementData.terrainDepth = m_Terrain->GetDepth();
-        placeParams.placementData.cameraPos = m_Camera->GetPosition();
-        placeParams.placementData.waterLevel = CommonConstants::WATER_HEIGHT;
-        placeParams.placementData.grassDensity = BuffersConstants::GRASS_DENSITY;
-        placeParams.placementData.treeDensity = BuffersConstants::TREE_DENSITY;
-        placeParams.placementData.dist = BuffersConstants::DIST;
-        placeParams.placementData.heightScale = BuffersConstants::HEIGHT_SCALE;
-        placeParams.heightMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::HEIGHT, true)->GetSRV();
-        placeParams.normalMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::TERRAIN_RNOL)->GetSRV();
-		placeParams.world = m_Terrain->GetWorldMatrix();
-        m_GPUGrass->ComputePlacement(context, placeParams);
-    }
-
     const DirectX::XMFLOAT3& camPos = m_Camera->GetPosition();
     ActorObject::SubmitParams submitParams;
     submitParams.opaqueQueue = &m_OpaqueQueue;
@@ -495,6 +525,20 @@ void Renderer::MainPass(ID3D11DeviceContext* context, D3D11State* states) {
         submitParams.worldMatrix = m_Stone->GetWorldMatrix();
         submitParams.shaderID = static_cast<uint16_t>(ShaderID::Stone);
         m_Stone->Submit(submitParams);
+    }
+
+    if (m_InstancingActor && m_GPUGrass) {
+        InstancingActor::SubmitParams treeParams;
+        treeParams.opaqueQueue = &m_OpaqueQueue;
+        treeParams.transparentQueue = &m_TransparentQueue;
+        treeParams.states = states;
+        treeParams.cameraPosition = camPos;
+        treeParams.worldMatrix = m_InstancingActor->GetWorldMatrix();
+        treeParams.shaderID = static_cast<uint16_t>(ShaderID::Tree);
+        treeParams.InstanceUAV = m_GPUGrass->GetTreeInstanceUAV();
+        treeParams.instanceSRV = m_GPUGrass->GetTreeInstanceSRV();
+
+        m_InstancingActor->Submit(treeParams);
     }
 
     context->RSSetState(states->GetCullBackState());
@@ -577,6 +621,27 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
     context->HSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->HSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
 } // UpdateCommonShaderBuffer
+
+void Renderer::UpdatePlacement(ID3D11DeviceContext* context) {
+    if (!m_GPUGrass || !m_Terrain) {
+        return;
+    }
+
+    GPUGrass::RenderParams placeParams;
+    placeParams.placementData.terrainWidth = m_Terrain->GetWidth();
+    placeParams.placementData.terrainDepth = m_Terrain->GetDepth();
+    placeParams.placementData.cameraPos = m_Camera->GetPosition();
+    placeParams.placementData.waterLevel = CommonConstants::WATER_HEIGHT;
+    placeParams.placementData.grassDensity = BuffersConstants::GRASS_DENSITY;
+    placeParams.placementData.treeDensity = BuffersConstants::TREE_DENSITY;
+    placeParams.placementData.dist = BuffersConstants::DIST;
+    placeParams.placementData.heightScale = BuffersConstants::HEIGHT_SCALE;
+    placeParams.heightMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::HEIGHT, true)->GetSRV();
+    placeParams.normalMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::TERRAIN_RNOL)->GetSRV();
+    placeParams.world = m_Terrain->GetWorldMatrix();
+
+    m_GPUGrass->ComputePlacement(context, placeParams);
+} // UpdatePlacement
 
 void Renderer::DrawTerrain(ID3D11DeviceContext* context, D3D11State* states) {
     if (!m_Terrain) {
@@ -682,6 +747,13 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
     cloudExecParams.SkyLUTSRV = m_AtmosphereLUT->GetLUT();
 	cloudExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     m_VolumetricCloud->Execute(context, cloudExecParams);
+
+    ID3D11ShaderResourceView* nullSRVs[6] = { nullptr };
+    context->CSSetShaderResources(0, 6, nullSRVs);
+
+    ID3D11Buffer* nullCBs[4] = { nullptr };
+    context->CSSetConstantBuffers(0, 4, nullCBs);
+    context->CSSetShader(nullptr, nullptr, 0);
 } // ComputeShaderData
 
 void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
@@ -844,6 +916,14 @@ void Renderer::InitWidgets() {
             m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
                 "GPU Grass Control",
                 [this]() { m_GPUGrass->OnGui(); }
+            ));
+        }
+
+
+        if (m_InstancingActor) {
+            m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+                "m_InstancingActor Control",
+                [this]() { m_InstancingActor->OnGui(); }
             ));
         }
     }
