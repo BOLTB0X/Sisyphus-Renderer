@@ -116,6 +116,14 @@ namespace SharedConstants {
         static constexpr float             GRASS_DENSITY = 0.7f;
         static constexpr float             TREE_DENSITY = 0.005f;
 
+        static constexpr float             TREE_BASE_OFFSET  = 5.0f;
+        static constexpr float             TREE_SCALE_MIN    = 2.0f;
+        static constexpr float             TREE_SCALE_MAX    = 8.0f;
+        static constexpr float             TREE_JITTER_RANGE = 10.0f;
+        static constexpr float             TREE_BLOCK_SIZE = 24.0f;
+		static constexpr float             SEED_RANGE_CUT_OFF = 0.6f;
+		static constexpr float             TREE_RANGE_CUT_OFF = 0.75f;
+		static constexpr float             GRASS_RANGE_CUT_OFF = 0.4f;
 
     } // BuffersConstants
 }

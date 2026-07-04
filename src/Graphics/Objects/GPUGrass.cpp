@@ -26,7 +26,7 @@ using namespace DebugHelper;
 GPUGrass::GPUGrass() {
     m_grassSRV = nullptr;
     m_linearSampler = nullptr;
-    m_prevGrassData.padding.x = -1.0f;
+    m_prevGrassData.padding1.x = -1.0f;
 } // GPUGrass   
 
 GPUGrass::~GPUGrass() {

@@ -1,5 +1,6 @@
 #pragma once
 #include <directxmath.h>
+#include "Utils/SharedConstants/CommonConstants.h"
 #include "Utils/SharedConstants/BuffersConstants.h"
 #include "Utils/SharedConstants/ScreenConstants.h"
 
@@ -139,7 +140,32 @@ namespace ConstantBuffer {
 
         float             dist;
         float             heightScale;
-		DirectX::XMFLOAT2 padding;
+
+		DirectX::XMFLOAT2 padding1;
+
+        float             treeBaseOffset;
+        float             treeScaleMin;
+        float             treeScaleMax;
+        float             treeJitterRange;
+
+        float             treeBlockSize;
+        float             seedCutoff;
+		float             treeCutoff;
+		float             grassCutoff;
+
+        PlacementBuffer() : cameraPos(0.0f, 0.0f, 0.0f), waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT),
+            terrainWidth(0.0f), terrainDepth(0.0f), grassDensity(SharedConstants::BuffersConstants::GRASS_DENSITY),
+            treeDensity(SharedConstants::BuffersConstants::TREE_DENSITY), dist(SharedConstants::BuffersConstants::DIST),
+            heightScale(SharedConstants::BuffersConstants::HEIGHT_SCALE), padding1(0.0f, 0.0f),
+            treeBaseOffset(SharedConstants::BuffersConstants::TREE_BASE_OFFSET),
+            treeScaleMin(SharedConstants::BuffersConstants::TREE_SCALE_MIN),
+            treeScaleMax(SharedConstants::BuffersConstants::TREE_SCALE_MAX),
+            treeJitterRange(SharedConstants::BuffersConstants::TREE_JITTER_RANGE),
+            treeBlockSize(SharedConstants::BuffersConstants::TREE_BLOCK_SIZE),
+            seedCutoff(SharedConstants::BuffersConstants::SEED_RANGE_CUT_OFF),
+            treeCutoff(SharedConstants::BuffersConstants::TREE_RANGE_CUT_OFF),
+            grassCutoff(SharedConstants::BuffersConstants::GRASS_RANGE_CUT_OFF) {
+		}
     }; // PlacementBuffer
 
     struct DrawInstancedIndirectArgs {

@@ -2,7 +2,7 @@
 // https://www.rastertek.com/dx11win10tut45.html
 
 SamplerState LinearSampler : register(s0);
-Texture2D    AlphaTex : register(t3);
+Texture2D    AlphaTex : register(t0);
 
 struct PS_IN
 {

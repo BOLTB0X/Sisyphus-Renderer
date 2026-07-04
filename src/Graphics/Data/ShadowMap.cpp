@@ -113,6 +113,16 @@ void ShadowMap::ClearShadowDepth(ID3D11DeviceContext* context) {
     m_shadowRT->ClearDepth(context);
 } // ClearShadowDepth
 
+void ShadowMap::OnGui() {
+    if (ImGui::CollapsingHeader("ShadowMap Check")) {
+        if (m_shadowRT) {
+            ImGui::Text("m_shadowRT Preview");
+            ImGui::Image((ImTextureID)m_shadowRT->GetSRV(), ImVec2(256, 256));
+        }
+    }
+
+} // OnGui
+
 RenderTexture*            ShadowMap::GetShadowRT() const { return m_shadowRT.get(); }
 const D3D11_VIEWPORT&     ShadowMap::GetViewport() const { return m_shadowViewport; }
 ID3D11DepthStencilView*   ShadowMap::GetDSV() { return m_shadowRT->GetDSV(); }

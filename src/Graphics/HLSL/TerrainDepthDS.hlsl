@@ -21,7 +21,7 @@ cbuffer WorldBuffer : register(b2)
 
 cbuffer HeightScaleBuffer : register(b4)
 {
-    float hHeightScale;
+    float  hHeightScale;
     float3 hPadding;
 }; // HeightScaleBuffer
 
@@ -31,7 +31,10 @@ cbuffer LightMatrixBuffer : register(b1)
     matrix cLightProj;
 }; // LightMatrixBuffer
 
+#define WORLD        cWorld
 #define HEIGHT_SCALE hHeightScale
+#define LIGHT_VIEW   cLightView
+#define LIGHT_PROJ   cLightProj
 
 [domain("quad")]
 float4 main(
@@ -50,10 +53,10 @@ float4 main(
     float heightOutput = HeightMap.SampleLevel(LinearSampler, finalUV, 0).r;
     finalPosL.y += heightOutput * HEIGHT_SCALE;
 
-    float3 finalPosW = mul(float4(finalPosL, 1.0f), cWorld).xyz;
+    float3 finalPosW = mul(float4(finalPosL, 1.0f), WORLD).xyz;
 
-    float4 posH = mul(float4(finalPosW, 1.0f), cLightView);
-    posH = mul(posH, cLightProj);
+    float4 posH = mul(float4(finalPosW, 1.0f), LIGHT_VIEW);
+    posH = mul(posH, LIGHT_PROJ);
 
     return posH;
 } // main

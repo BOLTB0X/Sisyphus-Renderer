@@ -599,14 +599,6 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
         DebugPrint("방향광 버퍼 확인 필요");
     }
 
-    ID3D11ShaderResourceView* objectShadowSRV = m_ObjectShadowMap->GetSRV();
-    ID3D11ShaderResourceView* terrainShadowSRV = m_TerrainShadowMap->GetSRV();
-	ID3D11SamplerState* shadowSampler = states->GetShadowSamplerState();
-
-    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &objectShadowSRV);
-    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
-    context->PSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
-
     // Slot 0: Frame, Slot 1: Light
     context->VSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->VSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
@@ -620,6 +612,14 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
     context->DSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
     context->HSSetConstantBuffers(FRAME_CB_SLOT, 1, m_frameBuffer.GetAddressOf());
     context->HSSetConstantBuffers(DIRL_CB_SLOT, 1, m_lightBuffer.GetAddressOf());
+
+    ID3D11ShaderResourceView* objectShadowSRV = m_ObjectShadowMap->GetSRV();
+    ID3D11ShaderResourceView* terrainShadowSRV = m_TerrainShadowMap->GetSRV();
+    ID3D11SamplerState* shadowSampler = states->GetShadowSamplerState();
+
+    context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &objectShadowSRV);
+    context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
+    context->PSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
 } // UpdateCommonShaderBuffer
 
 void Renderer::UpdatePlacement(ID3D11DeviceContext* context) {
@@ -631,11 +631,6 @@ void Renderer::UpdatePlacement(ID3D11DeviceContext* context) {
     placeParams.placementData.terrainWidth = m_Terrain->GetWidth();
     placeParams.placementData.terrainDepth = m_Terrain->GetDepth();
     placeParams.placementData.cameraPos = m_Camera->GetPosition();
-    placeParams.placementData.waterLevel = CommonConstants::WATER_HEIGHT;
-    placeParams.placementData.grassDensity = BuffersConstants::GRASS_DENSITY;
-    placeParams.placementData.treeDensity = BuffersConstants::TREE_DENSITY;
-    placeParams.placementData.dist = BuffersConstants::DIST;
-    placeParams.placementData.heightScale = BuffersConstants::HEIGHT_SCALE;
     placeParams.heightMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::HEIGHT, true)->GetSRV();
     placeParams.normalMapSRV = m_TextureMgr->GetTexture(m_D3D11Mgr->GetDevice(), context, PathConstants::TERRAIN_RNOL)->GetSRV();
     placeParams.world = m_Terrain->GetWorldMatrix();
@@ -919,12 +914,18 @@ void Renderer::InitWidgets() {
             ));
         }
 
-
         if (m_InstancingActor) {
             m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
                 "m_InstancingActor Control",
                 [this]() { m_InstancingActor->OnGui(); }
             ));
         }
+
+        if (m_TerrainShadowMap) {
+            m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+                "Terrain Shadow Map Control",
+                [this]() { m_TerrainShadowMap->OnGui(); }
+            ));
+		}
     }
 } // InitWidgets

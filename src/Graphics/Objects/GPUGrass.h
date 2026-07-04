@@ -59,7 +59,7 @@ private:
 
         float             dist;
         float             alphaCut;
-        DirectX::XMFLOAT2 padding;
+        DirectX::XMFLOAT2 padding1;
 
         GrassBuffer() {
             using namespace SharedConstants;
@@ -69,7 +69,7 @@ private:
             windSpeed = BuffersConstants::WIND_SPEED;
             dist = BuffersConstants::DIST;
             alphaCut = BuffersConstants::ALPHA_CUT;
-            padding = DirectX::XMFLOAT2(0.0f, 0.0f);
+            padding1 = DirectX::XMFLOAT2(0.0f, 0.0f);
         }
     }; // GrassBuffer
 

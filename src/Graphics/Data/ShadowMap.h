@@ -44,6 +44,7 @@ public:
     bool RenderOpaque(ID3D11DeviceContext*, const RenderParams&);
     bool RenderTransparent(ID3D11DeviceContext*, const RenderParams&);
     void ClearShadowDepth(ID3D11DeviceContext*);
+	void OnGui();
 
     RenderTexture*            GetShadowRT() const;
     const D3D11_VIEWPORT&     GetViewport() const;

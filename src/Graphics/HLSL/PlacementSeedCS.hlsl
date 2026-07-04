@@ -14,6 +14,16 @@ cbuffer PlacementBuffer : register(b4)
     float placementDist;
     float heightScale;
     float2 pPadding;
+    
+    float treeBaseOffset;
+    float treeScaleMin;
+    float treeScaleMax;
+    float treeJitterRange;
+
+    float treeBlockSize;
+    float seedCutoff;
+    float treeCutoff;
+    float grassCutoff;
 }; // PlacementBuffer
 
 cbuffer WorldBuffer : register(b5)
@@ -38,11 +48,14 @@ struct InstanceData
 #define PLACEMENT_DIST placementDist
 #define HEIGHT_SCALE   heightScale
 
-#define TREE_BASE_OFFSET  12.0f   // 메쉬 피벗이 바닥이 아니면 여기서 보정
-#define TREE_SCALE_MIN    5.0f
-#define TREE_SCALE_MAX    10.0f
-#define TREE_JITTER_RANGE 10.0f  // 풀보다 훨씬 넓게 흩어지도록
-#define TREE_BLOCK_SIZE   24
+#define TREE_BASE_OFFSET  treeBaseOffset
+#define TREE_SCALE_MIN    treeScaleMin
+#define TREE_SCALE_MAX    treeScaleMax
+#define TREE_JITTER_RANGE treeJitterRange
+#define TREE_BLOCK_SIZE   treeBlockSize
+#define SEED_CUTOFF       seedCutoff
+#define TREE_CUTOFF       treeCutoff
+#define GRASS_CUTOFF      grassCutoff
 
 AppendStructuredBuffer<InstanceData> NearGrassBuffer : register(u0);
 AppendStructuredBuffer<InstanceData> FarGrassBuffer : register(u1);
@@ -76,12 +89,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
     normal = normalize(normal);
     float actualHeight = height * HEIGHT_SCALE;
 
-    if (actualHeight <= WATER_LEVEL + 1.0f || normal.y < 0.5f)
+    if (actualHeight <= WATER_LEVEL + 1.0f || normal.y < SEED_CUTOFF)
     {
         return;
     }
 
-    float maxDist = PLACEMENT_DIST * 2.0f;
+    float maxDist = PLACEMENT_DIST * 8.0f;
     float dist = distance(CAMERA_POS.xz, float2(worldX, worldZ));
     if (dist > maxDist)
     {
@@ -91,7 +104,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     bool treePlaced = false;
     float treeRandomVal = hash_uint2(DTid.xz + 999);
 
-    if (treeRandomVal <= TREE_DENSITY && normal.y > 0.7f)
+    if (treeRandomVal <= TREE_DENSITY && normal.y > TREE_CUTOFF)
     {
         float treeJitterX = (hash_uint2(DTid.xz + 4321) - 0.5f) * TREE_JITTER_RANGE;
         float treeJitterZ = (hash_uint2(DTid.xz + 8765) - 0.5f) * TREE_JITTER_RANGE;
@@ -118,6 +131,12 @@ void main(uint3 DTid : SV_DispatchThreadID)
     {
         return;
     }
+    
+    float grassMaxDist = PLACEMENT_DIST * 4.0f;
+    if (dist > grassMaxDist)
+    {
+        return;
+    }
 
     float falloff = saturate(dist / maxDist);
     float currentDensity = lerp(GRASS_DENSITY, GRASS_DENSITY * 0.1f, falloff);
@@ -134,7 +153,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
         float3 pos = float3(worldX + jitterX, 0, worldZ + jitterZ);
 
         float terrainY = GetTerrainHeight(pos);
-        if (terrainY <= WATER_LEVEL + 0.5f || normal.y < 0.3f || terrainY < -9990.0f)
+        if (terrainY <= WATER_LEVEL + 0.5f || normal.y < GRASS_CUTOFF || terrainY < -9990.0f)
         {
             continue;
         }

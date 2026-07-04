@@ -91,7 +91,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
     float3 ro = CAMERA_POSITION;
     float max_dist = MAX_DIST;
 
-    float2 planet_intersect = ray_sphere_intersect(ro - PLANET_CENTER, rd, PLANET_RADIUS - 100.0f);
+    float2 planet_intersect = ray_sphere_intersect(ro - PLANET_CENTER, rd, PLANET_RADIUS - 1000.0f);
     float groundDist = (planet_intersect.x > 0) ? planet_intersect.x : max_dist;
     float3 scene_color = dot(rd, LIGHT_DIRECTION) > 0.9998 ? 3.0 : 0.0;
 

@@ -40,7 +40,7 @@ void DirectionalLight::Update() {
     dir = XMVector3Normalize(dir);
 
     XMVECTOR lookAt = XMLoadFloat3(&m_lookAt);
-    XMVECTOR lightPos = lookAt - (dir * 2000.0f);
+    XMVECTOR lightPos = lookAt - (dir * 1000.0f);
 
     if (abs(XMVectorGetY(dir)) > 0.999f)
         upVector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
