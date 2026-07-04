@@ -1,5 +1,5 @@
 #include "Pch.h"
-#include "Grass.h"
+#include "QuadTreeGrass.h"
 #include "Components/Frustum.h"
 // Utils
 #include "Helpers/ShaderHelper.h"
@@ -15,18 +15,18 @@ using namespace DirectX;
 using namespace ShaderHelper;
 using namespace SharedConstants;
 
-Grass::Grass() {
+QuadTreeGrass::QuadTreeGrass() {
     m_grassSRV = nullptr;
 	m_linearSampler = nullptr;
     m_prevGrassData.padding.x = -1.0f;
-} // Grass
+} // QuadTreeGrass
 
-Grass::~Grass() {
+QuadTreeGrass::~QuadTreeGrass() {
     m_grassSRV = nullptr;
 	m_linearSampler = nullptr;    
-} // ~Grass
+} // ~QuadTreeGrass
 
-bool Grass::Init(const InitParams& params) {
+bool QuadTreeGrass::Init(const InitParams& params) {
     if (!params.device || !params.hwnd || !params.grass) {
         return false;
     }
@@ -36,7 +36,7 @@ bool Grass::Init(const InitParams& params) {
     return InitShader(params.device, params.hwnd);
 } // Init
 
-void Grass::Render(ID3D11DeviceContext* context, const RenderParams& params) {
+void QuadTreeGrass::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     if (!context || !params.visibleNodes) {
         return;
     }
@@ -70,7 +70,7 @@ void Grass::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->GSSetShader(nullptr, nullptr, 0);
 } // Render
 
-void Grass::RenderFar(ID3D11DeviceContext* context, const RenderParams& params) {
+void QuadTreeGrass::RenderFar(ID3D11DeviceContext* context, const RenderParams& params) {
     if (!context || !params.visibleNodes) {
         return;
     }
@@ -109,7 +109,7 @@ void Grass::RenderFar(ID3D11DeviceContext* context, const RenderParams& params) 
     }
 } // RenderFar
 
-void Grass::OnGui() {
+void QuadTreeGrass::OnGui() {
     ImGui::Begin("Grass Control");
 
     ImGui::SliderFloat("Blade Width", &m_grassData.width, 0.1f, 10.0f);
@@ -124,7 +124,7 @@ void Grass::OnGui() {
     ImGui::End();
 } // OnGui
 
-bool Grass::InitShader(ID3D11Device* device, HWND hwnd) {
+bool QuadTreeGrass::InitShader(ID3D11Device* device, HWND hwnd) {
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,  0,
           D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -134,7 +134,7 @@ bool Grass::InitShader(ID3D11Device* device, HWND hwnd) {
           D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
 
-    if (InitVertexShader(device, hwnd, PathConstants::GRASS_VS,
+    if (InitVertexShader(device, hwnd, PathConstants::QUAD_TREE_GRASS_VS,
         layoutDesc, ARRAYSIZE(layoutDesc),
         m_vertexShader.GetAddressOf(), m_layout.GetAddressOf()) == false) {
         DebugHelper::DebugPrint("Grass VS 초기화 실패");
@@ -164,7 +164,7 @@ bool Grass::InitShader(ID3D11Device* device, HWND hwnd) {
           1, 24, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
     };
 
-    if (InitVertexShader(device, hwnd, PathConstants::GRASS_FAR_VS,
+    if (InitVertexShader(device, hwnd, PathConstants::QUAD_TREE_GRASS_FAR_VS,
         farLayoutDesc, ARRAYSIZE(farLayoutDesc),
         m_farVertexShader.GetAddressOf(), m_farLayout.GetAddressOf()) == false) {
         DebugHelper::DebugPrint("Grass Far VS 초기화 실패");
@@ -185,7 +185,7 @@ bool Grass::InitShader(ID3D11Device* device, HWND hwnd) {
     return true;
 } // InitShader
 
-bool Grass::UpdateGrassBuffer(ID3D11DeviceContext* context) {
+bool QuadTreeGrass::UpdateGrassBuffer(ID3D11DeviceContext* context) {
     if (memcmp(&m_prevGrassData, &m_grassData, sizeof(GrassBuffer)) == 0) {
         return true;
     }

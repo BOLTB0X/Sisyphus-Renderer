@@ -1,4 +1,4 @@
-// GrassVS.hlsl
+// QuadTreeGrassVS.hlsl
 struct VS_IN
 {
     float3 position : POSITION;

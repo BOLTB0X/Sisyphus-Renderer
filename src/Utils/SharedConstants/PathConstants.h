@@ -40,12 +40,15 @@ namespace SharedConstants {
         static const std::wstring LENS_FLARE_PS = L"HLSL/LensflarePS.hlsl";
         static const std::wstring COMPOSITE_PS = L"HLSL/CompositePS.hlsl";
         static const std::wstring TAA_PS = L"HLSL/TemporalAntiAliasingPS.hlsl";
-        static const std::wstring GRASS_VS = L"HLSL/GrassVS.hlsl";
+        static const std::wstring QUAD_TREE_GRASS_VS = L"HLSL/QuadTreeGrassVS.hlsl";
         static const std::wstring GRASS_GS = L"HLSL/GrassGS.hlsl";
         static const std::wstring GRASS_PS = L"HLSL/GrassPS.hlsl";
 
-        static const std::wstring GRASS_FAR_VS = L"HLSL/GrassFarVS.hlsl";
+        static const std::wstring GRASS_PLACEMENT_CS = L"HLSL/PlacementSeedCS.hlsl";
+        static const std::wstring QUAD_TREE_GRASS_FAR_VS = L"HLSL/QuadTreeGrassFarVS.hlsl";
         static const std::wstring GRASS_FAR_PS = L"HLSL/GrassFarPS.hlsl";
+        static const std::wstring PLACE_GRASS_VS = L"HLSL/PlaceGrassVS.hlsl";
+        static const std::wstring PLACE_GRASS_FAR_VS = L"HLSL/PlaceGrassFarVS.hlsl";
 
         static const std::wstring TRANSPARENT_DEPTH_VS = L"HLSL/TransparentDepthVS.hlsl";
         static const std::wstring TRANSPARENT_DEPTH_PS = L"HLSL/TransparentDepthPS.hlsl";
@@ -60,6 +63,11 @@ namespace SharedConstants {
         static const std::wstring TERRAIN_HS = L"HLSL/TerrainHS.hlsl";
         static const std::wstring TERRAIN_DS = L"HLSL/TerrainDS.hlsl";
 
+        static const std::wstring INSTANCED_VS = L"HLSL/InstancedVS.hlsl";
+        static const std::wstring INSTANCED_DEPTH_VS = L"HLSL/InstancedDepthVS.hlsl";
+        static const std::wstring INSTANCED_TRANSPARENT_DEPTH_VS = L"HLSL/InstancedTransparentDepthVS.hlsl";
+        static const std::wstring TERRAIN_DEPTH_DS = L"HLSL/TerrainDepthDS.hlsl";
+
         static const std::string STONE = "assets/Stone/Stone.fbx";
         static const std::string TREE = "assets/Tree/TreeGen.fbx";
         static const std::string STONE_PILLAR = "assets/StonePillar/StonePillar_low.fbx";
@@ -71,7 +79,6 @@ namespace SharedConstants {
         static const std::string NOISE_2D = "assets/Noise/noise.png";
         static const std::string HEIGHT = "assets/Map/heightmap.png";
         static const std::string GRASS = "assets/Grass/grass.dds";
-        //static const std::string FARAWAY_GRASS = "assets/Ground/farawayGrass.tga";
         static const std::string GROUND_COL = "assets/Ground/Ground_baseColor.tga";
         static const std::string GROUND_NOR = "assets/Ground/Ground_normal.tga";
         static const std::string WATER_NOR = "assets/Map/water_normal.jpg";

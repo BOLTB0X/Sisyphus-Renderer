@@ -10,6 +10,7 @@
 
 class Frustum;
 class Texture;
+class D3D11State;
 
 class Terrain {
 public:
@@ -43,17 +44,27 @@ public:
         RenderParams() : cameraPosition(0.0f, 0.0f, 0.0f), time(0.0f), frustum(nullptr) {}
     }; // RenderParams
 
+    struct RenderShadowParams {
+        DirectX::XMMATRIX         lightView;
+        DirectX::XMMATRIX         lightProj;
+		D3D11State*               states;
+        RenderShadowParams() : lightView(DirectX::XMMatrixIdentity()), lightProj(DirectX::XMMatrixIdentity()), states(nullptr) {
+        }
+	}; // RenderShadowParams
+
 public:
     Terrain();
     ~Terrain();
 
     bool Init(const InitParams&);
     void Render(ID3D11DeviceContext*, const RenderParams&);
-    void RenderShadow(ID3D11DeviceContext*);
+    void RenderShadow(ID3D11DeviceContext*, const RenderShadowParams&);
 
     void              OnGui();
     DirectX::XMMATRIX GetWorldMatrix();
     float             GetHeightAt(float, float) const;
+    float             GetWidth() const;
+    float             GetDepth() const;            
 
 private:
     struct HeightScaleBuffer {
@@ -73,10 +84,18 @@ private:
         float             uv_tiling;
         DirectX::XMFLOAT3 padding;
 
-        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(140.0f),
-            uv_tiling(37.0f), padding(0.0f, 0.0f, 0.0f) {
+        TerrainBlendingBuffer() : waterLevel(SharedConstants::CommonConstants::WATER_HEIGHT), transZone(3.0f), grassLimit(0.8f), snowHeight(100.0f),
+            uv_tiling(30.0f), padding(0.0f, 0.0f, 0.0f) {
         } // TerrainBlendingBuffer
     }; // TerrainBlendingBuffer
+
+    struct LightMatrixBuffer {
+        DirectX::XMMATRIX view;
+        DirectX::XMMATRIX proj;
+
+        LightMatrixBuffer() : view(DirectX::XMMatrixIdentity()), proj(DirectX::XMMatrixIdentity()) {
+        }
+    }; // LightMatrixBuffer
 
 private:
     bool InitShader(ID3D11Device*, HWND);
@@ -92,6 +111,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DomainShader> m_domainShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_layout;
+
+    Microsoft::WRL::ComPtr<ID3D11DomainShader> m_domainShadowShader;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_lightMatrixBuffer;
 
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_worldBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_tessellationBuffer;

@@ -27,6 +27,7 @@ public:
     bool         Init(ID3D11Device*, const std::vector<FBRVertex>&, const std::vector<unsigned int>&, unsigned int);
     void         BindBuffers(ID3D11DeviceContext*);
     void         RenderBuffer(ID3D11DeviceContext*);
+    void         RenderInstancedBuffer(ID3D11DeviceContext*, ID3D11Buffer*);
     unsigned int GetMaterialIndex() const;
     UINT         GetIndexCount() const;
 

@@ -16,6 +16,8 @@ bool D3D11State::Init(ID3D11Device* device) {
     if (!InitWireframe(device)) return false;
     if (!InitCullNone(device)) return false;
     if (!InitCullFront(device)) return false;
+    if (!InitShadowCullBack(device)) return false;
+    if (!InitShadowCullNone(device)) return false;
     if (!InitDepth(device)) return false;
     if (!InitDepthNone(device)) return false;
     if (!InitDepthLess(device)) return false;
@@ -38,6 +40,8 @@ bool D3D11State::Init(ID3D11Device* device) {
 ID3D11RasterizerState*   D3D11State::GetCullBackState() const { return m_cullBackState.Get(); }
 ID3D11RasterizerState*   D3D11State::GetCullNone() const { return m_cullNoneState.Get(); }
 ID3D11RasterizerState*   D3D11State::GetCullFrontState() const {return m_cullFrontState.Get(); }
+ID3D11RasterizerState*   D3D11State::GetShadowCullBackState() const { return m_shadowCullBackState.Get(); }
+ID3D11RasterizerState*   D3D11State::GetShadowCullNoneState() const { return m_shadowCullNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthState() const { return m_depthStencilState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthNone() const { return m_depthNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthLessEqualState.Get(); }
@@ -194,3 +198,31 @@ bool D3D11State::InitBlendState(ID3D11Device* device) {
 
     return SUCCEEDED(device->CreateBlendState(&noBlendDesc, &m_noBlendState));
 } // InitBlendState
+
+bool D3D11State::InitShadowCullBack(ID3D11Device* device) {
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.AntialiasedLineEnable = false;
+    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.DepthBias = 15000;
+    rasterDesc.DepthBiasClamp = 0.01f;
+    rasterDesc.SlopeScaledDepthBias = 3.0f;
+    rasterDesc.DepthClipEnable = true;
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.FrontCounterClockwise = false;
+    rasterDesc.MultisampleEnable = false;
+    rasterDesc.ScissorEnable = false;
+
+    return SUCCEEDED(device->CreateRasterizerState(&rasterDesc, &m_shadowCullBackState));
+} // InitShadowCullBack
+
+bool D3D11State::InitShadowCullNone(ID3D11Device* device) {
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.CullMode = D3D11_CULL_NONE;
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.DepthBias = 15000;
+    rasterDesc.DepthBiasClamp = 0.01f;
+    rasterDesc.SlopeScaledDepthBias = 3.0f;
+    rasterDesc.DepthClipEnable = true;
+
+    return SUCCEEDED(device->CreateRasterizerState(&rasterDesc, &m_shadowCullNoneState));
+} // InitShadowCullNone

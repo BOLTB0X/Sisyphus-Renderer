@@ -39,6 +39,11 @@ float3 hash_33(float3 p3)
     return frac((p3.xxy + p3.yxx) * p3.zyx);
 } // hash33
 
+float hash_uint2(uint2 p)
+{
+    return frac(sin(dot(float2(p.x, p.y), float2(12.9898, 78.233))) * 43758.5453);
+} // hash
+
 float noise(float3 x)
 {
     float3 p = floor(x);

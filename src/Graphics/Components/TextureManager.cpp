@@ -28,7 +28,7 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 	NoiseGenerator::InitParams initParams;
 	LoadTexture(device, context, PathConstants::BLUE_NOISE);
 	LoadTexture(device, context, PathConstants::NOISE_2D);
-	LoadTexture(device, context, PathConstants::HEIGHT, true);
+	//LoadTexture(device, context, PathConstants::HEIGHT, true);
 	LoadTexture(device, context, PathConstants::GRASS);
 	LoadTexture(device, context, PathConstants::GROUND_COL);
 	LoadTexture(device, context, PathConstants::GROUND_NOR);
@@ -64,6 +64,10 @@ bool TextureManager::Init(ID3D11Device* device, ID3D11DeviceContext* context, HW
 
     if (!m_PerlinGenerator->Init(perlinParams)) {
         return false;
+    }
+    else {
+        auto generatedHeightMap = CreateProceduralHeightMap(device, context, PathConstants::HEIGHT, 1024, 1024);
+        m_Textures[PathConstants::HEIGHT] = generatedHeightMap;
     }
 
     return true;
@@ -122,6 +126,25 @@ void TextureManager::LoadTexture(
         m_Textures[filename] = newTexture;
     }
 } // LoadTexture
+
+std::shared_ptr<Texture> TextureManager::CreateProceduralHeightMap(
+    ID3D11Device* device, ID3D11DeviceContext* context,
+    const std::string& name,  UINT width, UINT height)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    auto newTexture = std::make_shared<Texture>();
+
+    NoiseGenerator::Generate2DParams params;
+    params.device = device;
+    params.width = width;
+    params.height = height;
+    params.outputTexture = newTexture.get();
+
+    m_PerlinGenerator->Generate2D(context, params);
+    m_Textures[name] = newTexture;
+    return newTexture;
+} // CreateProceduralHeightMap
 
 std::shared_ptr<Texture> TextureManager::GetTexture(
     ID3D11Device* device,

@@ -67,5 +67,10 @@ void PBRMesh::RenderBuffer(ID3D11DeviceContext* context) {
     context->DrawIndexed(m_indexCount, 0, 0);
 } // Render
 
+void PBRMesh::RenderInstancedBuffer(ID3D11DeviceContext* context, ID3D11Buffer* argsBuffer) {
+    BindBuffers(context);
+    context->DrawIndexedInstancedIndirect(argsBuffer, 0);
+} // Render
+
 unsigned int PBRMesh::GetMaterialIndex() const { return m_materialIndex; }
 UINT         PBRMesh::GetIndexCount() const { return m_indexCount; }

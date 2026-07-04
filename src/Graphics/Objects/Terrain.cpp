@@ -2,6 +2,7 @@
 #include "Terrain.h"
 #include "Resources/Texture.h"
 #include "Components/Frustum.h"
+#include "D3D11/D3D11State.h"
 // utils
 #include "SharedConstants/PathConstants.h"
 #include "SharedConstants/ScreenConstants.h"
@@ -10,17 +11,18 @@
 #include "Helpers/ShaderHelper.h"
 #include "Helpers/MathHelper.h"
 
-#define TEX_HEIGHTMAP_SLOT  0
-#define TEX_NOR_SLOT        2
-#define TEX_SAND_SLOT       3
-#define TEX_GRASS_SLOT      4
-#define TEX_DIFF_SLOT       5
-#define TEX_SNOW_SLOT       6
-#define LINEAR_SAMPLER_SLOT 0
-#define BUFFER_SLOT_WORLD   2
-#define BUFFER_SLOT_TESS    3
-#define BUFFER_SLOT_HEIGHT  4
-#define BUFFER_SLOT_BLEND   5
+#define TEX_HEIGHTMAP_SLOT       0
+#define TEX_NOR_SLOT             2
+#define TEX_SAND_SLOT            3
+#define TEX_GRASS_SLOT           4
+#define TEX_DIFF_SLOT            5
+#define TEX_SNOW_SLOT            6
+#define LINEAR_SAMPLER_SLOT      0
+#define BUFFER_SLOT_LIGHT_MATRIX 1
+#define BUFFER_SLOT_WORLD        2
+#define BUFFER_SLOT_TESS         3
+#define BUFFER_SLOT_HEIGHT       4
+#define BUFFER_SLOT_BLEND        5
 
 using namespace DirectX;
 using namespace SharedConstants;
@@ -188,29 +190,66 @@ void Terrain::Render(ID3D11DeviceContext* context, const RenderParams& params) {
     context->PSSetShaderResources(TEX_SNOW_SLOT, 1, &nullSRV);
 } // Render
 
-void Terrain::RenderShadow(ID3D11DeviceContext* context) {
-    context->IASetInputLayout(m_layout.Get());
+void Terrain::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParams& params) {
+    if (!context) {
+        return;
+    }
+
+    context->RSSetState(params.states->GetShadowCullBackState());
 
     UINT stride = sizeof(TerrainVertex);
     UINT offset = 0;
     context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
     context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+    context->IASetInputLayout(m_layout.Get());
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+
+    m_worldData.world = XMMatrixTranspose(GetWorldMatrix());
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_worldBuffer.Get(), m_worldData)) {
+        return;
+    }
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_tessellationBuffer.Get(), m_tessellationData)) {
+        return;
+    }
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_heightScaleBuffer.Get(), m_heightSacleData)) {
+        return;
+    }
+
+    LightMatrixBuffer lightData;
+    lightData.view = XMMatrixTranspose(params.lightView);
+    lightData.proj = XMMatrixTranspose(params.lightProj);
+    if (!ShaderHelper::UpdateConstantBuffer(context, m_lightMatrixBuffer.Get(), lightData)) {
+        return;
+    }
+
+    context->VSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
+    context->DSSetConstantBuffers(BUFFER_SLOT_WORLD, 1, m_worldBuffer.GetAddressOf());
+    context->HSSetConstantBuffers(BUFFER_SLOT_TESS, 1, m_tessellationBuffer.GetAddressOf());
+    context->DSSetConstantBuffers(BUFFER_SLOT_HEIGHT, 1, m_heightScaleBuffer.GetAddressOf());
+    context->DSSetConstantBuffers(BUFFER_SLOT_LIGHT_MATRIX, 1, m_lightMatrixBuffer.GetAddressOf());
 
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     context->HSSetShader(m_hullShader.Get(), nullptr, 0);
-    context->DSSetShader(m_domainShader.Get(), nullptr, 0);
-    context->PSSetShader(nullptr, nullptr, 0); // 뎁스만 쓸 때는 PS가 필요 없음
+    context->DSSetShader(m_domainShadowShader.Get(), nullptr, 0);
+    context->PSSetShader(nullptr, nullptr, 0);
 
-    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+    ID3D11ShaderResourceView* heightMapSRV = m_heightMap->GetSRV();
+    context->DSSetShaderResources(TEX_HEIGHTMAP_SLOT, 1, &heightMapSRV);
+    context->DSSetSamplers(LINEAR_SAMPLER_SLOT, 1, &m_linearSampler);
+
     context->DrawIndexed(m_indexCount, 0, 0);
 
     context->HSSetShader(nullptr, nullptr, 0);
     context->DSSetShader(nullptr, nullptr, 0);
+    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    context->DSSetShaderResources(TEX_HEIGHTMAP_SLOT, 1, &nullSRV);
 } // RenderShadow
 
 void Terrain::OnGui() {
     if (ImGui::CollapsingHeader("Terrain Settings")) {
-        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 500.0f);
+        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 2000.0f);
 
         ImGui::SliderFloat("Water Level", &m_terrainBlending.waterLevel, 0.0f, 50.0f);
         ImGui::SliderFloat("Transition Zone", &m_terrainBlending.transZone, 0.1f, 10.0f);
@@ -242,6 +281,14 @@ bool Terrain::InitShader(ID3D11Device* device, HWND hwnd) {
     }
 
     if (!InitPixelShader(device, hwnd, PathConstants::TERRAIN_PS, m_pixelShader.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitDomainShader(device, hwnd, PathConstants::TERRAIN_DEPTH_DS, m_domainShadowShader.GetAddressOf())) {
+        return false;
+    }
+
+    if (!InitConstantBuffer<LightMatrixBuffer>(device, m_lightMatrixBuffer.GetAddressOf())) {
         return false;
     }
 
@@ -290,3 +337,6 @@ float Terrain::GetHeightAt(float worldX, float worldZ) const {
     float height = m_heightMap->GetPixelHeight(texX, texY);
     return height * m_heightSacleData.heightScale;
 } // GetHeightAt
+
+float Terrain::GetWidth() const { return m_patchCountX * m_patchSize; }
+float Terrain::GetDepth() const { return m_patchCountZ * m_patchSize; }
