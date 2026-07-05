@@ -27,6 +27,7 @@
 #include "Data/VolumetricCloud.h"
 #include "Data/ShadowMap.h"
 #include "Data/CloudMap.h"
+#include "Data/VolumetricFog.h"
 // Resources
 #include "Resources/ConstantBuffer.h"
 #include "Resources/VolumeTexture.h"
@@ -34,6 +35,7 @@
 // Post
 #include "Post/CloudComposite.h"
 #include "Post/WaterComposite.h"
+#include "Post/FogComposite.h"
 #include "Post/TAA.h"
 #include "Post/PostEffects.h"
 // Utils
@@ -90,6 +92,8 @@ Renderer::Renderer() {
     m_Terrain = std::make_unique<Terrain>();
     m_GPUGrass = std::make_unique<GPUGrass>();
 	m_InstancingActor = std::make_unique<InstancingActor>();
+    m_VolumetricFog = std::make_unique<VolumetricFog>();
+    m_FogComposite = std::make_unique<FogComposite>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -212,19 +216,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    WaterComposite::InitParams waterInitParams;
-    waterInitParams.device = device;
-    waterInitParams.hwnd = hwnd;
-    waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
-    waterInitParams.screenWidth = RendererState::ScreenWidth;
-    waterInitParams.screenHeight = RendererState::ScreenHeight;
-    waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
-    waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
-    waterInitParams.linearWrapSampler = linerWrapSampler;
-    if (!m_WaterComposite->Init(waterInitParams)) {
-        return false;
-    }
-
 	VolumetricCloud::InitParams cloudInitParams;
 	cloudInitParams.device = device;
 	cloudInitParams.hwnd = hwnd;
@@ -235,6 +226,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     cloudInitParams.pointSampler = pointCampSampler;
 
     if (!m_VolumetricCloud->Init(cloudInitParams)) {
+        return false;
+    }
+
+    VolumetricFog::InitParams fogInitParams;
+    fogInitParams.device = device;
+    fogInitParams.hwnd = hwnd;
+    fogInitParams.heightMapSRV = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true)->GetSRV();
+    fogInitParams.worleyNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_WORLEY_NOISE)->GetSRV();
+    fogInitParams.wrapSampler = linerWrapSampler;
+    fogInitParams.pointSampler = pointCampSampler;
+    fogInitParams.screenWidth = RendererState::ScreenWidth;
+    fogInitParams.screenHeight = RendererState::ScreenHeight;
+
+    if (!m_VolumetricFog->Init(fogInitParams)) {
         return false;
     }
 
@@ -257,6 +262,29 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     compositeParams.ScreenWidth = RendererState::ScreenWidth;
     compositeParams.ScreenHeight = RendererState::ScreenHeight;
     if (!m_Composite->Init(compositeParams)) {
+        return false;
+    }
+
+    WaterComposite::InitParams waterInitParams;
+    waterInitParams.device = device;
+    waterInitParams.hwnd = hwnd;
+    waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
+    waterInitParams.screenWidth = RendererState::ScreenWidth;
+    waterInitParams.screenHeight = RendererState::ScreenHeight;
+    waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
+    waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
+    waterInitParams.linearWrapSampler = linerWrapSampler;
+    if (!m_WaterComposite->Init(waterInitParams)) {
+        return false;
+    }
+
+    FogComposite::InitParams fogCompositeParams;
+    fogCompositeParams.device = device;
+    fogCompositeParams.hwnd = hwnd;
+    fogCompositeParams.screenWidth = RendererState::ScreenWidth;
+    fogCompositeParams.screenHeight = RendererState::ScreenHeight;
+
+    if (!m_FogComposite->Init(fogCompositeParams)) {
         return false;
     }
 
@@ -307,6 +335,14 @@ void Renderer::Shutdown() {
     if (m_WaterComposite) {
         m_WaterComposite.reset();
     }
+    if (m_FogComposite) {
+        m_FogComposite.reset();
+    }
+
+    if (m_VolumetricFog) {
+        m_VolumetricFog.reset();
+	}
+
     if (m_Composite) {
         m_Composite.reset();
     }
@@ -410,6 +446,7 @@ bool Renderer::Render(float deltaTime) {
     MainPass(context, states);
     CompositePass(context, states);
     WaterPass(context, states);
+    FogPass(context, states);
     PostProcessingPass(context, states);
 
     m_ImGuiMgr->Frame();
@@ -619,7 +656,9 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
 
     context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &objectShadowSRV);
     context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
+    context->CSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
     context->PSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
+    context->CSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
 } // UpdateCommonShaderBuffer
 
 void Renderer::UpdatePlacement(ID3D11DeviceContext* context) {
@@ -743,8 +782,19 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
 	cloudExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     m_VolumetricCloud->Execute(context, cloudExecParams);
 
-    ID3D11ShaderResourceView* nullSRVs[6] = { nullptr };
-    context->CSSetShaderResources(0, 6, nullSRVs);
+    ID3D11ShaderResourceView* nullSRVs[7] = { nullptr };
+    context->CSSetShaderResources(0, 7, nullSRVs);
+
+    VolumetricFog::ExecuteParams fogExecParams;
+    fogExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    fogExecParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();
+    fogExecParams.terrainWidth = m_Terrain->GetWidth();
+    fogExecParams.terrainDepth = m_Terrain->GetDepth();
+    fogExecParams.terrainHeightScale = m_Terrain->GetHeightScale();
+    fogExecParams.time = m_renderingTime;
+    m_VolumetricFog->Execute(context, fogExecParams);
+
+    context->CSSetShaderResources(0, 7, nullSRVs);
 
     ID3D11Buffer* nullCBs[4] = { nullptr };
     context->CSSetConstantBuffers(0, 4, nullCBs);
@@ -784,6 +834,20 @@ void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_WaterComposite->Render(context, waterParams);
 } // WaterPass
 
+void Renderer::FogPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* fogRTV = m_FogComposite->GetRTV();
+    context->OMSetRenderTargets(1, &fogRTV, nullptr);
+    m_FogComposite->ClearRT(context);
+
+    FogComposite::RenderParams fogParams;
+    fogParams.sceneSRV = m_WaterComposite->GetSRV();
+    fogParams.fogSRV = m_VolumetricFog->GetFogSRV();
+    m_FogComposite->Render(context, fogParams);
+} // FogPass
+
 void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
@@ -793,6 +857,7 @@ void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     m_Post->ClearRT(context);
 
     PostEffects::RenderParams effectParam;
+    //effectParam.inputSRV = m_FogComposite->GetSRV();
     effectParam.inputSRV = m_WaterComposite->GetSRV();
     effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
     effectParam.transmittanceSRV = m_VolumetricCloud->GetTransmittanceSRV();
@@ -927,5 +992,10 @@ void Renderer::InitWidgets() {
                 [this]() { m_TerrainShadowMap->OnGui(); }
             ));
 		}
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Volumetric Fog Control",
+            [this]() { m_VolumetricFog->OnGui(); }
+        ));
     }
 } // InitWidgets

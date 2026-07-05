@@ -340,3 +340,4 @@ float Terrain::GetHeightAt(float worldX, float worldZ) const {
 
 float Terrain::GetWidth() const { return m_patchCountX * m_patchSize; }
 float Terrain::GetDepth() const { return m_patchCountZ * m_patchSize; }
+float Terrain::GetHeightScale() const { return m_heightSacleData.heightScale; }
