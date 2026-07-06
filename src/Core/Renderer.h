@@ -34,7 +34,6 @@ class WaterComposite;
 class Terrain;
 class GPUGrass;
 class InstancingActor;
-class VolumetricFog;
 class FogComposite;
 
 class Renderer {
@@ -57,7 +56,7 @@ private:
 	void UpdateModelTransform();
     void MainPass(ID3D11DeviceContext*, D3D11State*);
     void ShadowPass(ID3D11DeviceContext*, D3D11State*);
-    void CompositePass(ID3D11DeviceContext*, D3D11State*);
+    void CouldPass(ID3D11DeviceContext*, D3D11State*);
     void WaterPass(ID3D11DeviceContext*, D3D11State*);
     void FogPass(ID3D11DeviceContext*, D3D11State*);
     void PostProcessingPass(ID3D11DeviceContext*, D3D11State*);
@@ -112,7 +111,6 @@ private:
 	std::unique_ptr<Terrain>             m_Terrain;
 	std::unique_ptr<GPUGrass>            m_GPUGrass;
 	std::unique_ptr<InstancingActor>     m_InstancingActor;
-    std::unique_ptr<VolumetricFog>       m_VolumetricFog;
     std::unique_ptr<FogComposite>        m_FogComposite;
 
     std::shared_ptr<TextureManager>      m_TextureMgr;
