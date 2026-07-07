@@ -1,296 +1,235 @@
-# Sisyphus-Renderer
-
-![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
-
-## Self Introduce
+# Sisyphus-Renderer - Tessellation Terrain
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC5.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC4.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain05_01.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>시지프스 렌더러</strong></p>
+  <p><strong>Tessellation Terrain</strong></p>
 </div>
 
-- **Assimp** 로더
-- **FBR Shading**
-- **Sky LUT**: 대기 산란 Raymarching
-- **Shadow mapping** : Poisson Disk Sampling
-- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
-- **동적 Ambient 전환** : 노을, 낮, 밤
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **Bloom + Lens Flare** 후처리
-- **God Rays**: 후처리 Volumetric Scattering
-- **YCoCg Variance Clipping**
-- **TAA**
-- **Lensflare**
-- **Terrain** : HeightMap, Quad Tree
-- **Grass LOD(Level of Detail)** : Geometry + Instancing, Billboard
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B501.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A901.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong> QuadTree | Tessellation </strong></p>
+</div>
 
+- 카메라 거리별 최적화된 테셀레이션 인자(Tessellation Factor) 계산을 통해 근경의 디테일을 극대화하고 원경의 불필요한 폴리곤 낭비를 제어하며, 텍셀 기반 노말 생성 알고리즘과 높이 기반 멀티 레이어 블렌딩 기법을 도입
 
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
+- [결과 및 시행착오](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Terrain)
 
 <br/>
 
+<table>
+  <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain03_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%9801.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain03_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%9802.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain03_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%9803.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain03_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%9804.png?raw=true" width="320"></td>
+  </tr>
+</table>
+
+<p align="center">
+  Light, Shadow
+</p>
+
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A902.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A903.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>Volumetric Cloud & God Rays</strong></p>
+  <p><strong> 높이맵 및 광원 위치에 따른 변화 </strong></p>
 </div>
-
-<details>
-<summary> About Volumetric </summary>
-
-> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  | 상황 | FPS |
-  |---|---|
-  | 일반 구름 뷰 | 50 ~ 59 |
-  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
-
-</div>
-
-
-Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
-
-</details>
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Volumetric Cloud 2.0</strong></p>
-</div>
-
-<details>
-<summary> About Volumetric 2.0 </summary>
-
-> 정석 Volumetric
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 `(현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리)` 을 진행했으나, <br/> 빛 레이마칭 수정으로 수학적으로 올바른 `(현재 거리 - 바닥 거리) / (천장 거리 - 바닥 거리)` 적용
-</div>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-  수정 전 | 수정 후
-</div>
-
-바닥(`Bottom`)에서 0, 천장(`Top`)에서 1로 정상적인 고도 그라데이션이 형성되도록 수정
-
-</details>
-
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC2.gif?raw=true)" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Terrain & LOD Grass</strong></p>
-</div>
-
-<details>
-<summary> About LOD Grass </summary>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC3.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-
-  -Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
-  -이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
-  -Poisson Disk Sampling PCF 소프트 섀도우
-
-  | 거리 구분 | 렌더링 방식 | 특징 |
-  | :--- | :--- | :--- |
-  | 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
-  | D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
-  | D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
-
-
-</div>
-
-</details>
-
-<br/>
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
 
 ---
 
-## Quick Start
+## [파이프라인 구조도]
 
-<details>
-<summary> open / close </summary>
+1. **전처리 및 패치 데이터 생성**
 
-### 1. 필수 요구 사항
+   - `Terrain::Init` 단계에서 쿼드(`Quad`) 레이아웃 기반의 정점 및 인덱스 버퍼를 빌드 (32x32 패치 구성)
 
-- **OS** : Windows 10/11
+   - `D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST` 토폴로지를 지정하여 헐 셰이더의 입력 인터페이스 정의
 
-- **IDE** : [Visual Studio Community 2022](https://visualstudio.microsoft.com/ko/vs/community/) (C++를 사용한 데스크톱 개발 워크로드 포함)
+2. **하드웨어 테셀레이션 단계 구동**
 
-- **Build** : [CMake 3.21](https://cmake.org/cmake/help/latest/release/3.21.html) 이상
+    - [`TerrainVS.hlsl1`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/HLSL/TerrainVS.hlsl) -> 제어점 정점 패스스루 연산 수행
 
-- **Package Manager** : [vcpkg](https://vcpkg.io/en/)
+    - [`TerrainHS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/HLSL/TerrainHS.hlsl) -> 패치 상수 변환 및 카메라 거리 비례 분할 지수(`CalcTessFactor`) 계산
 
-### 2. 라이브러리 설치 (`vcpkg`)
+    - [`TerrainDS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/HLSL/TerrainDS.hlsl) -> 분할된 도메인 좌표 상에서 높이맵 기반 변위 매핑(`Displacement Mapping`) 및 노말 생성
 
-```bash
-# 터미널/파워쉘에서 다음 라이브러리들을 설치
-vcpkg install imgui[directx11-binding,win32-binding]
-vcpkg install directxtk
-vcpkg install directxtex
-vcpkg install spdlog
-vcpkg install assimp
+3. **Shading & Shadow**
+
+   - [`TerrainPS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/HLSL/TerrainPS.hlsl) -> 수면 높이, 전이 구역, 눈 한계 축 변수를 기반으로 여러 종의 텍스처 멀티 블렌딩 및 PBR 광원 연산과 포아송 샘플링 섀도우 합성
+
+---
+
+### 1. Terrain 컴포넌트 자원 초기화
+
+```cpp
+[Init 단계]
+    // 지형 매개변수 설정 및 하드웨어 테셀레이션 파이프라인 버퍼 바인딩
+    Terrain::Init()
+        └─ 4개 제어점 기반 Quad Patch 메쉬(VertexBuffer / IndexBuffer) 빌드
+        └─ VS, HS, DS, PS 각각의 독립 셰이더 컴파일
+        └─ 파이프라인 제어용 상수 버퍼(World, TessellationControl, HeightScale, TerrainBlending) 생성
+        └─ TextureManager를 통한 고해상도 높이맵 및 레이어별 텍스처(SRV) 바인딩
 ```
 
-### 3. 클론 및 빌드
+- [`Terrain.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/Objects/Terrain.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/Tessellation/src/Graphics/Objects/Terrain.cpp)
 
-```bash
-# 저장소 클론
-git clone https://github.com/BOLTB0X/Sisyphus-Renderer.git
-cd Sisyphus-Renderer
+- [`PerlinHeightMapCS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/GPU_Driven_Grass/src/Graphics/HLSL/PerlinHeightMapCS.hlsl) : ~~GPU Driven Grass 에서 추가~~
 
-# 빌드 디렉토리 생성
-mkdir build
-cd build
+---
 
-# CMake 구성 (vcpkg 경로 설정 필수)
-cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg.cmake
+### 2. 매 프레임 동적 분할 및 제어 셰이딩 파이프라인
 
-# 프로젝트 열기 (or cmake --build . 실행)
-start SisyphusRenderer.sln
+```cpp
+[매 프레임 렌더 파이프라인]
+Renderer::Render()
+  └─ Terrain 패스 실행 (RenderQueue 내부 지연 실행 혹은 Direct Render)
+        │
+        ├─ [파이프라인 상태 설정 및 입력 바인딩]
+        │    ├─ IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST)
+        │    ├─ HeightMap SRV (VS/DS t0), LinearSampler (s0) 바인딩
+        │    └─ 상수 버퍼 가동 (TessellationControlBuffer -> b3, HeightScaleBuffer -> b4)
+        │
+        ├─ [헐 셰이더 스테이지 - TerrainHS]
+        │    ├─ 각 패치의 에지 미드포인트(Edge Midpoint) 좌표 계산
+        │    ├─ CalcTessFactor() : CAMERA_POSITION과의 스칼라 거리를 기반으로 거리가 가까울수록 최대 분할율 보간
+        │    └─ SV_TessFactor(4개 에지) 및 SV_InsideTessFactor(2개 내부) 결정 및 고정 기능 테셀레이터에 전달
+        │
+        ├─ [도메인 셰이더 스테이지 - TerrainDS]
+        │    ├─ Quad 영역 내의 SV_DomainLocation(적응형 UV좌표) 분할점 생성
+        │    ├─ HeightMap.SampleLevel(LinearSampler, finalUV, 0).r * HEIGHT_SCALE 기법으로 로컬 y축 변위 적용
+        │    └─ CalculateNormalFromHeightMap() : 인접 4개 방향 텍셀 크기 기반의 수치 미분 노말 벡터 실시간 계산 및 전달
+        │
+        └─ [픽셀 셰이더 루프 - TerrainPS]
+             ├─ 물밑 높이(tWaterLevel), 잔디 한계(tGrassLimit), 만년설 경계(tSnowHeight) 조건 검색
+             ├─ 절벽 경사도(N.y의 경사 반비례 축) 파악을 통한 Cliff 텍스처 전이 가중치 획득
+             ├─ 독립된 지형 텍스처 시퀀스를 다중 가중치 선형 보간(lerp) 처리 후 알베도/노말 PBR 합성
+             └─ calculate_poisson_shadow() 연산을 연계하여 지형 표면의 사실적인 미세 그림자 차폐율 반영
 ```
 
-### 4. 사용한 에셋
+## [알면 좋은 것들]
 
-- [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+### 패치 경계면 결합 에러(Crack Artifact) 방지를 위한 에지 미드포인트 동기화
 
-- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+#### 1. 원인)
+패치 중심점과의 거리만을 기준으로 개별적인 테셀레이터 가중치를 부여하면, 인접한 두 패치의 분할율 계수가 서로 다르게 계산되어 패치와 패치 사이의 경계 정점이 어긋나고 틈새가 벌어지는 크랙(Crack) 현상이 수반됨
 
-- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
+#### 2. 해결 방안)
 
-- [Learn OpenGL: Tessellation Chapter I: Rendering Terrain using Height Maps](https://learnopengl.com/Guest-Articles/2021/Tessellation/Height-map)
+```cpp
+PatchTess CalcHSPatchConstants(
+    InputPatch<VS_OUT, 4> patch,
+    uint patchID : SV_PrimitiveID)
+{
+    PatchTess pt;
 
-- [sketchfab: Tree GN](https://sketchfab.com/3d-models/tree-gn-40da979cb23f492583ec89c4196cff4e)
+    float3 edgeMid0 = 0.5f * (patch[0].posW + patch[3].posW); // edge0: 0-3
+    float3 edgeMid1 = 0.5f * (patch[0].posW + patch[1].posW); // edge1: 0-1
+    float3 edgeMid2 = 0.5f * (patch[1].posW + patch[2].posW); // edge2: 1-2
+    float3 edgeMid3 = 0.5f * (patch[2].posW + patch[3].posW); // edge3: 2-3
 
-- [sketchfab: Stone Pillar](https://sketchfab.com/3d-models/stone-pillar-4b74c340d1bf47ccad35b57deb78b58a)
+    pt.edgeTess[0] = CalcTessFactor(edgeMid0);
+    pt.edgeTess[1] = CalcTessFactor(edgeMid1);
+    pt.edgeTess[2] = CalcTessFactor(edgeMid2);
+    pt.edgeTess[3] = CalcTessFactor(edgeMid3);
 
-- [sketchfab: Arca Dwarapala](https://sketchfab.com/3d-models/arca-dwarapala-fe8803efbc0043d7bc3114387c4c1545)
+    float3 centerPos = 0.25f * (patch[0].posW + patch[1].posW + patch[2].posW + patch[3].posW);
+    float insideTess = CalcTessFactor(centerPos);
+    pt.insideTess[0] = insideTess;
+    pt.insideTess[1] = insideTess;
 
-- [rastertek: grass.dds](https://www.rastertek.com/tertut19.html)
+    return pt;
+} // CalcHSPatchConstants
+```
 
-- [sketchfab: (Black Myth)Wukong - Di Luo Cha [Animation]](https://sketchfab.com/3d-models/black-myth-wukong-di-luo-cha-animation-79819655a05f497dbb4225726fcb73e3)
+패치 내부 중심점이 아닌, 패치를 이루는 네 에지의 중간 지점(`edgeMid0` ~ `edgeMid3`)을 정밀 추적하고 해당 에지 경계면의 깊이 거리를 기준으로 `SV_TessFactor`를 동기화하는 구조를 채택하여, 인접 패치 간의 분할 밀도가 완벽히 결합하도록 크랙 현상을 사전에 차단함
 
-</details>
+---
 
-## Assimp
+### 고정 데이터가 없는 변위 매핑 지형의 텍셀 수치 미분 노말 생성
 
-### [Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+#### 1. 원인)
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>static Model</strong></p>
-</div>
+스테틱 메쉬와 달리 도메인 셰이더 단계에서 실시간으로 높이 데이터가 변형(`Displacement`)되므로, DCC 툴에서 미리 베이킹된 버텍스 노말 데이터를 사용하는 방식으로는 지형의 경사면 라이팅을 정확히 연산할 수 없음
 
-### [Animation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Animation)
+#### 2. 해결 방안)
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp05_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp06_Rigid.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong> Skinned | Rigid </strong></p>
-</div>
+```cpp
+float3 CalculateNormalFromHeightMap(float2 uv, float texelSize)
+{
+    // 상하좌우 높이 샘플링
+    float hL = HeightMap.SampleLevel(LinearSampler, uv + float2(-texelSize, 0.0f), 0).r * HEIGHT_SCALE;
+    float hR = HeightMap.SampleLevel(LinearSampler, uv + float2(texelSize, 0.0f), 0).r * HEIGHT_SCALE;
+    float hB = HeightMap.SampleLevel(LinearSampler, uv + float2(0.0f, -texelSize), 0).r * HEIGHT_SCALE;
+    float hT = HeightMap.SampleLevel(LinearSampler, uv + float2(0.0f, texelSize), 0).r * HEIGHT_SCALE;
 
-## Atmospheric Scattering
+    // x, z 축 방향의 접선(Tangent) 벡터 생성 후 외적
+    float3 tangentX = normalize(float3(2.0f, hR - hL, 0.0f));
+    float3 tangentZ = normalize(float3(0.0f, hT - hB, 2.0f));
+    
+    return normalize(cross(tangentZ, tangentX));
+} // CalculateNormalFromHeightMap
+```
 
-### [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
+도메인 셰이더 내에서 도메인 UV 좌표를 기준으로 상, 하, 좌, 우 4방향의 미세 오프셋 텍셀(`texelSize`) 지점 높이를 `SampleLevel`로 바인딩 계산 후, 접선 공간의 기울기 차이를 외적 연산하는 수치 미분 공식(`CalculateNormalFromHeightMap`)을 셰이더 코드을 작성
 
-<div align="center">
-<td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B001_%ED%95%98%EB%8A%9802.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B002_%EC%9A%B0%EC%A3%BC01.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true" width="260"></td>
-  <br>
-  <p><strong>카메라 위치에 따른 동적 베이킹</strong></p>
-</div>
+---
 
-### [LUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
+## [최적화 전략]
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT05_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT06_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT07_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT08_new.png?raw=true" width="200"></td>
-  <br>
-  <p><strong>UAV 로 계산 후 LUT</strong></p>
-</div>
+매 프레임 막대한 단위의 터레인 패치가 분할 기하 연산을 거치므로 오버헤드를 막기 위한 제어 단계 최적화 기법을 사용
 
-## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
+### (1) 비선형 거리 감쇠 함수 (Non-linear Distance Attenuation)
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B502.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow07.png?raw=true" width="260"></td>
-  <br>
-  <p><strong>Point | Terrain | mix</strong></p>
-</div>
+```cpp
+// TerrainHS.hlsl
+// ...
+cbuffer TessellationControlBuffer : register(b3)
+{
+    float  tMinTessDist;
+    float  tMaxTessDist;
+    float  tMinTessFactor;
+    float  tMaxTessFactor;
+    
+    float4 tPadding;
+}; // TessellationControlBuffer
 
+#define MIN_TESS_DISTANCE tMinTessDist
+#define MAX_TESS_DISTANCE tMaxTessDist
+#define MIN_TESS_FACTOR   tMinTessFactor
+#define MAX_TESS_FACTOR   tMaxTessFactor
 
-## Volumetric
+float CalcTessFactor(float3 patchCenterPos)
+{
+    float dist = distance(patchCenterPos, CAMERA_POSITION);
+    
+    float tess = saturate((MAX_TESS_DISTANCE - dist) / (MAX_TESS_DISTANCE - MIN_TESS_DISTANCE));
+    
+    return lerp(MIN_TESS_FACTOR, MAX_TESS_FACTOR, tess);
+} // CalcTessFactor
+```
 
-### [Volumetric Cloud(라이팅 과포화)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
+무조건적인 선형 할당을 배제하고 유효 시야 한계점(`MAX_TESS_DISTANCE`)을 초과하는 원경 패치는 최소 분할율(`MIN_TESS_FACTOR = 1.0f`)로 강제 고정하여 불필요한 GPU 기하 버퍼 낭비를 차단
 
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/08Volumetric_%EB%A0%8C%EC%A6%88%ED%94%8C%EB%A0%88%EC%96%B401.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
+### (2) 섀도우 패스 전용 뎁스 도메인 셰이더 분리
 
-### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
+섀도우 맵 생성을 위한 깊이 바인딩Pass에서는 무거운 수치 미분 노말 연산 및 픽셀 셰이더 복잡도가 불필요하므로, 순수 위치 변위와 라이트 행렬 곱셈만 수행하는 간소화된 전용 도메인 셰이더(`TerrainDepthDS.hlsl`)를 구성
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Post-Processing Volumetric Scattering</strong></p>
-</div>
+- [`TerrainDepthDS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/GPU_Driven_Grass/src/Graphics/HLSL/TerrainDepthDS.hlsl)
 
-### [Volumetric Cloud(에너지 보존 법칙)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0)
+## 참고
 
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9501.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
+- [Microsoft TechNet: Introduction to Tessellation in Direct3D 11](https://learn.microsoft.com/en-us/windows/win32/direct3d11/direct3d-11-advanced-stages-tessellation)
 
-## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
+- [NVIDIA Developer: Dynamic Terrain Tessellation in DX11](https://developer.nvidia.com/gpugems/gpugems2/part-i-geometric-complexity/chapter-2-terrain-rendering-using-gpu-based-geometry)
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8403.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-</div>
+- [Github - TerrainEngine-OpenGL(fede-vaccaro)](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
+
+- [Rastertek - Tutorial 35: Depth Buffer](https://www.rastertek.com/dx11win10tut35.html)
+
+- [Rastertek - Tutorial 45: Shadow Mapping and Transparency](https://www.rastertek.com/dx11win10tut45.html)
+
+- [Rastertek - Tutorial 49: Hardware Tessellation](https://www.rastertek.com/dx11win10tut49.html)
