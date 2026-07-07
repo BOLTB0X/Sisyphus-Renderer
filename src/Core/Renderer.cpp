@@ -310,29 +310,29 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 } // Init
 
 void Renderer::Shutdown() {
+    // UI
     if (m_ImGuiMgr) {
         m_ImGuiMgr.reset();
     }
 
-    // 후처리 및 포스트 이펙트
+    // 포스트 프로세싱 및 2D 합성
     if (m_TAA) {
         m_TAA.reset();
     }
     if (m_Post) {
         m_Post.reset();
     }
-    if (m_WaterComposite) {
-        m_WaterComposite.reset();
-    }
     if (m_FogComposite) {
         m_FogComposite.reset();
     }
-
+    if (m_WaterComposite) {
+        m_WaterComposite.reset();
+    }
     if (m_Composite) {
         m_Composite.reset();
     }
 
-    // 렌더 타겟 및 그림자
+    // 렌더 타겟 및 섀도우 맵
     if (m_sceneRTMgr) {
         m_sceneRTMgr.reset();
     }
@@ -343,29 +343,41 @@ void Renderer::Shutdown() {
         m_ObjectShadowMap.reset();
     }
 
-    // 볼류매트릭 및 대기 렌더링 객체
+    // 환경, 볼류매트릭 및 인스턴싱 객체
     if (m_VolumetricCloud) {
         m_VolumetricCloud.reset();
     }
-    if (m_CloudMapLUT) {
-        m_CloudMapLUT.reset();
+    if (m_InstancingActor) {
+        m_InstancingActor.reset();
     }
-    if (m_AtmosphereLUT) {
-        m_AtmosphereLUT.reset();
+    if (m_GPUGrass) {
+        m_GPUGrass.reset();
+    }
+    if (m_Terrain) {
+        m_Terrain.reset();
     }
     if (m_SkyBox) {
         m_SkyBox.reset();
     }
+    if (m_AtmosphereLUT) {
+        m_AtmosphereLUT.reset();
+    }
+    if (m_CloudMapLUT) {
+        m_CloudMapLUT.reset();
+    }
 
+    // 스키닝 액터 및 단일 오브젝트
+    if (m_Rakshasa) {
+        m_Rakshasa.reset();
+    }
+    if (m_Stone) {
+        m_Stone.reset();
+    }
     if (m_Ground) {
         m_Ground.reset();
     }
 
-    if (m_Stone) {
-        m_Stone.reset();
-    }
-
-    // 렌더러 핵심 컴포넌트 및 매니저
+    // 렌더러 핵심 컴포넌트
     if (m_TextureMgr) {
         m_TextureMgr.reset();
     }
@@ -376,19 +388,19 @@ void Renderer::Shutdown() {
         m_DirectionalLight.reset();
     }
 
-    // 상수 버퍼
-    if (m_lightBuffer) {
-        m_lightBuffer.Reset();
-    }
+    // 공통 상수 버퍼
     if (m_frameBuffer) {
         m_frameBuffer.Reset();
+    }
+    if (m_lightBuffer) {
+        m_lightBuffer.Reset();
     }
 
     // 그래픽스 API 코어
     if (m_D3D11Mgr) {
         m_D3D11Mgr.reset();
     }
-} // Renderer
+} // Shutdown
 
 bool Renderer::Frame(float deltaTime) {
     m_renderingTime += deltaTime;
@@ -817,6 +829,7 @@ void Renderer::FogPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_FogComposite->ClearRT(context);
 
     FogComposite::RenderParams fogParams;
+	fogParams.cameraPosition = m_Camera->GetPosition();
     fogParams.sceneSRV = m_WaterComposite->GetSRV();
     fogParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     fogParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();

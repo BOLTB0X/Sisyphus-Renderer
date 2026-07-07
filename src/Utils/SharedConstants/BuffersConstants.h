@@ -132,10 +132,15 @@ namespace SharedConstants {
         static constexpr float             FOG_NOISE_SCALE = 0.02f;
         static constexpr float             FOG_NOISE_STRENGTH = 0.6f;
         static constexpr float             FOG_WIND_SPEED = 0.5f;
-        static constexpr DirectX::XMFLOAT3 FOG_COLOR = { 0.7f, 0.75f, 0.8f };
-        static constexpr float             FOG_AMBIENT_STRENGTH = 0.5f;
+        static constexpr DirectX::XMFLOAT3 FOG_COLOR = { 0.3f, 0.35f, 0.4f };
+        static constexpr float             FOG_AMBIENT_STRENGTH = 0.01f;
         static constexpr DirectX::XMFLOAT2 FOG_WIND_DIRECTION = { 0.5f, 0.5f };
         static constexpr int               FOG_MARCH_STEPS = 24;
+        static constexpr int               FOG_LIGHT_MARCH_STEPS = 4;
+        static constexpr float             FOG_LIGHT_MARCH_DIST = 200.0f;
+        static constexpr float             FOG_PHASE_G = 0.5f;
+		static constexpr float             FOG_EDGE_SOFTNESS = 400.0f;
+		static constexpr float             FOG_SPHERE_RADIUS = 2000.0f;
 
     } // BuffersConstants
 }
