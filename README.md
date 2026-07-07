@@ -215,7 +215,12 @@ if (dot(reflectDir, hitNormal) <= 0.0f) { ... isHit = true; }
 
 - [EA Frostbite: Stochastic Screen-Space Reflections](https://www.ea.com/news/stochastic-screen-space-reflections)
 
+- [Willpgfx - Screen Space Glossy Reflections](https://willpgfx.com/2015/07/screen-space-glossy-reflections/)
+
 - [Github: TerrainEngine(fede-vaccaro) - OpenGL](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
 
-- [rastertek: Tutorial 16: Small Body Water](https://www.rastertek.com/tertut16.html)
+- [Rastertek: Tutorial 16: Small Body Water](https://www.rastertek.com/tertut16.html)
 
+- [Rastertek: Tutorial 30: Reflection](https://www.rastertek.com/dx11win10tut30.html)
+
+- [Rastertek: Tutorial 50: Deferred Shading](https://www.rastertek.com/dx11win10tut50.html)
