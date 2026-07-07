@@ -1,296 +1,114 @@
-# Sisyphus-Renderer
+# Sisyphus-Renderer - RenderQueue
 
-![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
+렌더링엔진을 만들면서 느낀게 매번 **DirectX 11 API 상태(State)** 변경하는 것에 번거롭다 느낌 
 
-## Self Introduce
+매 프레임 발생하는 불필요한 *DirectX 11 API 상태(State) 변경* 을 최소화하고, *불투명(Opaque)* 및 *투명(Transparent)* 오브젝트의 정렬을 효율적으로 처리하기 위해 **커스텀 렌더 큐(Render Queue)** 시스템을 도입
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC5.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC4.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>시지프스 렌더러</strong></p>
-</div>
+## 1. Core Architecture
 
-- **Assimp** 로더
-- **FBR Shading**
-- **Sky LUT**: 대기 산란 Raymarching
-- **Shadow mapping** : Poisson Disk Sampling
-- **Volumetric Cloud** (CloudMap, Volume Worley Noise)
-- **동적 Ambient 전환** : 노을, 낮, 밤
-- **3중 Beer's Law** Shadow
-- **Depth Probability** (구름 하단 그림자)
-- **Bloom + Lens Flare** 후처리
-- **God Rays**: 후처리 Volumetric Scattering
-- **YCoCg Variance Clipping**
-- **TAA**
-- **Lensflare**
-- **Terrain** : HeightMap, Quad Tree
-- **Grass LOD(Level of Detail)** : Geometry + Instancing, Billboard
+```cpp
+enum class ShaderID : uint16_t {
+    Stone = 1,
+    StonePillar = 2,
+    Arca = 3,
+    Tree = 4,
+    Rakshasa = 5
+}; // ShaderID
+```
+```cpp
+inline uint64_t GenerateSortKey(uint16_t shaderID, uint16_t materialID, float distance) {
+    uint32_t depth = static_cast<uint32_t>(distance * 1000.0f);
 
-
-이 모든 파이프라인이 돌아가면서도 저사양 환경에서 실시간으로 방어되는 프레임이 **이 Sisyphys Renderer 의 자랑**
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Volumetric Cloud & God Rays</strong></p>
-</div>
-
-<details>
-<summary> About Volumetric </summary>
-
-> 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  | 상황 | FPS |
-  |---|---|
-  | 일반 구름 뷰 | 50 ~ 59 |
-  | 구름층 전체 + GodRays 등 후처리 풀가동 | 39 ~ 49 |
-
-</div>
-
-
-Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20~30 FPS를 기록하는 것과 대비하면 상당한 차이가 있다 생각함
-
-</details>
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Volumetric Cloud 2.0</strong></p>
-</div>
-
-<details>
-<summary> About Volumetric 2.0 </summary>
-
-> 정석 Volumetric
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 `(현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리)` 을 진행했으나, <br/> 빛 레이마칭 수정으로 수학적으로 올바른 `(현재 거리 - 바닥 거리) / (천장 거리 - 바닥 거리)` 적용
-</div>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-  수정 전 | 수정 후
-</div>
-
-바닥(`Bottom`)에서 0, 천장(`Top`)에서 1로 정상적인 고도 그라데이션이 형성되도록 수정
-
-</details>
-
-
-<br/>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC2.gif?raw=true)" width="550" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Terrain & LOD Grass</strong></p>
-</div>
-
-<details>
-<summary> About LOD Grass </summary>
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC3.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <br/>
-
-  <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-
-  -Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
-  -이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
-  -Poisson Disk Sampling PCF 소프트 섀도우
-
-  | 거리 구분 | 렌더링 방식 | 특징 |
-  | :--- | :--- | :--- |
-  | 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
-  | D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
-  | D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
-
-
-</div>
-
-</details>
-
-<br/>
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
-
----
-
-## Quick Start
-
-<details>
-<summary> open / close </summary>
-
-### 1. 필수 요구 사항
-
-- **OS** : Windows 10/11
-
-- **IDE** : [Visual Studio Community 2022](https://visualstudio.microsoft.com/ko/vs/community/) (C++를 사용한 데스크톱 개발 워크로드 포함)
-
-- **Build** : [CMake 3.21](https://cmake.org/cmake/help/latest/release/3.21.html) 이상
-
-- **Package Manager** : [vcpkg](https://vcpkg.io/en/)
-
-### 2. 라이브러리 설치 (`vcpkg`)
-
-```bash
-# 터미널/파워쉘에서 다음 라이브러리들을 설치
-vcpkg install imgui[directx11-binding,win32-binding]
-vcpkg install directxtk
-vcpkg install directxtex
-vcpkg install spdlog
-vcpkg install assimp
+    uint64_t key = 0;
+    key |= (static_cast<uint64_t>(shaderID) << 48);
+    key |= (static_cast<uint64_t>(materialID) << 32);
+    key |= static_cast<uint64_t>(depth);
+    return key;
+} // GenerateSortKey
 ```
 
-### 3. 클론 및 빌드
+```cpp
+class RenderQueue {
+public:
+    struct DrawCommand {
+        uint64_t            sortKey;
+        ID3D11VertexShader* vs;
+        ID3D11PixelShader*  ps;
 
-```bash
-# 저장소 클론
-git clone https://github.com/BOLTB0X/Sisyphus-Renderer.git
-cd Sisyphus-Renderer
+        std::function<void(ID3D11DeviceContext*)> execute;
 
-# 빌드 디렉토리 생성
-mkdir build
-cd build
+        DrawCommand() : sortKey(0), vs(nullptr), ps(nullptr) {
+        }
+    }; // DrawCommand
 
-# CMake 구성 (vcpkg 경로 설정 필수)
-cmake .. -DCMAKE_TOOLCHAIN_FILE=[vcpkg 설치 경로]/scripts/buildsystems/vcpkg.cmake
+public:
+    RenderQueue();
+    ~RenderQueue();
 
-# 프로젝트 열기 (or cmake --build . 실행)
-start SisyphusRenderer.sln
+    void Submit(const DrawCommand& cmd);
+    void SortOpaque();
+    void SortTransparent();
+    void Execute(ID3D11DeviceContext* context);
+    void Clear();
+
+private:
+    std::vector<DrawCommand> m_commands;
+}; // RenderQueue
 ```
 
-### 4. 사용한 에셋
+  - [`RenderQueue.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Core/RenderQueue.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Core/RenderQueue.cpp)
 
-- [sketchfab - Madee: Ground//Stone Sphere](https://sketchfab.com/3d-models/groundstone-sphere-1c0f2b2e213348e6a760743a546dc7a6)
+렌더 큐의 핵심은 상태 동기화 비용을 줄이기 위한 64비트 **정렬 키(Sort Key)** 생성과 **실행 람다(Lambda Context)** 의 캡처
 
-- [Calinou: Free blue noise textures](https://github.com/Calinou/free-blue-noise-textures)
+- `64-bit Sort Key` : 셰이더 ID(16비트), 머티리얼 ID(16비트), 카메라와의 거리(32비트)를 하나의 `uint64_t` 키로 결합
 
-- [maximeheckel: noise textures](https://cdn.maximeheckel.com/noises/noise2.png)
+- 불투명 오브젝트(SortOpaque): 셰이더 및 머티리얼 변화가 적은 순(오름차순)으로 정렬하여 버텍스/픽셀 셰이더 바인딩 교체 횟수를 줄임
 
-- [Learn OpenGL: Tessellation Chapter I: Rendering Terrain using Height Maps](https://learnopengl.com/Guest-Articles/2021/Tessellation/Height-map)
+  - [`MayaActor.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/MayaActor.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/MayaActor.cpp)
 
-- [sketchfab: Tree GN](https://sketchfab.com/3d-models/tree-gn-40da979cb23f492583ec89c4196cff4e)
+- 투명 오브젝트(SortTransparent): 블렌딩 연산의 후면-전면(Back-to-Front) 순서를 보장하기 위해 거리 기준 내림차순으로 정렬하여 알파 블렌딩 아티팩트를 방지
 
-- [sketchfab: Stone Pillar](https://sketchfab.com/3d-models/stone-pillar-4b74c340d1bf47ccad35b57deb78b58a)
+    - [`TransparentActor.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/TransparentActor.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/TransparentActor.cpp)
 
-- [sketchfab: Arca Dwarapala](https://sketchfab.com/3d-models/arca-dwarapala-fe8803efbc0043d7bc3114387c4c1545)
+    - [`SkinnedActor.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/SkinnedActor.h) / [`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/RenderQueue/src/Graphics/Objects/SkinnedActor.cpp)
 
-- [rastertek: grass.dds](https://www.rastertek.com/tertut19.html)
+- **Command Pattern (지연 실행)** : 디바이스 컨텍스트를 직접 호출하는 대신, 오브젝트의 상태와 상태 지정을 람다 함수(`std::function<void(ID3D11DeviceContext*)>`) 형태로 캡처하여 `DrawCommand` 구조체에 담아 큐에 `Submit`
 
-- [sketchfab: (Black Myth)Wukong - Di Luo Cha [Animation]](https://sketchfab.com/3d-models/black-myth-wukong-di-luo-cha-animation-79819655a05f497dbb4225726fcb73e3)
+## 2. Rendering Pipeline
 
-</details>
+```
+[ 각 Actor 객체 ] ──(Submit)──> [ RenderQueue ] ──(Sort)──> [ State-Minimizing Execution ]
+  - MayaActor                      - Opaque: Ascending         - VS/PS State Cache Check
+  - SkinnedActor                   - Transparent: Descending   - Batch Draw Call
+  - RigidActor / TransparentActor
+```
 
-## Assimp
+## 3. 객체별 `Submit` 구현
 
-### [Model Loading](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp)
+시지프스 엔진 내의 모든 주요 렌더링 컴포넌트는 `RenderQueue::Submit` 구조를 통해 렌더링 파이프라인에 참여
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Assimp-test.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>static Model</strong></p>
-</div>
+각 객체는 고유한 특성에 맞춰 `DrawCommand` 를 구성
 
-### [Animation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Animation)
+### 1) MayaActor & SkinnedActor
 
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp05_%EC%95%A0%EB%8B%88%EB%A9%94%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp06_Rigid.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong> Skinned | Rigid </strong></p>
-</div>
+- FBX 및 외부 에셋 기반의 변환(`Transform`) 행렬 및 본 애니메이션(`BoneAnimation`) 데이터를 가짐
 
-## Atmospheric Scattering
+- `Submit` 매커니즘
 
-### [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap)
+  - 오브젝트가 가진 하위 `Mesh` 개수만큼 루프를 돌며 각 메시의 `MaterialID`와 카메라 사이의 거리를 계산하여 `GenerateSortKey`를 호출
 
-<div align="center">
-<td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B001_%ED%95%98%EB%8A%9802.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B002_%EC%9A%B0%EC%A3%BC01.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/CubeMap/%EB%8C%80%EA%B8%B0_%EA%B3%A0%EB%8F%84%EC%97%90%EB%94%B0%EB%A5%B8%EB%B3%80%ED%99%941.gif?raw=true" width="260"></td>
-  <br>
-  <p><strong>카메라 위치에 따른 동적 베이킹</strong></p>
-</div>
+  - 람다 캡처 내부에서 `ConstantBuffer(World 변환 행렬, 뼈대 행렬 버퍼)`를 업데이트하고, 해당 메시가 가진 알베도/노말 등의 `SRV(Shader Resource View)`를 바인딩하는 명령을 캡처하여 제출
 
-### [LUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
+### 2) TransparentActor (알파 및 투명 오브젝트)
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT05_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT06_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT07_new.png?raw=true" width="200"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/SkyLUT08_new.png?raw=true" width="200"></td>
-  <br>
-  <p><strong>UAV 로 계산 후 LUT</strong></p>
-</div>
+- 나뭇잎, 풀 등 **알파 테스팅(Alpha Testing) 혹은 알파 블렌딩(Alpha Blending)** 처리가 필요한 컴포넌트
 
-## [Shadowmapping](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/ShadowMapping)
+- `Submit` 매커니즘
 
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/ShadowMapping/ShadowMapping01_02PCF-clamp%EC%83%98%ED%94%8C%EB%9F%AC.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B502.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow07.png?raw=true" width="260"></td>
-  <br>
-  <p><strong>Point | Terrain | mix</strong></p>
-</div>
+  - 머티리얼 정보 중 Opacity 슬롯을 필수로 포함하며, SortTransparent 파이프라인으로 분류되기 위해 카메라와의 뎁스 거리를 정밀하게 반영한 키를 빌드
 
+## 참고
 
-## Volumetric
+- [ChiliTomatoNoodle - Render Queue System [C++ 3D DirectX Tutorial]](https://www.youtube.com/watch?v=yJtyc5b0EHg&t=3)
 
-### [Volumetric Cloud(라이팅 과포화)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
-
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%84.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/08Volumetric_%EB%A0%8C%EC%A6%88%ED%94%8C%EB%A0%88%EC%96%B401.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
-
-### [God Rays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Post-Processing Volumetric Scattering</strong></p>
-</div>
-
-### [Volumetric Cloud(에너지 보존 법칙)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0)
-
-<div align="center">
- <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9501.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="260"></td>
-  <br>
-  <p><strong> AAA 급 볼류메트릭 클라우드</strong></p>
-</div>
-
-## [LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
-
-<div align="center">
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8403.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="260"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass06_shadow06.png?raw=true" width="260"></td>
-    <br>
-  <p><strong> Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-</div>
+- [gamedev - d3d11 renderqueue multi pass rendering design best practice](https://gamedev.stackexchange.com/questions/169053/d3d11-renderqueue-multi-pass-rendering-design-best-practice)
