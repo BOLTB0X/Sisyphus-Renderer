@@ -1,5 +1,14 @@
 # Sisyphus-Renderer - RenderQueue
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/%EB%A0%8C%EB%8D%94%ED%81%9001.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+</div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/%EB%A0%8C%EB%8D%94%ED%81%9002.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+</div>
+
+
 렌더링엔진을 만들면서 느낀게 매번 **DirectX 11 API 상태(State)** 변경하는 것에 번거롭다 느낌 
 
 매 프레임 발생하는 불필요한 *DirectX 11 API 상태(State) 변경* 을 최소화하고, *불투명(Opaque)* 및 *투명(Transparent)* 오브젝트의 정렬을 효율적으로 처리하기 위해 **커스텀 렌더 큐(Render Queue)** 시스템을 도입
