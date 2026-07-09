@@ -34,6 +34,7 @@
 // Post
 #include "Post/CloudComposite.h"
 #include "Post/WaterComposite.h"
+#include "Post/FogComposite.h"
 #include "Post/TAA.h"
 #include "Post/PostEffects.h"
 // Utils
@@ -90,6 +91,7 @@ Renderer::Renderer() {
     m_Terrain = std::make_unique<Terrain>();
     m_GPUGrass = std::make_unique<GPUGrass>();
 	m_InstancingActor = std::make_unique<InstancingActor>();
+    m_FogComposite = std::make_unique<FogComposite>();
     m_TextureMgr = std::make_shared<TextureManager>();
     m_sceneRTMgr = std::make_unique<SceneRTManager>();
     m_nullRTV = nullptr;
@@ -212,19 +214,6 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
         return false;
     }
 
-    WaterComposite::InitParams waterInitParams;
-    waterInitParams.device = device;
-    waterInitParams.hwnd = hwnd;
-    waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
-    waterInitParams.screenWidth = RendererState::ScreenWidth;
-    waterInitParams.screenHeight = RendererState::ScreenHeight;
-    waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
-    waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
-    waterInitParams.linearWrapSampler = linerWrapSampler;
-    if (!m_WaterComposite->Init(waterInitParams)) {
-        return false;
-    }
-
 	VolumetricCloud::InitParams cloudInitParams;
 	cloudInitParams.device = device;
 	cloudInitParams.hwnd = hwnd;
@@ -257,6 +246,34 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
     compositeParams.ScreenWidth = RendererState::ScreenWidth;
     compositeParams.ScreenHeight = RendererState::ScreenHeight;
     if (!m_Composite->Init(compositeParams)) {
+        return false;
+    }
+
+    WaterComposite::InitParams waterInitParams;
+    waterInitParams.device = device;
+    waterInitParams.hwnd = hwnd;
+    waterInitParams.waterHeight = CommonConstants::WATER_HEIGHT;
+    waterInitParams.screenWidth = RendererState::ScreenWidth;
+    waterInitParams.screenHeight = RendererState::ScreenHeight;
+    waterInitParams.waterNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_NOR)->GetSRV();
+    waterInitParams.waterWaveNormalSRV = m_TextureMgr->GetTexture(device, context, PathConstants::WATER_WAVE_NOR)->GetSRV();
+    waterInitParams.linearWrapSampler = linerWrapSampler;
+    if (!m_WaterComposite->Init(waterInitParams)) {
+        return false;
+    }
+
+    FogComposite::InitParams fogInitParams;
+    fogInitParams.device = device;
+    fogInitParams.hwnd = hwnd;
+	fogInitParams.noiseMapSRV = m_TextureMgr->GetTexture(device, context, PathConstants::NOISE_2D)->GetSRV();
+    fogInitParams.heightMapSRV = m_TextureMgr->GetTexture(device, context, PathConstants::HEIGHT, true)->GetSRV();
+    fogInitParams.worleyNoiseSRV = m_TextureMgr->GetVolumeTexture(PathConstants::KEY_WORLEY_NOISE)->GetSRV();
+    fogInitParams.wrapSampler = linerWrapSampler;
+    fogInitParams.pointSampler = pointCampSampler;
+    fogInitParams.screenWidth = RendererState::ScreenWidth;
+    fogInitParams.screenHeight = RendererState::ScreenHeight;
+
+    if (!m_FogComposite->Init(fogInitParams)) {
         return false;
     }
 
@@ -293,16 +310,20 @@ bool Renderer::Init(HWND hwnd, std::shared_ptr<ImGuiManager> imgui) {
 } // Init
 
 void Renderer::Shutdown() {
+    // UI
     if (m_ImGuiMgr) {
         m_ImGuiMgr.reset();
     }
 
-    // 후처리 및 포스트 이펙트
+    // 포스트 프로세싱 및 2D 합성
     if (m_TAA) {
         m_TAA.reset();
     }
     if (m_Post) {
         m_Post.reset();
+    }
+    if (m_FogComposite) {
+        m_FogComposite.reset();
     }
     if (m_WaterComposite) {
         m_WaterComposite.reset();
@@ -311,7 +332,7 @@ void Renderer::Shutdown() {
         m_Composite.reset();
     }
 
-    // 렌더 타겟 및 그림자
+    // 렌더 타겟 및 섀도우 맵
     if (m_sceneRTMgr) {
         m_sceneRTMgr.reset();
     }
@@ -322,29 +343,41 @@ void Renderer::Shutdown() {
         m_ObjectShadowMap.reset();
     }
 
-    // 볼류매트릭 및 대기 렌더링 객체
+    // 환경, 볼류매트릭 및 인스턴싱 객체
     if (m_VolumetricCloud) {
         m_VolumetricCloud.reset();
     }
-    if (m_CloudMapLUT) {
-        m_CloudMapLUT.reset();
+    if (m_InstancingActor) {
+        m_InstancingActor.reset();
     }
-    if (m_AtmosphereLUT) {
-        m_AtmosphereLUT.reset();
+    if (m_GPUGrass) {
+        m_GPUGrass.reset();
+    }
+    if (m_Terrain) {
+        m_Terrain.reset();
     }
     if (m_SkyBox) {
         m_SkyBox.reset();
     }
+    if (m_AtmosphereLUT) {
+        m_AtmosphereLUT.reset();
+    }
+    if (m_CloudMapLUT) {
+        m_CloudMapLUT.reset();
+    }
 
+    // 스키닝 액터 및 단일 오브젝트
+    if (m_Rakshasa) {
+        m_Rakshasa.reset();
+    }
+    if (m_Stone) {
+        m_Stone.reset();
+    }
     if (m_Ground) {
         m_Ground.reset();
     }
 
-    if (m_Stone) {
-        m_Stone.reset();
-    }
-
-    // 렌더러 핵심 컴포넌트 및 매니저
+    // 렌더러 핵심 컴포넌트
     if (m_TextureMgr) {
         m_TextureMgr.reset();
     }
@@ -355,19 +388,19 @@ void Renderer::Shutdown() {
         m_DirectionalLight.reset();
     }
 
-    // 상수 버퍼
-    if (m_lightBuffer) {
-        m_lightBuffer.Reset();
-    }
+    // 공통 상수 버퍼
     if (m_frameBuffer) {
         m_frameBuffer.Reset();
+    }
+    if (m_lightBuffer) {
+        m_lightBuffer.Reset();
     }
 
     // 그래픽스 API 코어
     if (m_D3D11Mgr) {
         m_D3D11Mgr.reset();
     }
-} // Renderer
+} // Shutdown
 
 bool Renderer::Frame(float deltaTime) {
     m_renderingTime += deltaTime;
@@ -408,8 +441,9 @@ bool Renderer::Render(float deltaTime) {
     UpdatePlacement(context);
     ShadowPass(context, states);
     MainPass(context, states);
-    CompositePass(context, states);
+    CouldPass(context, states);
     WaterPass(context, states);
+    FogPass(context, states);
     PostProcessingPass(context, states);
 
     m_ImGuiMgr->Frame();
@@ -619,7 +653,9 @@ void Renderer::UpdateCommonShaderBuffer(ID3D11DeviceContext* context, D3D11State
 
     context->PSSetShaderResources(OBJECT_SHADOW_SLOT, 1, &objectShadowSRV);
     context->PSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
+    context->CSSetShaderResources(TERRAIN_SHADOW_SLOT, 1, &terrainShadowSRV);
     context->PSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
+    context->CSSetSamplers(SAMPLER_SHADOW_SLOT, 1, &shadowSampler);
 } // UpdateCommonShaderBuffer
 
 void Renderer::UpdatePlacement(ID3D11DeviceContext* context) {
@@ -743,15 +779,15 @@ void Renderer::ComputeShaderData(ID3D11DeviceContext* context, D3D11State* state
 	cloudExecParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
     m_VolumetricCloud->Execute(context, cloudExecParams);
 
-    ID3D11ShaderResourceView* nullSRVs[6] = { nullptr };
-    context->CSSetShaderResources(0, 6, nullSRVs);
+    ID3D11ShaderResourceView* nullSRVs[7] = { nullptr };
+    context->CSSetShaderResources(0, 7, nullSRVs);
 
     ID3D11Buffer* nullCBs[4] = { nullptr };
     context->CSSetConstantBuffers(0, 4, nullCBs);
     context->CSSetShader(nullptr, nullptr, 0);
 } // ComputeShaderData
 
-void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
+void Renderer::CouldPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
 
@@ -765,7 +801,7 @@ void Renderer::CompositePass(ID3D11DeviceContext* context, D3D11State* states) {
     renderParam.depthSRV = m_D3D11Mgr->GetDepthSRV();
     renderParam.linerSampler = states->GetLinearWrapSamplerState();
     m_Composite->Render(context, renderParam);
-} // CompositePass
+} // CouldPass
 
 void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
@@ -784,6 +820,25 @@ void Renderer::WaterPass(ID3D11DeviceContext* context, D3D11State* states) {
     m_WaterComposite->Render(context, waterParams);
 } // WaterPass
 
+void Renderer::FogPass(ID3D11DeviceContext* context, D3D11State* states) {
+    context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
+    context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
+
+    ID3D11RenderTargetView* fogRTV = m_FogComposite->GetRTV();
+    context->OMSetRenderTargets(1, &fogRTV, nullptr);
+    m_FogComposite->ClearRT(context);
+
+    FogComposite::RenderParams fogParams;
+	fogParams.cameraPosition = m_Camera->GetPosition();
+    fogParams.sceneSRV = m_WaterComposite->GetSRV();
+    fogParams.depthSRV = m_D3D11Mgr->GetDepthSRV();
+    fogParams.normalSRV = m_sceneRTMgr->GetRT(KEY_NORMAL_RT)->GetSRV();
+    fogParams.terrainWidth = m_Terrain->GetWidth();
+    fogParams.terrainDepth = m_Terrain->GetDepth();
+    fogParams.terrainHeightScale = m_Terrain->GetHeightScale();
+    m_FogComposite->Render(context, fogParams);
+} // FogPass
+
 void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     context->PSSetShaderResources(POST_PS_SLOT1, 1, &m_nullSRV);
     context->PSSetShaderResources(POST_PS_SLOT2, 1, &m_nullSRV);
@@ -793,7 +848,7 @@ void Renderer::ApplyEffects(ID3D11DeviceContext* context, D3D11State* states) {
     m_Post->ClearRT(context);
 
     PostEffects::RenderParams effectParam;
-    effectParam.inputSRV = m_WaterComposite->GetSRV();
+    effectParam.inputSRV = m_FogComposite->GetSRV();
     effectParam.cloudSRV = m_VolumetricCloud->GetCloudSRV();
     effectParam.transmittanceSRV = m_VolumetricCloud->GetTransmittanceSRV();
     effectParam.linerSampler = states->GetLinearWrapSamplerState();
@@ -914,18 +969,23 @@ void Renderer::InitWidgets() {
             ));
         }
 
-        if (m_InstancingActor) {
-            m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-                "m_InstancingActor Control",
-                [this]() { m_InstancingActor->OnGui(); }
-            ));
-        }
+        //if (m_InstancingActor) {
+        //    m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+        //        "m_InstancingActor Control",
+        //        [this]() { m_InstancingActor->OnGui(); }
+        //    ));
+        //}
 
-        if (m_TerrainShadowMap) {
-            m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
-                "Terrain Shadow Map Control",
-                [this]() { m_TerrainShadowMap->OnGui(); }
-            ));
-		}
+  //      if (m_TerrainShadowMap) {
+  //          m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+  //              "Terrain Shadow Map Control",
+  //              [this]() { m_TerrainShadowMap->OnGui(); }
+  //          ));
+		//}
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Volumetric Fog Control",
+            [this]() { m_FogComposite->OnGui(); }
+        ));
     }
 } // InitWidgets

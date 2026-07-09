@@ -64,7 +64,8 @@ public:
     DirectX::XMMATRIX GetWorldMatrix();
     float             GetHeightAt(float, float) const;
     float             GetWidth() const;
-    float             GetDepth() const;            
+    float             GetDepth() const;
+    float             GetHeightScale() const;
 
 private:
     struct HeightScaleBuffer {

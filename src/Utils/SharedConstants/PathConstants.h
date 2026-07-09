@@ -68,6 +68,9 @@ namespace SharedConstants {
         static const std::wstring INSTANCED_TRANSPARENT_DEPTH_VS = L"HLSL/InstancedTransparentDepthVS.hlsl";
         static const std::wstring TERRAIN_DEPTH_DS = L"HLSL/TerrainDepthDS.hlsl";
 
+        static const std::wstring VOLUMETRIC_FOG_PS = L"HLSL/VolumetricFogPS.hlsl";
+        static const std::wstring DEFERRED_FOG_PS = L"HLSL/DeferredFogPS.hlsl";
+
         static const std::string STONE = "assets/Stone/Stone.fbx";
         static const std::string TREE = "assets/Tree/TreeGen.fbx";
         static const std::string STONE_PILLAR = "assets/StonePillar/StonePillar_low.fbx";
