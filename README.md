@@ -28,7 +28,7 @@
   <tr>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9503.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9502.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%ED%88%AC%EA%B3%BC%ED%85%8C%EC%8A%A4%ED%8A%B82.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="320"></td>
   </tr>
   <tr>
@@ -74,6 +74,16 @@
   
    - `TemporalAntiAliasingPS.hlsl` -> *TAA (Variance Clipping + Reprojection)*
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/02Volumetric_%EC%A1%B0%EB%AA%85%EC%A0%81%EB%B6%84-%ED%8F%AC%EA%B7%B8-%EB%B0%94%EB%9E%8C-%EB%93%B1%EB%93%B1.gif?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EB%B3%BC%EB%A5%98%EB%A7%A4%ED%8A%B8%EB%A6%AD_%EC%88%98%EC%8B%9D%EC%88%98%EC%A0%95.png?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="280" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong> 전처리 -> 합성 -> 후처리 </strong></p>
+</div>
+
+
+
 ---
 
 ### 1. Cloud LUT, 월리 노이즈 생성
@@ -104,13 +114,6 @@
         └─ VolumetricCloudCS 컴파일
         └─ VolumetricCloudBuffer 생성
 ```
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/00Volumetric_%EC%9B%94%EB%A6%AC%EB%85%B8%EC%9D%B4%EC%A6%88.png?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/00Volumetric_CloudLUT_%EB%B3%B4%EB%A1%9C%EB%85%B8%EC%9D%B4.png?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-    <br>
-  <p><strong> UAV -> SRV </strong></p>
-</div>
 
 - [`RenderTexture.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/VolumetricCloud_2.0/src/Graphics/Data/RenderTexture.h)/[`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/VolumetricCloud_2.0/src/Graphics/Data/RenderTexture.cpp)
 
@@ -600,26 +603,6 @@ float3 cloud   = CloudMap.SampleLevel(LinearWrapSampler, pos.xz, mipLevel).rgb;
 - 32스텝 + 블루노이즈 지터링 + TAA 조합으로 128스텝에 준하는 품질을 구현
 
 - 매 프레임 지터링 위치가 달라지면서 TAA가 시간축으로 샘플을 누적
-
----
-
-## [참고]
-
-- [Guerrilla games: Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine)
-
-- [Patapom: Real-Time Volumetric Rendering](https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf)
-
-- [Github: RenderEngine(NadirRoGue) - OpenGL](https://github.com/NadirRoGue/RenderEngine/tree/master)
-
-- [Github: TerrainEngine(fede-vaccaro) - OpenGL](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
-
-- [Github: Volumetric Cloud(chihirobelmo) - DX11](https://github.com/chihirobelmo/volumetric-cloud-for-directx11/tree/main)
-
-- [Shadertoy: Himalayas(MdGfzh)](https://www.shadertoy.com/view/MdGfzh)
-
-- [Shadertoy: Enscape Cube(4dSBDt)](https://www.shadertoy.com/view/4dSBDt)
-
-- [Chris' Graphics Blog: Volumetric Rendering Part 1](https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html)
 
 ---
 
