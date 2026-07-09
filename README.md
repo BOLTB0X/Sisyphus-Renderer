@@ -1,28 +1,28 @@
-# Sisyphus-Renderer - God Rays(Post-Processing Volumetric Scattering)
+# Sisyphus-Renderer - God Rays
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/09Volumetric_%EA%B0%93%EB%A0%88%EC%9D%B402.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B86.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>God Rays(Raymarching Light)</strong></p>
+  <p><strong>God Rays(Volumetric Light)</strong></p>
 </div>
 
 <table>
   <tr>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master01_%EB%82%AE.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master02_%EC%83%88%EB%B2%BD.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master03_%EB%85%B8%EC%9D%84.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master04_%ED%99%A9%ED%98%BC.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/Fog03_%EB%8E%81%EC%8A%A402.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/Fog04_%EA%B5%AC%EA%B5%90%EC%B0%A807.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/Fog03_%EB%8E%81%EC%8A%A404.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B88.png?raw=true" width="320"></td>
   </tr>
   <tr>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B41.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8406.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B5%AC%EB%A6%84%EB%B0%80%EB%8F%84%EC%A1%B0%EC%A0%88.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/t_%ED%99%94%EB%A9%B4%EC%A0%84%EC%B2%B4%EB%A5%BC%20%EB%8D%AE%EC%96%B4%EB%B2%84%EB%A6%BC.png?raw=true" width="320"></td>
   </tr>
 </table>
 
 <p align="center">
-  <strong> Depth & Transmittance 기반 정밀한 차폐(Occlusion) </strong>
+  <strong> Depth & Transmittance 기반 Occlusion 및 Light </strong>
 </p>
 
 ## [파이프라인 구조도]
@@ -44,6 +44,13 @@ PostEffects::RenderGodRays()
 - [`PostEffects.h`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/GodRays/src/Graphics/Post/PostEffects.h)/[`.cpp`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/GodRays/src/Graphics/Post/PostEffects.cpp)
 
 - [`VolumetricCloudCS.hlsl`](https://github.com/BOLTB0X/Sisyphus-Renderer/blob/GodRays/src/Graphics/HLSL/VolumetricCloudCS.hlsl)
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_uav_%EB%B9%9B%ED%9D%A1%EC%88%98.png?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>하늘에서 빛이 어느정도 투과되는 지</strong></p>
+</div>
+
 
 
 ```cpp
@@ -76,8 +83,6 @@ PostEffects::RenderGodRays()
      └─ 태양의 동적 색상 * 누적된 color * EXPOSURE * 태양 기본 밝기
 ```
 
-
-
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/09Volumetric_%EA%B0%93%EB%A0%88%EC%9D%B401.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master07_%EA%B0%93%EB%A0%88%EC%9D%B43.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
@@ -96,13 +101,6 @@ PostEffects::RenderGodRays()
 ## [알면 좋은 것들]
 
 ### (1) 십자가 샘플링(Cross Sampling)을 통한 Flickering 방지
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master08_Occlusion.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8407.png?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <p><strong>Flickering 방지 및 광원 위치 확인 </strong></p>
-</div>
 
 ```cpp
 float get_cross_luminance(Texture2D scene, SamplerState samp, float2 lightUV, float InterpolationOffest)
@@ -142,16 +140,18 @@ float get_cross_luminance(Texture2D scene, SamplerState samp, float2 lightUV, fl
   
   - 어설프게 밝은 부분은 무시하고 확실한 광원에서만 빛 산란이 일어나도록 제어
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master08_Occlusion.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master09_%ED%88%AC%EA%B3%BC.gif?raw=true" width="300" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>Flickering 방지 및 광원 위치 확인 </strong></p>
+</div>
+
+---
+
 ### (2) Depth & Transmittance 기반 정밀한 차폐(Occlusion)
 
 단순히 화면의 밝은 픽셀을 번지게 하는 일반적인 형태의 **Radial Blur**와 달리, 매 스텝마다 `DepthTex`와 `TransmittanceTex` 를 샘플링하여 물리적으로 타당한 차폐를 구현
-
-<div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master09_%ED%88%AC%EA%B3%BC.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/09Volumetric_%EA%B0%93%EB%A0%88%EC%9D%B403.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
-  <br>
-  <strong>Depth & Transmittance</strong>
-</div>
 
 ```cpp
 // GodRayPS.hlsl
@@ -186,6 +186,26 @@ for (int i = 0; i < NUM_SAMPLES; i++)
 - CloudMask (`cloudT`)
 
   두꺼운 구름 뒤에서는 빛이 통과하지 못하고, 얇은 구름이나 구름 사이의 틈(Transmittance가 높은 곳)에서만 빛이 새어 나오는 진짜 구름 틈새 빛(Crepuscular rays) 연출이 가능
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8407.png?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <strong>Transmittance</strong>
+</div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/09Volumetric_%EA%B0%93%EB%A0%88%EC%9D%B403.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <strong>Depth</strong>
+</div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EB%9D%BC%EC%9D%B4%ED%8C%85.gif?raw=true" width="320" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <strong>Fog/Dust 표현</strong>
+</div>
+
+---
 
 ### (3) Screen Space 연산으로 성능 극대화
 
