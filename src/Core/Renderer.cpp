@@ -48,7 +48,7 @@
 #include "SharedConstants/ShadowConstants.h"
 #include "SharedConstants/CommonConstants.h"
 // define
-#define STONE_TRANSFORM_OFFSET 10.0f
+#define STONE_TRANSFORM_OFFSET 8.0f
 #define OBJECT_SHADOW_SLOT     10
 #define TERRAIN_SHADOW_SLOT    11
 #define SAMPLER_SHADOW_SLOT    5
@@ -682,6 +682,7 @@ void Renderer::DrawTerrain(ID3D11DeviceContext* context, D3D11State* states) {
     context->RSSetState(states->GetCullBackState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
     context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
+    //context->OMSetBlendState(states->GetNoBlendState(), nullptr, 0xffffffff);
 
     Terrain::RenderParams terrainParams;
     terrainParams.cameraPosition = m_Camera->GetPosition();
@@ -986,6 +987,11 @@ void Renderer::InitWidgets() {
         m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
             "Volumetric Fog Control",
             [this]() { m_FogComposite->OnGui(); }
+        ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Post Control",
+            [this]() { m_Post->OnGui(); }
         ));
     }
 } // InitWidgets

@@ -126,13 +126,13 @@ namespace SharedConstants {
 		static constexpr float             GRASS_RANGE_CUT_OFF = 0.4f;
 
         static constexpr float             FOG_BASE_HEIGHT = 20.0f;
-        static constexpr float             FOG_HEIGHT_FALLOFF = 0.15f;
-        static constexpr float             FOG_DENSITY = 0.0015f;
+        static constexpr float             FOG_HEIGHT_FALLOFF = 0.25f;
+        static constexpr float             FOG_DENSITY = 0.015f;
         static constexpr float             FOG_MAX_DISTANCE = 3000.0f;
         static constexpr float             FOG_NOISE_SCALE = 0.02f;
         static constexpr float             FOG_NOISE_STRENGTH = 0.6f;
         static constexpr float             FOG_WIND_SPEED = 0.5f;
-        static constexpr DirectX::XMFLOAT3 FOG_COLOR = { 0.3f, 0.35f, 0.4f };
+        static constexpr DirectX::XMFLOAT3 FOG_COLOR = { 0.7f, 0.85f, 0.9f };
         static constexpr float             FOG_AMBIENT_STRENGTH = 0.01f;
         static constexpr DirectX::XMFLOAT2 FOG_WIND_DIRECTION = { 0.5f, 0.5f };
         static constexpr int               FOG_MARCH_STEPS = 24;

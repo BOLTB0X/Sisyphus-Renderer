@@ -249,9 +249,9 @@ void Terrain::RenderShadow(ID3D11DeviceContext* context, const RenderShadowParam
 
 void Terrain::OnGui() {
     if (ImGui::CollapsingHeader("Terrain Settings")) {
-        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 2000.0f);
+        ImGui::SliderFloat("Height Scale", &m_heightSacleData.heightScale, 0.0f, 5000.0f);
 
-        ImGui::SliderFloat("Water Level", &m_terrainBlending.waterLevel, 0.0f, 50.0f);
+        ImGui::SliderFloat("Water Level", &m_terrainBlending.waterLevel, 0.0f, 5000.0f);
         ImGui::SliderFloat("Transition Zone", &m_terrainBlending.transZone, 0.1f, 10.0f);
         ImGui::SliderFloat("Grass Limit", &m_terrainBlending.grassLimit, 0.0f, 1.0f);
         ImGui::SliderFloat("Snow Height", &m_terrainBlending.snowHeight, 0.0f, 200.0f);
