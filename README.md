@@ -1,7 +1,7 @@
 # Sisyphus-Renderer - Sky LUT
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/SkyBox/%EC%8A%A4%EC%B9%B4%EC%9D%B4%EB%B0%95%EC%8A%A401_%EC%8B%A4%EC%8B%9C%EA%B0%84%EB%B3%80%EA%B2%BD03.png?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/%EB%8C%80%EA%B8%B0%EC%82%B0%EB%9E%80.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Precomputed Atmospheric Scattering</strong></p>
 </div>
