@@ -6,30 +6,19 @@
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC17.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC18.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>시지프스 렌더러</strong></p>
 </div>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC11.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC12.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC13.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC11.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC12.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC13.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
 </div>
 
-## Development Environment
+## Features
 
-- **IDE** : Visual Studio Community 2022
-- **Lang/Graphics API** : C++ 17/ HLSL 5.0 / DirectX 11
-- **Library** : `DirectXTK`, `DirectXTex`, `spdlog`, `Assimp`, `ImGui`
-- **Build** : CMake 3.21
-- **Package Manager** : vcpkg
-- **CPU/GPU:** AMD Ryzen 5 3500u Vega Mobile GFX / AMD Radeon Vega 8
-- **AI** : Gemini
-
-## Features 
-
-- **Assimp** 로더
+- **Assimp** Loader
 - **FBR Shading**
 - **Shadow mapping**
 - **Atmospheric scattering**
@@ -54,10 +43,23 @@
   - *CPU Based Geometry + Instancing + Billboard*
   - *GPU Driven Grass*
 
+## Development Environment
+
+- **IDE** : Visual Studio Community 2022
+- **Lang/Graphics API** : C++ 17/ HLSL 5.0 / DirectX 11
+- **Library** : `DirectXTK`, `DirectXTex`, `spdlog`, `Assimp`, `ImGui`
+- **Build** : CMake 3.21
+- **Package Manager** : vcpkg
+- **CPU/GPU:** AMD Ryzen 5 3500u Vega Mobile GFX / AMD Radeon Vega 8
+- **AI** : Gemini
+
 
 ## Summary
 
-### First. Volumetric
+### Volumetric: [Volumetric Cloud 1.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud) & [GodRay](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
+
+<details>
+<summary> Summary </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC01.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
@@ -87,16 +89,20 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 
 </details>
 
+</details>
+
 ---
+
+### Volumetric: [Volumetric Cloud 2.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0)
+
+<details>
+<summary> Summary </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Volumetric Cloud 2.0</strong></p>
 </div>
-
-<details>
-<summary> About Volumetric 2.0 </summary>
 
 > 정석 Volumetric
 
@@ -121,14 +127,16 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 
 ---
 
+### Volumetric: [Volumetric Fog](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Volumetric_Fog_Light)
+
+<details>
+<summary> Summary </summary>
+
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC15.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Volumetric Fog</strong></p>
 </div>
-
-<details>
-<summary> About Volumetric Fog </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EB%9D%BC%EC%9D%B4%ED%8C%85.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
@@ -161,7 +169,11 @@ return FOG_DENSITY * sphereFalloff * heightFalloff * noiseFactor;
 
 ---
 
-### Second. CPU / GPU Culling (Terrain, Instanced Foliage)
+### CPU Based: [Quadtree Terrain & LOD Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass)
+
+<details>
+<summary> Summary </summary>
+
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC02.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
@@ -169,44 +181,41 @@ return FOG_DENSITY * sphereFalloff * heightFalloff * noiseFactor;
   <p><strong>Quadtree Terrain & LOD Grass</strong></p>
 </div>
 
-<details>
-<summary> About LOD Grass </summary>
-
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass02_%EC%A1%B0%EB%AA%85.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
 
   <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
-
-  -Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
-  -이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
-  -Poisson Disk Sampling PCF 소프트 섀도우
-
-  | 거리 구분 | 렌더링 방식 | 특징 |
-  | :--- | :--- | :--- |
-  | 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
-  | D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
-  | D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
-
-
 </div>
+
+- Heightmap 기반 지형 생성 (QuadTree + Frustum Culling)
+
+- 이중 Shadow Map 구조: `ObjectShadowMap`, `TerrainShadowMap`
+
+- Poisson Disk Sampling PCF 소프트 섀도우
+
+| 거리 구분 | 렌더링 방식 | 특징 |
+| :--- | :--- | :--- |
+| 0 ~ D | Geometry Shader | 3방향 빌보드 적용, 바람 애니메이션 효과 |
+| D ~ D*2 | Hardware Instancing | Y축 고정 빌보드 적용, 밉맵 LOD 사용 |
+| D*2 ~ | Ground 텍스처 블렌딩 | 풀(Grass) 렌더링 없음 (텍스처로 대체) |
+
 
 </details>
 
-<br/>
-
 ---
+
+### GPU Based: [Tessellation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Tessellation)
+
+<details>
+<summary> Summery </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain05_02.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Tessellation Terrain</strong></p>
 </div>
-
-
-<details>
-<summary> About Tessellation Terrain </summary>
 
 **CPU 병목 제거** 및 동적 기하 분할을 위해 *Hull / Domain Shader* 와 *HeightMap Displacement* 를 결합한 하드웨어 테셀레이션 지형
 
@@ -233,9 +242,13 @@ return lerp(MIN_TESS_FACTOR, MAX_TESS_FACTOR, tess);
 
 </details>
 
-<br/>
-
 ---
+
+###  GPU Based: [GPU Driven Grass (Instanced Foliage)](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GPU_Driven_Grass)
+
+<details>
+
+<summary> Summery </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC14.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
@@ -243,8 +256,6 @@ return lerp(MIN_TESS_FACTOR, MAX_TESS_FACTOR, tess);
   <p><strong>GPU Drive Grass / Instanced Foliage </strong></p>
 </div>
 
-<details>
-<summary> About Instanced Foliage </summary>
 
 **CPU 부하를 줄이기 위해 컴포지트 연산** 및 *StructuredBuffer*를 활용한 *GPU-Driven Rendering* 파이프라인
 
@@ -259,6 +270,12 @@ if (randomVal > currentDensity) continue; // 밀도에 따른 확률적 배치
 context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
 ```
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass05.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass03.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+  Grass | Wood
+</div>
 
 | 구분 | 렌더링 알고리즘 | 시각적 결과 및 장점 |
 | :--- | :--- | :--- |
@@ -268,12 +285,12 @@ context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
 
 </details>
 
-<br/>
-
 ---
 
+### [Water : SSR](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Water)
 
-### Third. Water
+<details>
+<summary> Summary </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC07.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
@@ -281,8 +298,6 @@ context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
   <p><strong>Water</strong></p>
 </div>
 
-<details>
-<summary> About Water & SSR </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water02_G-Buffer.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
@@ -317,20 +332,18 @@ for(int i = 0; i < MAX_STEPS; ++i) {
 
 </details>
 
-<br/>
-
 ---
 
-### Fourth. Atmospheric scattering
+### [Atmospheric scattering](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT)
+
+<details>
+<summary> Summary </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/%EB%8C%80%EA%B8%B0%EC%82%B0%EB%9E%80.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Atmospheric scattering</strong></p>
 </div>
-
-<details>
-<summary> About Atmospheric scattering </summary>
 
 **물리 기반 대기 렌더링**을 위한 *Rayleigh* 및 *Mie* 산란 [ShaderToy: Atmospheric scattering explained - skythedragon](https://www.shadertoy.com/view/wlBXWK) 을 참고
 
@@ -480,11 +493,13 @@ for(int i = 0; i < MAX_STEPS; ++i) {
 
 </details>
 
-<br/>
-
 ---
 
-### Fifth. Animation
+### [Assimp](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Assimp): [Animation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GPU_Driven_Grass)
+
+
+<details>
+<summary> Summary </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC09.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
@@ -492,8 +507,6 @@ for(int i = 0; i < MAX_STEPS; ++i) {
   <p><strong>Animation</strong></p>
 </div>
 
-<details>
-<summary> About Animation </summary>
 
 - **Skinned Animation**
 
@@ -511,12 +524,6 @@ for(int i = 0; i < MAX_STEPS; ++i) {
 
 ---
 
-<br/>
-
-
-*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
-
----
 
 ## Branches
 
@@ -722,6 +729,8 @@ start SisyphusRenderer.sln
 
 <div align="center">
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/%EB%A0%8C%EB%8D%94%ED%81%9001.png?raw=true" width="260"></td>
+   <br>
+  <p><strong> Render Queue </strong></p>
 </div>
 
 ### [Tessellation Terrain](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Tessellation)
@@ -755,3 +764,5 @@ start SisyphusRenderer.sln
 </div>
 
 </details>
+
+*cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
