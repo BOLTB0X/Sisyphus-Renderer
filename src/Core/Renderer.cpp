@@ -680,6 +680,7 @@ void Renderer::DrawTerrain(ID3D11DeviceContext* context, D3D11State* states) {
     }
 
     context->RSSetState(states->GetCullBackState());
+    //context->RSSetState(states->GetWireframeState());
     context->OMSetDepthStencilState(states->GetDepthState(), 1);
     context->OMSetBlendState(states->GetBlendState(), nullptr, 0xffffffff);
 

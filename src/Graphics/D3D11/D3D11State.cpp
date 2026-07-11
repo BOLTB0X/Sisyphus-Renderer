@@ -42,6 +42,7 @@ ID3D11RasterizerState*   D3D11State::GetCullNone() const { return m_cullNoneStat
 ID3D11RasterizerState*   D3D11State::GetCullFrontState() const {return m_cullFrontState.Get(); }
 ID3D11RasterizerState*   D3D11State::GetShadowCullBackState() const { return m_shadowCullBackState.Get(); }
 ID3D11RasterizerState*   D3D11State::GetShadowCullNoneState() const { return m_shadowCullNoneState.Get(); }
+ID3D11RasterizerState*   D3D11State::GetWireframeState() const { return m_wireframeState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthState() const { return m_depthStencilState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthNone() const { return m_depthNoneState.Get(); }
 ID3D11DepthStencilState* D3D11State::GetDepthLessEqual() const { return m_depthLessEqualState.Get(); }

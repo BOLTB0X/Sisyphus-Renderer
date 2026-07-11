@@ -16,6 +16,7 @@ public:
     ID3D11RasterizerState*   GetCullFrontState() const;
     ID3D11RasterizerState*   GetShadowCullBackState() const;
     ID3D11RasterizerState*   GetShadowCullNoneState() const;
+    ID3D11RasterizerState*   GetWireframeState() const;
     ID3D11DepthStencilState* GetDepthState() const;
     ID3D11DepthStencilState* GetDepthNone() const;
     ID3D11DepthStencilState* GetDepthLessEqual() const;
