@@ -15,8 +15,6 @@
 
 - 카메라 거리별 최적화된 테셀레이션 인자(Tessellation Factor) 계산을 통해 근경의 디테일을 극대화하고 원경의 불필요한 폴리곤 낭비를 제어하며, 텍셀 기반 노말 생성 알고리즘과 높이 기반 멀티 레이어 블렌딩 기법을 도입
 
-- [결과 및 시행착오](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Terrain)
-
 <br/>
 
 <table>
@@ -28,16 +26,16 @@
   </tr>
 </table>
 
-<p align="center">
-  Light, Shadow
-</p>
-
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A902.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A903.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%84%B0%EB%A0%88%EC%9D%B8%20%EB%86%92%EC%9D%B4%EC%A1%B0%EC%A0%88.gif?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A902.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain04_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98%EC%89%90%EB%8F%84%EC%9A%B0%EC%A0%81%EC%9A%A903.png?raw=true" width="260" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong> 높이맵 및 광원 위치에 따른 변화 </strong></p>
 </div>
+
+cf. [결과 및 시행착오](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer/Terrain)
+
 
 ---
 
