@@ -2,19 +2,30 @@
 
 ![모두](https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/%EC%98%A4%EC%98%A4%EC%98%A4%EC%98%A4.gif?raw=true)
 
-## Self Introduce
-
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC17.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC18.gif?raw=true" width="500" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>시지프스 렌더러</strong></p>
 </div>
+
+## Self Introduce
+
+<details>
+<summary> Demo </summary>
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC11.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC12.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC13.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
 </div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC03.png?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC10.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water05_SSR_light02.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+</div>
+
+</details>
 
 ## Features
 
@@ -56,25 +67,22 @@
 
 ## Summary
 
-### Volumetric: [Volumetric Cloud 1.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud) & [GodRay](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
-
+### Volumetric: [Volumetric Cloud 1.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud)
 <details>
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC01.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC01.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>Volumetric Cloud 1.0 & God Rays</strong></p>
+  <p><strong>Volumetric Cloud 1.0</strong></p>
 </div>
 
-<details>
-<summary> About Volumetric </summary>
 
 > 언리얼 엔진 실행 불가, 유니티 버벅이는 저사양 노트북 환경 기준
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B43.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
 
   | 상황 | FPS |
@@ -89,8 +97,6 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 
 </details>
 
-</details>
-
 ---
 
 ### Volumetric: [Volumetric Cloud 2.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0)
@@ -99,7 +105,7 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9506.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Volumetric Cloud 2.0</strong></p>
 </div>
@@ -107,16 +113,16 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 > 정석 Volumetric
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9504.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9509.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
 
   레이마칭 스텝을 줄이기 위해 비정상적으로 누적된 것이 과포화을 하기 위해서 `(현재 거리 - 천장 거리) / (천장 거리 - 바닥 거리)` 을 진행했으나, <br/> 빛 레이마칭 수정으로 수학적으로 올바른 `(현재 거리 - 바닥 거리) / (천장 거리 - 바닥 거리)` 적용
 </div>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8409.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/10Volumetric_2_%EB%A0%88%EC%9D%B4%EB%A7%88%EC%B9%AD%EB%9D%BC%EC%9D%B4%ED%8A%B8%EC%88%98%EC%A0%9508.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   수정 전 | 수정 후
 </div>
@@ -133,7 +139,7 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC15.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC15.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Volumetric Fog</strong></p>
 </div>
@@ -147,8 +153,8 @@ Web API(Shadertoy) 기반의 유사 구현체들이 브라우저 환경에서 20
 **갓레이 보완** 및 Sphere Bounding 구조로 *3D Worley Noise* 와 *Phase Function* 를 결합한 볼류매트릭 포그
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/t_%ED%92%80.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EC%A0%80%EB%85%812.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/t_%ED%92%80.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EC%A0%80%EB%85%812.gif?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   Terrain Normal | Sphere Bounding
 </div>
@@ -176,14 +182,14 @@ return FOG_DENSITY * sphereFalloff * heightFalloff * noiseFactor;
 
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC02.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC02.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Quadtree Terrain & LOD Grass</strong></p>
 </div>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass02_%EC%A1%B0%EB%AA%85.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass03_%EB%B2%94%EC%9C%84%EC%A4%84%EC%9E%8404.gif?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass02_%EC%A1%B0%EB%AA%85.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
 
   <p><strong> </strong>HeightMap 적용 Terrain + Grass Level of Detail(Geometry + Instancing, Billboard) </strong></p>
@@ -212,7 +218,7 @@ return FOG_DENSITY * sphereFalloff * heightFalloff * noiseFactor;
 <summary> Summery </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain05_02.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain05_02.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Tessellation Terrain</strong></p>
 </div>
@@ -220,8 +226,8 @@ return FOG_DENSITY * sphereFalloff * heightFalloff * noiseFactor;
 **CPU 병목 제거** 및 동적 기하 분할을 위해 *Hull / Domain Shader* 와 *HeightMap Displacement* 를 결합한 하드웨어 테셀레이션 지형
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B001.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B002.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B001.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B002.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   동적 폴리곤 분할 (Wireframe)
 </div>
@@ -251,7 +257,7 @@ return lerp(MIN_TESS_FACTOR, MAX_TESS_FACTOR, tess);
 <summary> Summery </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC14.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC14.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>GPU Drive Grass / Instanced Foliage </strong></p>
 </div>
@@ -271,8 +277,8 @@ context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
 ```
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass05.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass03.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass05.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass03.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   Grass | Wood
 </div>
@@ -287,30 +293,84 @@ context->DrawInstancedIndirect(m_grassArgsBuffer.Get(), 0);
 
 ---
 
+### [GodRay](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays)
+
+<details>
+<summary> Summary </summary>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/%EA%B0%93%EB%A0%88%EC%9D%B4.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
+  <br>
+  <p><strong>God Ray</strong></p>
+</div>
+
+**퍼포먼스 튜닝**을 위해 3D 볼륨 연산을 배제하고, 광원 스크린 좌표 기준의 *Radial Blur*와 *Decay* 알고리즘을 결합한 최적화된 빛 산란 파이프라인
+
+```cpp
+// GodRayPS.hlsl
+// 광원 방향을 향해 화면 공간 텍스처 좌표를 이동하며 샘플링 누적
+float2 deltaTexCoord = (input.uv - LIGHT_UV) * (1.0f / NUM_SAMPLES * DENSITY);
+
+[loop]
+for (int i = 0; i < NUM_SAMPLES; i++)
+{
+    uv -= deltaTexCoord;
+    
+    // 깊이 버퍼를 통해 하늘 영역 판별 및 구름 투과도(Transmittance)
+    float cloudT = TransmittanceTex.SampleLevel(LinearSampler, uv, 0).r;
+    float isSky = (DepthTex.SampleLevel(LinearSampler, uv, 0).r <= 0.0001f) ? 1.0f : 0.0f;
+    cloudT *= isSky;
+    
+    // 빛의 누적 및 거리 기반 수학적 감쇠(Decay)
+    color += InputTex.SampleLevel(LinearSampler, uv, 0).rgb * cloudT * illuminationDecay * WEIGHT;
+    illuminationDecay *= DECAY;
+}
+```
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EB%9D%BC%EC%9D%B4%ED%8C%85.gif?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master06_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="230" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+  <p><strong>Occlusion | Scattering | Blow-out</strong></p>
+</div>
+
+
+</details>
+
+---
+
 ### [Water : SSR](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Water)
 
 <details>
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC07.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/t_%EB%AC%BC%20%EB%86%92%EC%9D%B4%EC%A1%B0%EC%A0%88.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Water</strong></p>
 </div>
 
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water02_G-Buffer.png?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water02_G-Buffer.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   G 버퍼
 </div>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water05_SSR_light02.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
-   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/t_%EB%AC%BC%20%EB%86%92%EC%9D%B4%EC%A1%B0%EC%A0%88.gif?raw=true" width="400" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Water/t_%EB%B0%98%EC%82%AC.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+  SSR
+</div>
+
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Water/Water07_SSR_Shadow04.gif?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
+   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/Water06_SSR_%EA%B5%B4%EC%A0%8803.png?raw=true" width="340" style="border:1px solid #ddd; border-radius:4px;" />
   <br/>
   SSR와 Refraction 그리고 Lighting이 결합된 물 표면 렌더링
 </div>
+
 
 **레이마칭(Ray-Marching)을 이용한 픽셀 단위 반사** 및 *Fresnel* 항을 적용한 실시간 수면 렌더링 파이프라인
 
@@ -340,7 +400,7 @@ for(int i = 0; i < MAX_STEPS; ++i) {
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/%EB%8C%80%EA%B8%B0%EC%82%B0%EB%9E%80.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/%EB%8C%80%EA%B8%B0%EC%82%B0%EB%9E%80.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Atmospheric scattering</strong></p>
 </div>
@@ -502,7 +562,7 @@ for(int i = 0; i < MAX_STEPS; ++i) {
 <summary> Summary </summary>
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC09.gif?raw=true" width="550" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC09.gif?raw=true" width="460" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
   <p><strong>Animation</strong></p>
 </div>
