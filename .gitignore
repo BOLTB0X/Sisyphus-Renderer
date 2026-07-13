@@ -429,9 +429,3 @@ build/**
 
 .vscode/
 .vscode/**
-
-# Ignore all assets
-assets/*
-
-# But keep hello.txt
-!assets/hello.txt
