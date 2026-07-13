@@ -13,6 +13,15 @@
   <p><strong> QuadTree | Tessellation </strong></p>
 </div>
 
+<div align="center">
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B001.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/t_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%98_%EC%99%80%EC%9D%B4%ED%84%B002.png?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <br/>
+  <p><strong>동적 폴리곤 분할 (Wireframe)</strong></p>
+</div>
+
+<br/>
+
 - 카메라 거리별 최적화된 테셀레이션 인자(Tessellation Factor) 계산을 통해 근경의 디테일을 극대화하고 원경의 불필요한 폴리곤 낭비를 제어하며, 텍셀 기반 노말 생성 알고리즘과 높이 기반 멀티 레이어 블렌딩 기법을 도입
 
 <br/>
