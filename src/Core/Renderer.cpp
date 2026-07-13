@@ -988,5 +988,10 @@ void Renderer::InitWidgets() {
             "Volumetric Fog Control",
             [this]() { m_FogComposite->OnGui(); }
         ));
+
+        m_ImGuiMgr->AddWidget(std::make_unique<FunctionWidget>(
+            "Post Control",
+            [this]() { m_Post->OnGui(); }
+        ));
     }
 } // InitWidgets
