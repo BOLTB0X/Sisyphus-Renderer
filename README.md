@@ -1,9 +1,10 @@
 # Sisyphus-Renderer - God Rays
 
 <div align="center">
-  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B86.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
+   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B86.gif?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
+  <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/%EA%B0%93%EB%A0%88%EC%9D%B4.gif?raw=true" width="380" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>God Rays(Volumetric Light)</strong></p>
+  <p><strong>God Rays</strong></p>
 </div>
 
 <table>
@@ -17,7 +18,7 @@
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/t_%EA%B0%93%EB%A0%88%EC%9D%B41.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8406.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/t_%ED%99%94%EB%A9%B4%EC%A0%84%EC%B2%B4%EB%A5%BC%20%EB%8D%AE%EC%96%B4%EB%B2%84%EB%A6%BC.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="320"></td>
   </tr>
 </table>
 
