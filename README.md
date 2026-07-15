@@ -11,24 +11,28 @@
 > 💡 **전체 파이프라인의 핵심 요약과 주요 Screenshot & GIF 를 [Pipeline & Features Summery README](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/main/src)에서 한눈에 확인하실 수 있습니다.**
 
 <table>
-<tr>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp01_Tree.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="320"></td>
-  </tr>
   <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Volumetric/real/01master_%EA%B5%AC%EB%A6%8408.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Volumetric/real/11Volumetric_2_%EC%8B%A4%EB%B2%84%EB%9D%BC%EC%9D%B4%EB%8B%9D03.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Volumetric/real/12Volumetric_2_%EC%B0%A8%ED%8F%90%ED%99%95%EC%9D%B802.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="320"></td>
+  </tr>
+  <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/assimp/assimp02_pillar01.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass04_InstancedGrass03.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass03.png?raw=true" width="320"></td>
   </tr>
   <tr>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Water/t_WaterNormal.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Water/t_%EB%B0%98%EC%82%AC.png?raw=true" width="320"></td>
-  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/grass08_GPU_Driven_%EC%9A%B0%EB%93%9C06.png?raw=true" width="320"></td>
-  </tr>
-    <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Water/Water07_SSR_Shadow03.png?raw=true" width="320"></td>
+  <tr>
+    <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Terrain/terrain02_%EC%89%90%EB%8F%84%EC%9A%B0%EB%A7%B503.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC03.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Terrain/terrain03_%ED%85%8C%EC%85%80%EB%A0%88%EC%9D%B4%EC%85%9803.png?raw=true" width="320"></td>
+  </tr>
+  <tr>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Fog/Fog01_01%EB%B0%A4.png?raw=true" width="320"></td>
+  <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B8_%EA%B0%93%EB%A0%88%EC%9D%B4.png?raw=true" width="320"></td>
   <td><img src="https://github.com/BOLTB0X/DirectX11-Draw/raw/main/DemoGIF/Renderer/Fog/%ED%8F%AC%EA%B7%B89.png?raw=true" width="320"></td>
   </tr>
 </table>
@@ -68,7 +72,7 @@
 
 | Rendering Feature | Key Optimizations & Logic | Branch Link |
 | :--- | :--- | :--- |
-| **Volumetric Cloud** | Raymarching 최적화, AAA급 구름 렌더링 | [VolumetricCloud_2.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0) |
+| **Volumetric Cloud** | Raymarching 최적화, AAA급 구름 렌더링 | [VolumetricCloud 1.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud) / [VolumetricCloud 2.0](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/VolumetricCloud_2.0) |
 | **Volumetric Fog / God Rays** | 포스트 프로세싱 기반 산란 연산 | [Volumetric_Fog](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Volumetric_Fog_Light) / [GodRays](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GodRays) |
 | **Atmospheric Scattering** | 카메라 고도에 따른 동적 베이킹, Sky LUT | [Cubemap](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Cubemap) / [SkyLUT](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/SkyLUT) |
 | **Terrain & LOD Grass** | Quad Tree Culling, Tessellation, GPU Driven | [CPU(Quad Tree Culling) Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Grass) / [Tessellation](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/Tessellation) / [GPU Driven Grass](https://github.com/BOLTB0X/Sisyphus-Renderer/tree/GPU_Driven_Grass) |
@@ -84,7 +88,6 @@
 - **Build** : CMake 3.21
 - **Package Manager** : vcpkg
 - **CPU/GPU:** AMD Ryzen 5 3500u Vega Mobile GFX / AMD Radeon Vega 8
-- **AI** : Gemini
 
 ---
 
