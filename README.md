@@ -1,9 +1,9 @@
-# Sisyphus-Renderer (DX11 Rendering Engie)
+# Sisyphus-Renderer (DX11 Real-Time Rendering Engine)
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/%EC%8B%9C%EC%A7%80%ED%94%84%EC%8A%A4%EB%A0%8C%EB%8D%94%EB%9F%AC18.gif?raw=true" width="500" style="border:1px solid #ddd; border-radius:4px;" />
   <br>
-  <p><strong>Sisyphus Renderer</strong></p>
+  <p><strong>🫸🟤 Sisyphus Renderer</strong></p>
 </div>
 
 ## Self Introduce
