@@ -73,6 +73,8 @@ foreach(FILE ${SOURCES})
             set_source_files_properties(${FILE} PROPERTIES VS_SHADER_TYPE "Hull")
         elseif(FILE MATCHES "DS" OR FILE MATCHES "Domain")
             set_source_files_properties(${FILE} PROPERTIES VS_SHADER_TYPE "Domain")
+        elseif(FILE MATCHES "GS" OR FILE MATCHES "Geometry")
+            set_source_files_properties(${FILE} PROPERTIES VS_SHADER_TYPE "Geometry")
         endif()
     elseif(FILE MATCHES "\\.hlsli$")
         set_source_files_properties(${FILE} PROPERTIES VS_TOOL_OVERRIDE "None")
@@ -80,17 +82,15 @@ foreach(FILE ${SOURCES})
 endforeach()
 
 set(HLSL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/HLSL")
-set(HLSL_OUTPUT_DIR "${CMAKE_BINARY_DIR}/HLSL")
 set(ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-set(ASSETS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/assets")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${HLSL_OUTPUT_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${HLSL_SOURCE_DIR}" "${HLSL_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/HLSL"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${HLSL_SOURCE_DIR}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/HLSL"
     
     # 에셋 폴더 복사
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_OUTPUT_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_OUTPUT_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
     
     COMMENT "Copying HLSL shaders and Assets to build directory..."
 )
