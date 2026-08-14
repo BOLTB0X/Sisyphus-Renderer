@@ -70,14 +70,15 @@ float noise_tile(float3 x, float tile)
 
     f = f * f * (3.0f - 2.0f * f);
     
-    return lerp(lerp(lerp(hash_33(fmod(p + float3(0, 0, 0), tile)),
-                        hash_33(fmod(p + float3(1, 0, 0), tile)), f.x),
-                   lerp(hash_33(fmod(p + float3(0, 1, 0), tile)),
-                        hash_33(fmod(p + float3(1, 1, 0), tile)), f.x), f.y),
-               lerp(lerp(hash_33(fmod(p + float3(0, 0, 1), tile)),
-                        hash_33(fmod(p + float3(1, 0, 1), tile)), f.x),
-                   lerp(hash_33(fmod(p + float3(0, 1, 1), tile)),
-                        hash_33(fmod(p + float3(1, 1, 1), tile)), f.x), f.y), f.z);
+    float3 tileVector = float3(tile, tile, tile);
+    return lerp(lerp(lerp(hash_13(fmod(p + float3(0, 0, 0), tileVector)),
+                        hash_13(fmod(p + float3(1, 0, 0), tileVector)), f.x),
+                   lerp(hash_13(fmod(p + float3(0, 1, 0), tileVector)),
+                        hash_13(fmod(p + float3(1, 1, 0), tileVector)), f.x), f.y),
+               lerp(lerp(hash_13(fmod(p + float3(0, 0, 1), tileVector)),
+                        hash_13(fmod(p + float3(1, 0, 1), tileVector)), f.x),
+                   lerp(hash_13(fmod(p + float3(0, 1, 1), tileVector)),
+                        hash_13(fmod(p + float3(1, 1, 1), tileVector)), f.x), f.y), f.z);
 } // noise
 
 float noise_texture(Texture2D tex, SamplerState samp, float2 t)

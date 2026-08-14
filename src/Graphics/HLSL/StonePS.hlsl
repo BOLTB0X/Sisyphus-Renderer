@@ -30,7 +30,7 @@ struct PS_OUT
     float4 normal : SV_Target1;
 }; // PS_OUT
 
-PS_OUT main(PS_IN input) : SV_TARGET
+PS_OUT main(PS_IN input)
 {
     PS_OUT output;
     float4 albedo = AlbedoTexture.Sample(LinearSampler, input.texCoord);

@@ -49,6 +49,7 @@ PS_IN main(VS_IN input, uint vertexID : SV_VertexID)
         output.uv = float2(0, 0);
         output.worldPos = float3(0, 0, 0);
         output.dist = 0.0f;
+        output.rootWorldPos = float3(0, 0, 0);
         return output;
     }
 

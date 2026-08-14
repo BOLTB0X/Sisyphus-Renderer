@@ -42,6 +42,9 @@ float Texture::GetPixelHeight(int x, int y) const {
         int i = ((y * m_width) + x) * 4;
         return static_cast<float>(m_cpuPixels[i]) / 255.0f;
     }
+
+    // CPU 픽셀 데이터를 보존하지 않은 텍스처에 대한 안전한 기본값
+    return 0.0f;
 } // GetPixelHeight
 
 int Texture::GetWidth() const {

@@ -38,7 +38,7 @@ cbuffer WorldBuffer : register(b2)
 
 static const float TILING_FACTOR = 50.0f;
 
-PS_OUT main(PS_IN input) : SV_TARGET
+PS_OUT main(PS_IN input)
 {
     PS_OUT output;
     float4 albedo = AlbedoTex.Sample(LinearSampler, input.uv);

@@ -46,7 +46,7 @@ cbuffer TerrainBlendingBuffer : register(b5)
 #define SNOW_HEIGHT tSnowHeight
 #define UV_TILING   tUVTiling
 
-PS_OUT main(PS_IN input) : SV_TARGET
+PS_OUT main(PS_IN input)
 {
     PS_OUT output;
     

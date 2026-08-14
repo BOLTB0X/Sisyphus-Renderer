@@ -14,7 +14,7 @@ const static float mixVor = MIX_VORONOI;
 [numthreads(8, 8, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    float width, height;
+    uint width, height;
     OutCloud2DLUT.GetDimensions(width, height);
     
     if (DTid.x >= width || DTid.y >= height)

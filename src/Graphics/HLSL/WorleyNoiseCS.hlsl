@@ -10,13 +10,13 @@ RWTexture3D<float4> OutNoise : register(u0);
 [numthreads(8, 8, 8)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    float3 dims;
+    uint3 dims;
     OutNoise.GetDimensions(dims.x, dims.y, dims.z);
     
     if (DTid.x >= dims.x || DTid.y >= dims.y || DTid.z >= dims.z)
         return;
 
-    float3 coord = float3(DTid) / dims;
+    float3 coord = float3(DTid) / float3(dims);
 
     // 3D 보로노이 노이즈 레이어링
     float r = tilable_voronoi(coord, 16.0f, 3.0f);

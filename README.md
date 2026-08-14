@@ -110,7 +110,7 @@
 
 ```bash
 # 터미널/파워쉘에서 다음 라이브러리들을 설치
-vcpkg install imgui[directx11-binding,win32-binding]
+vcpkg install "imgui[dx11-binding,win32-binding]:x64-windows"
 vcpkg install directxtk
 vcpkg install directxtex
 vcpkg install spdlog
@@ -162,3 +162,90 @@ start SisyphusRenderer.sln
 <br/>
 
 *cf* [시행착오 및 스크린샷 및 gif 모음](https://github.com/BOLTB0X/DirectX11-Draw/tree/main/DemoGIF/Renderer)
+
+## Reference
+
+<details>
+<summary> open / close </summary>
+
+###  Volumetric Cloud
+
+- [Guerrilla games: Nubis: Authoring Real-Time Volumetric Cloudscapes with the Decima Engine](https://www.guerrilla-games.com/read/nubis-authoring-real-time-volumetric-cloudscapes-with-the-decima-engine)
+
+- [Patapom: Real-Time Volumetric Rendering](https://patapom.com/topics/Revision2013/Revision%202013%20-%20Real-time%20Volumetric%20Rendering%20Course%20Notes.pdf)
+
+- [Github: RenderEngine(NadirRoGue) - OpenGL](https://github.com/NadirRoGue/RenderEngine/tree/master)
+
+- [Github: TerrainEngine(fede-vaccaro) - OpenGL](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
+
+- [Github: Volumetric Cloud(chihirobelmo) - DX11](https://github.com/chihirobelmo/volumetric-cloud-for-directx11/tree/main)
+
+- [Shadertoy: Himalayas(MdGfzh)](https://www.shadertoy.com/view/MdGfzh)
+
+- [Shadertoy: Enscape Cube(4dSBDt)](https://www.shadertoy.com/view/4dSBDt)
+
+- [Chris' Graphics Blog: Volumetric Rendering Part 1](https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html)
+
+### God Ray
+
+- [Medium: God Rays? What’s that?(Julien Moreau-Mathis)](https://medium.com/community-play-3d/god-rays-whats-that-5a67f26aeac2)
+
+- [Shadertoy: Simple God Rays(ltcXDH)](https://www.shadertoy.com/view/ltcXDH)
+
+- [Shadertoy: Volumetric Light Fog(ssV3zh)](https://www.shadertoy.com/view/ssV3zh)
+
+- [Shadertoy: Lens Flare Example(4sX3Rs)](https://www.shadertoy.com/view/4sX3Rs)
+
+###  Volumetric Fog
+
+- [Shadertoy - volumetric fog - above and below (trapzz)](https://www.shadertoy.com/view/lsc3Ds)
+
+- [Shadertoy - Volumetric fog ride(sergei_am)](https://www.shadertoy.com/view/7s3SRH)
+
+- [Github - VLD3D11 (this project is still in progress)](https://github.com/ACskyline/VLD3D11)
+
+### CPU / GPU Driven Grass
+
+- [NVIDIA Developer - Advancing GPU-Driven Rendering with Work Graphs in Direct3D 12](https://developer.nvidia.com/blog/advancing-gpu-driven-rendering-with-work-graphs-in-direct3d-12/)
+
+- [NVIDIA Developer - Chapter 7. Rendering Countless Blades of Waving Grass](https://developer.nvidia.com/blog/advancing-gpu-driven-rendering-with-work-graphs-in-direct3d-12/)
+
+- [A-programmer's-cave - Grass Shader](https://giordi91.github.io/post/grass/)
+
+- [Roble Programming - GPU로 풀 그리기](https://roble-programing.tistory.com/m/72)
+
+- [Stackoverflow - What is GPU driven rendering?](https://stackoverflow.com/questions/59686151/what-is-gpu-driven-rendering)
+
+- [Rastertek: Terrain Rendering Tutorials](https://rastertek.com/tutterr.html)
+
+- [GPU Gems: Chapter 7. Rendering Countless Blades of Waving Grass](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-7-rendering-countless-blades-waving-grass)
+
+### Terrain & Tessellation
+
+- [Microsoft TechNet: Introduction to Tessellation in Direct3D 11](https://learn.microsoft.com/en-us/windows/win32/direct3d11/direct3d-11-advanced-stages-tessellation)
+
+- [NVIDIA Developer: Dynamic Terrain Tessellation in DX11](https://developer.nvidia.com/gpugems/gpugems2/part-i-geometric-complexity/chapter-2-terrain-rendering-using-gpu-based-geometry)
+
+- [Github - TerrainEngine-OpenGL(fede-vaccaro)](https://github.com/fede-vaccaro/TerrainEngine-OpenGL/tree/master)
+
+- [Rastertek - Tutorial 35: Depth Buffer](https://www.rastertek.com/dx11win10tut35.html)
+
+- [Rastertek - Tutorial 45: Shadow Mapping and Transparency](https://www.rastertek.com/dx11win10tut45.html)
+
+- [Rastertek - Tutorial 49: Hardware Tessellation](https://www.rastertek.com/dx11win10tut49.html)
+
+### etc
+
+- [ShaderToy : Atmospheric scattering explained - wlBXWK](https://www.shadertoy.com/view/wlBXWK)
+
+- [ChiliTomatoNoodle - Render Queue System [C++ 3D DirectX Tutorial]](https://www.youtube.com/watch?v=yJtyc5b0EHg&t=3)
+
+- [gamedev - d3d11 renderqueue multi pass rendering design best practice](https://gamedev.stackexchange.com/questions/169053/d3d11-renderqueue-multi-pass-rendering-design-best-practice)
+
+- [OpenGL Tutorial 16 - shadow mapping](https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/)
+
+- [Rastertek DX 11 - Tutorial 41: Shadow Mapping](https://www.rastertek.com/dx11win10tut41.html)
+
+- [티스토리 mstone8370 - [DirectX11] 쉐도우 맵과 PCF(Percentage Closer Filtering](https://mstone8370.tistory.com/25)
+
+</details>

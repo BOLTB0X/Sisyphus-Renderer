@@ -28,7 +28,8 @@ float4 main(PS_INPUT input) : SV_TARGET
 
     // 비네팅
     float2 uv = input.uv;
-    float vignette = pow(16.0 * uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y), 0.1);
+    float vignetteBase = max(16.0 * uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y), 0.0);
+    float vignette = pow(vignetteBase, 0.1);
     col = lerp(col * col, col, vignette);
 
     // 필름 노이즈
