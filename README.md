@@ -1,4 +1,4 @@
-# Sisyphus-Renderer - GPU Driven Grass & Instancing
+# Sisyphus-Renderer - GPU Driven Grass
 
 <div align="center">
   <img src="https://github.com/BOLTB0X/DirectX11-Draw/blob/main/DemoGIF/Renderer/Grass/GPU_Driven_Grass02.gif?raw=true" width="650" style="border:1px solid #ddd; border-radius:4px;" />
